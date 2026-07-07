@@ -233,10 +233,12 @@ class Aggregator(Protocol):
     def aggregate(self, participants: Sequence[Agent], rng: np.random.Generator) -> Prediction: ...
 ```
 
-**Stub rule:** `Agent` and `Arena` exist NOW as minimal stub classes (docstring naming the owning ticket;
-every method body `raise NotImplementedError("W2-01 owns Agent")`). W2-01/W3-01 replace stub INTERNALS and may
-TIGHTEN protocol parameter types; they may not rename seams or loosen types — that is a cross-ticket contract
-change (§11). `partner_profile` stays a read-only `Mapping` on purpose: it is the spec §6.5 public-profile
+**Stub rule (AMENDED 2026-07-07 — W0-02 plan review, D2):** `Agent` and `Arena` exist NOW as
+CONSTRUCTOR-ONLY stub classes — `__init__` raises `NotImplementedError("W2-01 owns Agent")` (resp.
+`"W3-01 owns Arena"`), docstring naming the owning ticket, NO other methods or fields (no speculative surface
+to become accidental API; supersedes the earlier "every method body raises" wording). W2-01/W3-01 replace
+stub INTERNALS and may TIGHTEN protocol parameter types; they may not rename seams or loosen types — that is
+a cross-ticket contract change (§11). `partner_profile` stays a read-only `Mapping` on purpose: it is the spec §6.5 public-profile
 boundary, and typing it as `Agent` would hand every scoring policy the whole agent — the exact hole the
 boundary exists to close.
 
@@ -377,7 +379,8 @@ plan-level decision for that ticket, taken loudly.
 7. **Provenance:** `git_sha` matches `git rev-parse HEAD`; touch a tracked file → suffix `+dirty` appears
    (restore after); `package_versions` carries all six named packages.
 8. **Protocol conformance:** a trivial fake per seam passes `isinstance` (runtime_checkable) and mypy strict;
-   `Agent`/`Arena` stub methods raise `NotImplementedError` naming their owning ticket.
+   `Agent()`/`Arena()` construction raises `NotImplementedError` naming the owning ticket (constructor-only
+   stubs per the amended S2 rule).
 9. **Prediction model:** `class_label` outside {0,1} rejected; frozen; `extra="forbid"`.
 10. **CI proof (not a pytest test):** links to one green per-commit run and one green scheduled/dispatch run
     in the close report.

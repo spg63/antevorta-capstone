@@ -1,9 +1,9 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-07 (stakeholder + Claude, Codex-review fold-in + wave-plan rename) — branch
-`main` (commits happen at explicit stakeholder direction; the standing rule remains: humans commit). The
-wave plan is now `W0-WAVE_scaffold-experiment-harness_PLAN.md` (index v1.12) — if you're looking for
-"W0-01's other plan", there isn't one: the dedicated plan owns W0-01, the wave plan owns W0-02..04.
+**Last updated:** 2026-07-07 (stakeholder + Claude + Codex, W0-02 plan landed) — branch `main` (commits
+happen at explicit stakeholder direction; the standing rule remains: humans commit). Plan map: the dedicated
+plans own W0-01 and W0-02; `W0-WAVE_scaffold-experiment-harness_PLAN.md` owns W0-03/04 plus the wave-shared
+O1–O6/STEP-0 (index v1.12 rename note: the wave plan is not "W0-01's other plan").
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -32,16 +32,18 @@ wave plan is now `W0-WAVE_scaffold-experiment-harness_PLAN.md` (index v1.12) —
   exact-arithmetic example, prior_accuracy totality, small-N swarm fallback) + process fixes — full
   disposition in `tickets/02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md`. Stakeholder rulings live in the
   index changelog (v1.2–v1.11) and the W0-01 plan §12.
-- **In flight / blocked:** No code exists; no ticket has started. Nothing is blocked: the W0-01 plan is
-  **APPROVED (stakeholder, 2026-07-07)** — the only gate left before W0-01 code is the team's own STEP-0.
+- **In flight / blocked:** No code exists; no ticket has started. Nothing is blocked: the W0-01 AND W0-02
+  plans are **APPROVED (stakeholder, 2026-07-07)** — W0-02's was authored by Codex and reviewed by Claude
+  (the first AI→AI plan review; disposition in its banner + index v1.13). The only gate before W0-01 code
+  is the team's own STEP-0; W0-02 additionally waits on W0-01 ✅. **The project is now paused for the
+  students to read through everything** (stakeholder, 2026-07-07).
 - **Owner-attention:** (1) Team: run the W0 STEP-0 ruling meeting — the wave plan's O1–O6 (O1 and O6
   already ruled by fact: the repo exists, MIT license landed) and the W0-01 plan's O7–O9; record rulings in
   both RESULT blocks. (2) Team: fill stream-owner GitHub handles (index streams table → the plan's
   CODEOWNERS §7-S4).
 - **Next step:** the STEP-0 meeting, then CORE + EVAL implement W0-01 while DATA starts W1-01 (no
   blockers) and AGENTS/ARENA draft their W2-01/W3-01 mini-plans.
-- **Five-minute test:** `ls tickets/ | wc -l` → 47 files (42 tickets + index + preamble + 2 plans + the
-  02_ review doc); the FIRST changelog entry in `tickets/00_INDEX.md` is v1.11 (Codex review fold-in);
-  `grep -c "RULED" tickets/02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md` ≥ 3. If the newest changelog entry
-  or the git history describes work this CURRENT STATE doesn't mention, this handoff is stale — fix it
-  FIRST.
+- **Five-minute test:** `ls tickets/ | wc -l` → 48 files (42 tickets + index + preamble + 3 plans + the
+  02_ review doc); the FIRST changelog entry in `tickets/00_INDEX.md` is v1.13 (the W0-02 plan, Codex-
+  authored, approved). If the newest changelog entry or the git history describes work this CURRENT STATE
+  doesn't mention, this handoff is stale — fix it FIRST.

@@ -1,5 +1,13 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.13 (2026-07-07): the W0-02 PLAN lands** (`W0-02_types-policy-seams_PLAN.md`) — authored by CODEX
+> under the §9 invocation, independently reviewed by CLAUDE (the set's first AI→AI plan review), **✅
+> APPROVED with amendments** (stakeholder): D2 (constructor-only stubs) ruled as an explicit amendment to
+> the wave plan §7-S2 stub rule — wave plan + its §10.8 pin updated to match; tighten-never-loosen restated
+> in the plan's §11; one untestable absence-claim reworded to a static pin. Review highlights: correct
+> wave-vs-dedicated authority routing, current ticket IDs throughout, and D1 (TYPE_CHECKING forward refs)
+> closed a latent circular-import defect the wave plan had glossed over.
+>
 > **v1.12 (2026-07-07): the wave plan is RENAMED** `W0-01_scaffold-experiment-harness_PLAN.md` →
 > `W0-WAVE_scaffold-experiment-harness_PLAN.md`. The "W0-01" in its filename was a fossil of the pre-split
 > monolithic ticket and read as "W0-01 has two plans" (it doesn't: the dedicated plan owns W0-01; the wave
@@ -102,9 +110,11 @@ that did not implement it)** + status flipped here as `✅ (reviewed: <who/what>
 
 ## Wave W0 — Scaffold (blocks everything)
 
-**Two plans govern this wave.** `W0-01_repo-scaffold-ci_PLAN.md` (✅ APPROVED — stakeholder, 2026-07-07) is
-the dedicated, per-ticket plan for W0-01 and the exemplar of the preamble §9 invocation at full depth.
-`W0-WAVE_scaffold-experiment-harness_PLAN.md` remains the execution document for W0-02..04 and holds the
+**Three plans govern this wave.** `W0-01_repo-scaffold-ci_PLAN.md` (✅ APPROVED — stakeholder, 2026-07-07)
+is the dedicated plan for W0-01 and the exemplar of the preamble §9 invocation at full depth.
+`W0-02_types-policy-seams_PLAN.md` (✅ APPROVED — stakeholder, 2026-07-07; authored by Codex, reviewed by
+Claude) is the dedicated plan for W0-02 and supersedes the wave plan's §7-S2 where they differ.
+`W0-WAVE_scaffold-experiment-harness_PLAN.md` remains the execution document for W0-03/W0-04 and holds the
 wave-shared §3 rulings (O1–O6) and STEP-0 RESULT block, which must be filled before any W0 code. Read a
 ticket first (the what), then its plan (the how).
 
