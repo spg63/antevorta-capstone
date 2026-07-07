@@ -27,6 +27,10 @@ This project is built from the spec, the publications, and the `antevorta-db` da
 looking for the original WoC-Bots implementation, other implementations, or code outside this repository.
 If you want to know "how the original did it" beyond what the spec says — STOP and ask the stakeholder.
 
+**This repository is PUBLIC**, so the boundary cuts both ways: nothing derived from the stakeholder's
+private research code may ever appear here in ANY form — code, comments, commit messages, issues, or PR
+text. Committed data excerpts must comply with their source datasets' licenses (see `data/README.md`).
+
 ## Hard rules (short form — the preamble is authoritative; restated here because each is the cheap path)
 
 - ONE seeded `numpy.random.Generator`, threaded from the experiment config. No `np.random.*` module calls,

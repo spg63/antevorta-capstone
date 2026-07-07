@@ -22,7 +22,8 @@
 
 ## CURRENT STATE (2026-07-07, repo bring-up)
 
-- **Done:** Repository created by the stakeholder (private until publication). Pre-laid: directory
+- **Done:** Repository created by the stakeholder (**PUBLIC** — re-ruled 2026-07-07, superseding
+  private-until-publication; see index v1.9). Pre-laid: directory
   skeleton (`src/wocbots/*`, `tests/`, `configs/`, `results/manifests/`, `data/`), seed `.gitignore`,
   `README.md`, control documents (`CLAUDE.md`, `AGENTS.md`, this file, `docs/agent_prompts/`). The full
   ticket set lives in `tickets/` (index v1.7: 42 tickets, 9 waves, 5 streams) with the spec at
@@ -30,9 +31,10 @@
   (v1.2–v1.6) and the W0-01 plan §12.
 - **In flight / blocked:** No code exists; no ticket has started. Nothing is blocked: the W0-01 plan is
   **APPROVED (stakeholder, 2026-07-07)** — the only gate left before W0-01 code is the team's own STEP-0.
-- **Owner-attention:** (1) Team: run the W0 STEP-0 ruling meeting — the wave plan's O1–O6 (O1 already
-  ruled by fact) and the W0-01 plan's O7–O9; record rulings in both RESULT blocks. (2) Team: fill
-  stream-owner GitHub handles (index streams table → the plan's CODEOWNERS §7-S4).
+- **Owner-attention:** (1) Team: run the W0 STEP-0 ruling meeting — the wave plan's O1–O6 (O1 and O6
+  already ruled by fact: the repo exists, MIT license landed) and the W0-01 plan's O7–O9; record rulings in
+  both RESULT blocks. (2) Team: fill stream-owner GitHub handles (index streams table → the plan's
+  CODEOWNERS §7-S4).
 - **Next step:** the STEP-0 meeting, then CORE + EVAL implement W0-01 while DATA starts W1-01 (no
   blockers) and AGENTS/ARENA draft their W2-01/W3-01 mini-plans.
 - **Five-minute test:** `ls tickets/ | wc -l` → 46 files; `head -8 tickets/00_INDEX.md` shows the v1.8

@@ -58,7 +58,7 @@ Ruling authority for this section is **delegated to the team** (see header). Eac
 recommended default that stands unless the team overrules it WITH a recorded rationale — "we didn't like it"
 is not a rationale; "we know Actions better than the alternative" is. Per preamble §0.2, these are blocked
 INPUTS, not blocked work — the structure that surrounds them lands regardless. Note the delegation is
-per-section, not global: gates that name the stakeholder elsewhere in the set (W1-02's label reconciliation,
+per-section, not global: gates that name the stakeholder elsewhere in the set (W1-04's label reconciliation,
 any MUST dispute per preamble §0.2) still escalate to him.
 
 - **O1 — Repository identity.** The toolkit lives in the TEAM'S OWN repository (clean-room: it must be
@@ -78,9 +78,8 @@ any MUST dispute per preamble §0.2) still escalate to him.
 - **O5 — CI platform & cadence.** **Recommended:** GitHub Actions; per-commit job = lint + format + mypy +
   `pytest -m "not slow"`; scheduled weekly job (+ manual dispatch) = full `pytest` including `slow` marks.
   The ticket-close gate remains the FULL suite run locally (preamble §5).
-- **O6 — License.** **Recommended:** MIT — if in doubt, MIT and move on. One caveat worth five minutes of
-  reading: university IP policy for capstone work tied to ongoing research. If the team picks anything
-  unusual (copyleft, non-commercial), sanity-check it against the publication path first.
+- **O6 — License. ✅ RULED BY FACT (stakeholder, 2026-07-07): MIT**, landed as `LICENSE` at the repo root.
+  No team ruling needed; W0-01's license step becomes a verify.
 
 **Encoding rule (post-ruling):** each ruling lands as one named line in §6's RESULT block and (where it changes
 a file) a comment at the site: `# O3 ruling (team, <date>): pydantic v2, extra="forbid"`. A future re-ruling
@@ -105,9 +104,10 @@ changes that site only.
   per-run metrics, aggregate mean ± std, timestamped filename.
 - **Greenfield fact:** there is no existing code; `antevorta-db` is NOT a dependency of this ticket (it enters
   at W1-01, and only as an external data producer — never as a package dependency).
-- **Downstream facts this ticket must not contradict:** W2-01 needs the Generator threading and the classifier
-  seam room; W3-01 binds `InitPolicy`/`MovementPolicy`; W4-01 binds `Aggregator` and the runner loop; W5-02
-  and W8-04 consume manifests as their provenance layer (figures regenerate from manifests by script).
+- **Downstream facts this ticket must not contradict (IDs per the index v1.4 re-cut):** W2-01/W2-02 need the
+  Generator threading and the classifier seam room; W3-01/W3-02 bind `InitPolicy`/`MovementPolicy`; W4-01
+  binds the runner loop, W4-03/W6-02 bind `Aggregator`; W5-05 and W8-06 consume manifests as their provenance
+  layer (figures regenerate from manifests by script).
 
 ---
 
@@ -203,8 +203,8 @@ Cell = tuple[int, int]          # (row, col); the arena grid coordinate
 
 class Prediction(BaseModel, frozen=True, extra="forbid"):
     class_label: Literal[0, 1]
-    tier: str | None = None     # vote-margin tier (spec §7) / swarm band (spec §8.2); None until W4-02
-    margin: float | None = None # winning vote share in [0,1]; None until W4-02
+    tier: str | None = None     # vote-margin tier (spec §7) / swarm band (spec §8.2); None until W4-04
+    margin: float | None = None # winning vote share in [0,1]; None until W4-04
 ```
 
 `protocols.py`, exact (all `@runtime_checkable`; docstrings cite owning spec sections):
@@ -247,7 +247,7 @@ boundary exists to close.
 ```python
 class ExperimentConfig(BaseModel, frozen=True, extra="forbid"):
     name: str                     # manifest filename stem
-    kind: str                     # registry key; W0-01 ships "dummy"
+    kind: str                     # registry key; W0-04 ships "dummy"
     seed: int                     # the ONE master seed
     n_runs: int = 10              # spec §9.1 default
     params: dict[str, JsonValue] = Field(default_factory=dict)  # kind-specific; the kind validates
@@ -335,7 +335,7 @@ The manifest IS the observability layer at this stage: per-run metrics + aggrega
 ran, from what, and what came out" for every invocation. Two deliberate non-features, recorded so nobody adds
 them ad hoc: no logging framework (print-level progress in the runner loop is fine; structured logging is a
 future decision owned by whichever ticket first needs it), and no run database (manifest files in git are the
-database; W8-04's provenance audit consumes them as such). If a later ticket outgrows either ruling, that is a
+database; W8-06's provenance audit consumes them as such). If a later ticket outgrows either ruling, that is a
 plan-level decision for that ticket, taken loudly.
 
 ---
@@ -389,17 +389,17 @@ plan-level decision for that ticket, taken loudly.
 Greenfield inverts blast radius: nothing existing breaks, but every surface here is an API later tickets bind
 to, so *changing it later* is the cross-ticket event. Enumerated:
 
-- **`protocols.py` seams** → W3-01 (`InitPolicy`, `MovementPolicy`), W3-02 (`InteractionPolicy`,
-  `ScoringPolicy`), W4-02/W6-02 (`Aggregator`). Tightening parameter types in the owning ticket: allowed.
+- **`protocols.py` seams** → W3-01 (`InitPolicy`), W3-02 (`MovementPolicy`), W3-03 (`InteractionPolicy`,
+  `ScoringPolicy`), W4-03/W6-02 (`Aggregator`). Tightening parameter types in the owning ticket: allowed.
   Renaming/loosening: a ruled, index-logged contract change.
-- **`Mapping`-typed `partner_profile`** → the spec §6.5 privacy boundary; W3-02 and W8-02's audit both lean on
+- **`Mapping`-typed `partner_profile`** → the spec §6.5 privacy boundary; W3-03 and W8-03's audit both lean on
   it. Do not "convenience" it into `Agent`.
-- **`ExperimentConfig.params` + the kind registry** → every experiment ticket (W2-02, W4-02, W5-*, W6-02,
+- **`ExperimentConfig.params` + the kind registry** → every experiment ticket (W2-04, W4-04, W5-*, W6-03,
   W7-*, W8-*) adds kinds; the registry error behavior is their debugging experience.
-- **Manifest schema (`schema_version: 1`)** → W5-02's reproduction tables, W8-04's figure regeneration and
+- **Manifest schema (`schema_version: 1`)** → W5-02..05's reproduction tables, W8-06's figure regeneration and
   provenance audit. Additive evolution bumps `schema_version`; removals/renames need a migration note in the
   index changelog.
-- **SeedSequence spawning discipline** → W2-01 (sklearn seeding), W3-01 (arena RNG), W6-01 (wheel draws) all
+- **SeedSequence spawning discipline** → W2-02 (sklearn seeding), W3-01 (arena RNG), W6-01 (wheel draws) all
   receive Generators descended from the config seed. Nothing else may mint randomness (S4 enforces).
 - **The check suite** → preamble §5 verbatim; every later close gate.
 
@@ -413,7 +413,7 @@ to, so *changing it later* is the cross-ticket event. Enumerated:
 - **R2 — guard-test false positives** (e.g., a legitimate future wall-clock need). *Mitigation:* the named
   in-test allowlist with per-entry comments; growing it is a one-line reviewed change, not a workaround.
 - **R3 — nondeterminism seeping in via libraries** (BLAS thread counts, sklearn `n_jobs`). Not exercised by
-  the dummy kind; recorded here as a STANDING WARNING for W2-01: single-thread or explicitly-seeded paths in
+  the dummy kind; recorded here as a STANDING WARNING for W2-02: single-thread or explicitly-seeded paths in
   anything that feeds a manifest, and the determinism pin (§10.2 pattern) must be replicated in every
   experiment-bearing ticket.
 - **R4 — float-repr instability across Python versions** breaking byte-compares. *Mitigation:* determinism is
@@ -436,7 +436,8 @@ configs/x.yaml` is enough until someone needs more).
 1. ☐ Check suite green (all four, full pytest) locally AND both CI workflows green on the real repo.
 2. ☐ Every §10 pin exists and passes; the guard self-test proves the guard.
 3. ☐ STEP-0 RESULT block filled with all six rulings (named, dated).
-4. ☐ Preamble §5 updated with the ratified commands; `00_INDEX.md` W0-01 flipped ✅.
+4. ☐ Preamble §5 updated with the ratified commands; the closing ticket's `00_INDEX.md` status flipped ✅
+   (this plan closes ticket-by-ticket: W0-02, W0-03, W0-04).
 5. ☐ `dummy_smoke.yaml`'s manifest committed under `results/manifests/` as the harness's own first artifact.
 6. ☐ Close report lists every created path project-root-relative and links the CI runs.
 7. ☐ Commit discipline per team workflow (preamble §6.7).

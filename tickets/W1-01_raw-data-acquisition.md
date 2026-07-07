@@ -21,7 +21,9 @@ match is forensic.
 - **S2.** `data/DATA_PROVENANCE.md`: dataset versions/URLs, download dates, per-file SHA-256 checksums, row
   counts per file.
 - **S3.** Commit small fixture excerpts (~50 rows per file, spanning edge cases: zero budgets, missing
-  links) for downstream unit tests.
+  links) for downstream unit tests. **The repo is PUBLIC (index v1.9):** every committed excerpt must comply
+  with its source dataset's license/ToS — keep excerpts minimal and record source + license in
+  `DATA_PROVENANCE.md`.
 
 ## Forbidden shortcuts
 

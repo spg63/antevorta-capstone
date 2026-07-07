@@ -51,11 +51,12 @@ logic on purpose: its whole job is to make every subsequent ticket's job smaller
 ## 3. Decisions (team-ruled; fill into §6's RESULT block)
 
 Inherited and NOT re-opened: **O1 — ✅ RULED BY FACT (stakeholder, 2026-07-07): the repo is
-`antevorta-capstone`** (stakeholder-created; the PACKAGE remains `wocbots`; src layout; PRIVATE until
-publication per §12-Q3; bare directory skeleton, seed `.gitignore`, and README pre-laid — §7-S1 becomes
-verify-and-complete rather than create-from-nothing), **O2** (Python ≥3.11, CI matrix 3.11/3.12), **O3**
+`antevorta-capstone`** (stakeholder-created; the PACKAGE remains `wocbots`; src layout; **PUBLIC** per the
+§12-Q3 re-ruling of 2026-07-07; bare directory skeleton, seed `.gitignore`, and README pre-laid — §7-S1
+becomes verify-and-complete rather than create-from-nothing), **O2** (Python ≥3.11, CI matrix 3.11/3.12), **O3**
 (pydantic v2, `extra="forbid"`), **O4** (mypy strict), **O5** (GitHub Actions; fast per-commit + scheduled
-full), **O6** (license: MIT recommended) — all per the wave plan §3.
+full), **O6 — ✅ RULED BY FACT (stakeholder, 2026-07-07): MIT, landed at repo root** — all per the wave
+plan §3.
 
 New, surfaced by this plan's depth:
 
@@ -336,9 +337,9 @@ sites. Each is a future ticket's loud decision if ever needed.
 ## 12. Risks, alternatives, open questions FOR THE STAKEHOLDER
 
 **Risks.**
-- **R1 — GitHub Actions limits on a private repo** (Q3 ruling: private until publication, so the minutes
-  quota is live). *Mitigation:* ubuntu-only, 2-Python matrix (modest burn); scheduled job weekly not daily;
-  revisit at the public flip. Escalate only if the quota actually bites.
+- **R1 — ~~GitHub Actions limits on a private repo~~ DISSOLVED** by the Q3 re-ruling (public repo → free
+  Actions minutes). The ubuntu-only 2-Python matrix and weekly scheduled job stand as sensible defaults,
+  no longer as quota mitigations.
 - **R2 — Branch-protection friction for a 5-person team** (review latency stalls parallel streams).
   *Mitigation:* auto-merge + CODEOWNERS routing + small tickets (the v1.4 re-cut exists for this); if latency
   still bites, the escape hatch is a team ruling relaxing O8 — recorded, not improvised.
@@ -354,9 +355,14 @@ sites. Each is a future ticket's loud decision if ever needed.
 - **Q2 — Human-in-the-loop floor: RULED — pure AI→AI acceptable.** AI implements, a different AI reviews, a
   human adjudicates the reviewer's findings; no mandatory human full-diff read at ticket close. §8 stands as
   written.
-- **Q3 — Repo visibility: RULED — PRIVATE until publication**, then flipped public at paper submission. This
-  constrains the team's O1 ruling (they choose name/structure; visibility is fixed) and resolves R1
-  conservatively: ubuntu-only matrix, watch the Actions minutes, revisit at the public flip.
+- **Q3 — Repo visibility: RE-RULED (stakeholder, 2026-07-07): PUBLIC from day 1**, superseding the earlier
+  private-until-publication ruling (stakeholder rationale: this is a clean-room reimplementation, not the
+  original research code). Consequences: R1 dissolves (Actions minutes are free for public repos, and the
+  full branch-protection feature set is available without a paid plan — O8 gets cheaper to enforce);
+  committed fixture excerpts must comply with the source datasets' licenses/ToS (minimal excerpts,
+  attributed in `data/DATA_PROVENANCE.md` — noted in W1-01); and the clean-room boundary is now also a
+  PUBLICATION boundary — nothing derived from the stakeholder's private research code may ever appear here
+  in any form (code, comments, commit messages, issues, PR text).
 
 ---
 

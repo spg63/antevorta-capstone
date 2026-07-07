@@ -1,7 +1,8 @@
 # W0-01 — Repository scaffold, packaging, check-suite ratification, CI
 
-> **AMENDED (index v1.6):** the repository now EXISTS — `antevorta-capstone`, stakeholder-provided, private
-> until publication — with the bare directory skeleton, a seed `.gitignore`, and the README pre-laid. That
+> **AMENDED (index v1.6; visibility re-ruled at v1.9):** the repository now EXISTS — `antevorta-capstone`,
+> stakeholder-provided, **PUBLIC** — with the bare directory skeleton, a seed `.gitignore`, and the README
+> pre-laid. That
 > pre-does part of S1; this ticket's remaining scope is packaging (pyproject + lockfile), tool configs,
 > check-suite ratification, CODEOWNERS, the PR template, branch protection, and CI. The dedicated plan's
 > §7-S1 tree is now a verify-against-reality step, and its `.gitignore` spec (§7-S3) refines the seed file.

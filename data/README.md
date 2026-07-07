@@ -6,3 +6,7 @@ fixture excerpts (which live under `tests/`, not here).
 
 Datasets and the `antevorta-db` reference module are provided by the stakeholder (Dr. Grimes) — ask him, not
 Kaggle's search box, if anything is missing.
+
+**This repository is public.** Any committed excerpt (fixtures included) must comply with its source
+dataset's license/terms of use: keep excerpts minimal, and record the source + license alongside the
+checksums in `DATA_PROVENANCE.md`.

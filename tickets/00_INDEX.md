@@ -1,5 +1,16 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.10 (2026-07-07): MIT LICENSE landed** at the repo root (stakeholder ruling by fact — O6 closes;
+> W0-01's license step becomes a verify). With O1 and O6 both ruled, the team's STEP-0 scope is O2–O5 +
+> O7–O9.
+>
+> **v1.9 (2026-07-07): the repository is PUBLIC** (stakeholder re-ruling, superseding v1.6's
+> private-until-publication — rationale: clean-room reimplementation, not the original research code).
+> Consequences: free CI minutes and full branch-protection features (the W0-01 plan's R1 dissolves);
+> committed fixture excerpts must comply with dataset licenses/ToS (W1-01); and the clean-room boundary is
+> now also a PUBLICATION boundary — nothing derived from the stakeholder's private research code may appear
+> anywhere in this repo: code, comments, commit messages, issues, or PR text.
+>
 > **v1.8 (2026-07-07): the W0-01 dedicated plan is APPROVED** (stakeholder). W0-01 is fully startable once
 > the team fills its STEP-0 RESULT block (O7–O9 + version captures; O1–O6 shared with the wave plan). No
 > DRAFT artifacts remain in the set.
