@@ -1,0 +1,41 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# ---- Tooling caches ----
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- Notebooks / IDE / OS ----
+.ipynb_checkpoints/
+.idea/
+.vscode/
+.DS_Store
+
+# ---- Secrets / env ----
+.env
+*.env
+
+# ---- Project data policy (load-bearing — read before "fixing") ----
+# Raw datasets are NEVER committed; provenance + checksums are (see W1-01,
+# data/DATA_PROVENANCE.md). Fixture excerpts live in tests/, not here.
+data/raw/
+data/*.csv
+data/*.sqlite3
+data/*.parquet
+
+# NOTE: results/manifests/*.json are COMMITTED deliverables — deliberately NOT
+# ignored. Every reported number traces to a manifest (config + seed + SHA);
+# ignoring them would sever the provenance chain. Do not add them here.
+
+# NOTE: uv.lock (arrives with W0-01) is COMMITTED — the lockfile is the
+# dependency-level half of reproducibility. Do not add it here.

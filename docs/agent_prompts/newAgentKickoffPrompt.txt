@@ -1,0 +1,1 @@
+Read docs/agent_prompts/AGENT_KICKOFF.md in full before taking any other action. Do not write any code until you have completed the targeted reading protocol in that file. Follow its reading boundaries exactly — it tells you which files to read in full, which to read in part, and which never to read. Your assigned ticket is: <TICKET-ID>. Your session mode is: <MODE>.
