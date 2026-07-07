@@ -55,7 +55,7 @@ data/               local raw data (never committed; see data/README.md)
 
 ## Status & week 1
 
-The repo is pre-W0-01: packaging, tooling, and CI arrive with ticket **W0-01** (its plan is written and
-approved-pending — read it before touching anything). Week 1: all five run the W0 STEP-0 ruling meeting;
+The repo is pre-W0-01: packaging, tooling, and CI arrive with ticket **W0-01** (its dedicated plan is
+APPROVED — read it before touching anything). Week 1: all five run the W0 STEP-0 ruling meeting;
 CORE + EVAL implement W0-01; DATA starts W1-01; AGENTS and ARENA draft their W2-01/W3-01 mini-plans. The
 Q1 exit is W5-05: the published results, reproduced from configs.

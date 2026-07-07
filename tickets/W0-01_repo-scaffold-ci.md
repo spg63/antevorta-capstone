@@ -8,8 +8,10 @@
 > §7-S1 tree is now a verify-against-reality step, and its `.gitignore` spec (§7-S3) refines the seed file.
 
 **Wave:** W0. **Blocked by:** —. **Blocks:** W0-02, W0-03, and everything after.
-**Binding spec sections:** §11 (layout). **Formal plan:** `W0-01_scaffold-experiment-harness_PLAN.md` §7-S1,
-S5, S6 (the plan covers all of W0; its STEP-0 rulings O1–O6 gate THIS ticket).
+**Binding spec sections:** §11 (layout). **Formal plan:** `W0-01_repo-scaffold-ci_PLAN.md` — the dedicated,
+APPROVED plan for this ticket (review fix 2026-07-07: this line previously mis-pointed at the wave plan). The
+wave plan (`W0-01_scaffold-experiment-harness_PLAN.md`) is cited ONLY for the shared O1–O6 rulings and wave
+STEP-0; its implementation content covers W0-02..04, not this ticket.
 **Preamble:** `01_MANDATORY_PREAMBLE.md` applies in full.
 
 ## Why this ticket exists (system meaning)
@@ -19,14 +21,14 @@ and the ratified check suite — nothing else. No wocbots logic lands here.
 
 ## Grounding (read before starting)
 
-- The plan §3 (rulings — delegated to the team), §7-S1 (exact tree + pyproject pins), §7-S5 (CI), §7-S6
-  (README/docs).
+- The DEDICATED plan (`W0-01_repo-scaffold-ci_PLAN.md`) in full — its §3 (O7–O9 rulings), §7-S1..S7 (the
+  exact specification), §9 (sequence), §10 (pins). The wave plan's §3/§6 only for the shared O1–O6 rulings.
 
 ## Specification
 
-- **S1.** The plan §7-S1 layout: pyproject (pins incl. EXACT ruff pin, mypy strict per O4, pytest `slow`
-  marker, no default marker filter), `src/wocbots/` package dirs (empty `__init__.py`s), `configs/`,
-  `results/manifests/.gitkeep`, `.gitignore` (raw data out; manifests IN), LICENSE per O6, README skeleton.
+- **S1.** The dedicated plan §7-S1/S2/S3 layout + packaging: pyproject (pins incl. EXACT ruff pin, mypy
+  strict per O4, pytest `slow` marker, no default marker filter), lockfile per O7, package `__init__.py`s,
+  `.gitignore` refined per §7-S3 (raw data out; manifests IN), LICENSE (landed — verify), README per §7-S6.
 - **S2.** Ratify the check suite: `ruff check .` / `ruff format --check .` / `mypy src tests` / `pytest`;
   update preamble §5 with the ratified commands (that update is a deliverable of this ticket).
 - **S3.** CI per O5: per-commit workflow (lint, format, mypy, `pytest -m "not slow"`, matrix per O2) +

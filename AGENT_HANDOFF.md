@@ -1,7 +1,8 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-07 (stakeholder + Claude, repo bring-up) — branch `main`, initial commit pushed
-(committed at explicit stakeholder direction; the standing rule remains: humans commit).
+**Last updated:** 2026-07-07 (stakeholder + Claude, Codex-review fold-in) — branch `main` @ `bfd18f3` +
+UNCOMMITTED review-disposition tree (commits happen at explicit stakeholder direction; the standing rule
+remains: humans commit).
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -22,13 +23,14 @@
 
 ## CURRENT STATE (2026-07-07, repo bring-up)
 
-- **Done:** Repository created by the stakeholder (**PUBLIC** — re-ruled 2026-07-07, superseding
-  private-until-publication; see index v1.9). Pre-laid: directory
-  skeleton (`src/wocbots/*`, `tests/`, `configs/`, `results/manifests/`, `data/`), seed `.gitignore`,
-  `README.md`, control documents (`CLAUDE.md`, `AGENTS.md`, this file, `docs/agent_prompts/`). The full
-  ticket set lives in `tickets/` (index v1.7: 42 tickets, 9 waves, 5 streams) with the spec at
-  `docs/WoC-Bots_Implementation_Spec.md` (v1.1). Stakeholder rulings to date are in the index changelog
-  (v1.2–v1.6) and the W0-01 plan §12.
+- **Done:** Repository created by the stakeholder (**PUBLIC**, MIT-licensed). Pre-laid: directory skeleton,
+  seed `.gitignore`, `README.md`, control documents (`CLAUDE.md`, `AGENTS.md`, this file,
+  `docs/agent_prompts/`). Ticket set in `tickets/` (index v1.11: 42 tickets, 9 waves, 5 streams); spec at
+  `docs/WoC-Bots_Implementation_Spec.md` (**v1.2**). The Codex control-plane review (preamble §8's first
+  live execution) is folded in: ten findings accepted — four spec method rulings (arena capacity,
+  exact-arithmetic example, prior_accuracy totality, small-N swarm fallback) + process fixes — full
+  disposition in `tickets/02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md`. Stakeholder rulings live in the
+  index changelog (v1.2–v1.11) and the W0-01 plan §12.
 - **In flight / blocked:** No code exists; no ticket has started. Nothing is blocked: the W0-01 plan is
   **APPROVED (stakeholder, 2026-07-07)** — the only gate left before W0-01 code is the team's own STEP-0.
 - **Owner-attention:** (1) Team: run the W0 STEP-0 ruling meeting — the wave plan's O1–O6 (O1 and O6
@@ -37,6 +39,8 @@
   CODEOWNERS §7-S4).
 - **Next step:** the STEP-0 meeting, then CORE + EVAL implement W0-01 while DATA starts W1-01 (no
   blockers) and AGENTS/ARENA draft their W2-01/W3-01 mini-plans.
-- **Five-minute test:** `ls tickets/ | wc -l` → 46 files; `head -8 tickets/00_INDEX.md` shows the v1.8
-  (plan APPROVED) changelog entry; `git log --oneline` shows exactly the initial commit — if there are
-  commits this entry doesn't mention, this handoff is stale.
+- **Five-minute test:** `ls tickets/ | wc -l` → 47 files (42 tickets + index + preamble + 2 plans + the
+  02_ review doc); the FIRST changelog entry in `tickets/00_INDEX.md` is v1.11 (Codex review fold-in);
+  `grep -c "RULED" tickets/02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md` ≥ 3. If the newest changelog entry
+  or the git history describes work this CURRENT STATE doesn't mention, this handoff is stale — fix it
+  FIRST.

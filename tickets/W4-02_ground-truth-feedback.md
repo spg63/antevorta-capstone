@@ -16,10 +16,11 @@ guesses from minting a 1.3× influencer, and the ruling for crowds too small to 
 
 ## Specification
 
-- **S1.** After each sample's prediction: update each participant's running `prior_accuracy`;
-  `prior_performance = clamp(1.0 + 0.6 × (running_acc − 0.5), 0.7, 1.3)`, held at 1.0 until ≥ 5 scored
-  predictions; back-fill history correctness via W3-04's hook. Label-free samples leave all track-record
-  state untouched (deployment tolerance).
+- **S1.** After each sample's prediction: update each participant's track record — `prior_accuracy` stays at
+  its eval_accuracy seed until ≥ 5 scored inference predictions, then is REPLACED by the running fraction
+  correct (spec §6.7 v1.2 ruling; replaced, not blended); `prior_performance = clamp(1.0 + 0.6 ×
+  (running_acc − 0.5), 0.7, 1.3)`, held at 1.0 until the same ≥ 5 threshold; back-fill history correctness
+  via W3-04's hook. Label-free samples leave all track-record state untouched (deployment tolerance).
 - **S2.** Degenerate-crowd rule (spec §3): < 3 participants → skip arena and aggregation mechanism;
   certainty-weighted vote of whoever is present (crowd of one = its own prediction); result flagged Low
   confidence; occurrence counted in the manifest.
@@ -31,7 +32,8 @@ guesses from minting a 1.3× influencer, and the ruling for crowds too small to 
 ## Test requirements
 
 1. priorPerf pins: running_acc 0.5 → 1.0; 1.0 → 1.3; 0.0 → 0.7; 4 correct → still 1.0; fifth scored →
-   formula engages.
+   formula engages. prior_accuracy cold-start pin: eval-seeded value unchanged through 4 scored predictions;
+   fifth scored → replaced by the running fraction (both transitions asserted at the boundary).
 2. Degenerate: 2 participants → no arena, Low-confidence certainty-weighted result, counter increments;
    1 participant → its own prediction.
 3. Label-free tolerance: unlabeled samples change nothing.

@@ -1,5 +1,18 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.11 (2026-07-07): THE CODEX CONTROL-PLANE REVIEW IS FOLDED IN** — the preamble §8 rule's first live
+> execution, run against the governance artifacts themselves. Ten findings, all accepted:
+> `02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md` (moved to the 02_ slot; full disposition appended there).
+> **The spec is at v1.2** with four method rulings: §6.1 arena capacity (near-square rows=floor(sqrt(2N)) ×
+> cols=ceil(2N/rows) — the exactly-2N vs ceil-square contradiction resolved in favor of published density);
+> §6.5 worked example now EXACT arithmetic (the ticket pin had baked a rounded intermediate — real bug,
+> caught); §6.7/§7 prior_accuracy made total (eval-seeded → running at ≥5 scored; 50 votes = no-information
+> default only); §10.8 small-N swarm fallback made exact (3–9 → trust-weighted voting @ Low; <3 → degenerate
+> rule). Process fixes: W0-01 ticket re-pointed at its dedicated plan; the dedicated plan's self-dependent
+> STEP-0 gate re-sequenced (protection + traversal proof move post-CI); O2–O5 status clarified (defaults
+> awaiting team STEP-0, not ratified); W3-04 history cardinality ruled (1 encounter row + 2 directed rows);
+> handoff and README de-staled. Tickets touched: W0-01, W3-01, W3-03, W3-04, W4-02, W4-03, W6-02.
+>
 > **v1.10 (2026-07-07): MIT LICENSE landed** at the repo root (stakeholder ruling by fact — O6 closes;
 > W0-01's license step becomes a verify). With O1 and O6 both ruled, the team's STEP-0 scope is O2–O5 +
 > O7–O9.
@@ -65,7 +78,7 @@
 >
 > *v1.0 (2026-07-06):* initial 21-ticket decomposition.
 
-**Source of truth:** `docs/WoC-Bots_Implementation_Spec.md` (v1.1 — "the spec"). Every ticket binds
+**Source of truth:** `docs/WoC-Bots_Implementation_Spec.md` (v1.2 — "the spec"). Every ticket binds
 to named spec sections. Where a ticket and the spec disagree, **the spec wins** and the discrepancy is a bug
 in the ticket — report it, do not improvise.
 

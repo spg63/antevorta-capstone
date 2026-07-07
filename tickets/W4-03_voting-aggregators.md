@@ -17,8 +17,11 @@ produces. Mechanism only; the comparison experiment is W4-04.
 
 ## Specification
 
-- **S1.** UWM: 100 votes per participant for its predicted class. WVM: `round(100 × prior_accuracy)`, 50
-  votes before any track record. Trust-weighted: `votes = round(((prior_accuracy + trust_score)/2) × 100)`.
+- **S1.** UWM: 100 votes per participant for its predicted class. WVM: `round(100 × prior_accuracy)` —
+  total by construction (prior_accuracy is eval-seeded → running at ≥ 5 scored, spec §6.7/§7 v1.2); the
+  published 50-vote cold start survives only as the no-information default (`prior_accuracy = 0.5` for an
+  agent with no eval metrics of any kind → 50 votes). Trust-weighted: `votes = round(((prior_accuracy +
+  trust_score)/2) × 100)`.
 - **S2.** Majority of vote totals wins; exact ties → class 1, tie occurrences counted. Each returns a W0-02
   `Prediction` (tier/margin left None here — W4-04 fills them).
 - **S3.** Same-state rule: aggregators consume a frozen snapshot of crowd state, so the three can be compared
@@ -31,8 +34,8 @@ produces. Mechanism only; the comparison experiment is W4-04.
 
 ## Test requirements
 
-1. Formula pins: prior_acc 0.8 → WVM 80; (0.8, trust 0.7) → trust-weighted 75; no-history agent → WVM 50.
-   Exact.
+1. Formula pins: prior_acc 0.8 → WVM 80; (0.8, trust 0.7) → trust-weighted 75; a no-information agent
+   (prior_accuracy defaulted to 0.5) → WVM 50. Exact.
 2. Tie pin: engineered 50/50 split → class 1, tie counted.
 3. Same-state guarantee: the three aggregators consume one frozen snapshot (structural test).
 

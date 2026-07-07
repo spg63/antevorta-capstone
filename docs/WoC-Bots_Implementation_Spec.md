@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Stakeholder** | Dr. Sean Grimes |
-| **Status** | v1.1 — reviewed for release |
+| **Status** | v1.2 — independent-review rulings folded (2026-07-07: §6.1 arena capacity, §6.5 exact-arithmetic example, §6.7/§7 prior_accuracy totality, §10.8 small-N swarm fallback) |
 | **Companion to** | *WoC-Bots Reimagined* proposal; the WoC-Bots dissertation and publications |
 
 ---
@@ -88,7 +88,7 @@ The symbols are the ones used in the equations in §6–§8 and in the dissertat
 | `trust_score` | $a_{trust}$ | [0, 1] | eval_precision | Other agents modify it during interaction (§6.5) |
 | `confidence` | $a_{conf}$ | [0, 1] | Biased blend of eval metrics (§5.4) | Fixed after training |
 | `prior_performance` | $a_{priorPerf}$ | [0.7, 1.3] | 1.0 (neutral) | As inference-time track record accrues (§6.7) |
-| `prior_accuracy` | $a_{priorAcc}$ | [0, 1] | eval_accuracy | Running accuracy over inference samples (§7.1) |
+| `prior_accuracy` | $a_{priorAcc}$ | [0, 1] | eval_accuracy | Replaced by running inference accuracy once ≥ 5 scored predictions exist (§6.7); eval-seeded until then |
 | `eval_accuracy` / `eval_precision` / `eval_recall` | — | [0, 1] | Measured on held-out eval data after training | Fixed after training |
 | `features` | — | list | Assigned at agent creation | Fixed |
 | interaction history | — | — | empty | Appended every interaction (§6.5) |
@@ -313,10 +313,14 @@ change during inference.
 
 ### 6.1 Geometry
 
-- 2D grid of discrete cells. **Number of cells = 2 × number of participating agents**,
-  as square as possible: `side = ceil(sqrt(2N))`. (The abstraction supports arbitrary
-  rectangular compositions — rooms, floors — but the experiments use a plain square.
-  Build the plain square; leave the interface open.)
+- 2D grid of discrete cells targeting **2 × N cells** for N participants. Ruling (v1.2 —
+  the earlier "exactly 2N" + "square of side ceil(sqrt(2N))" pair was contradictory): a
+  **near-square rectangle** with `rows = floor(sqrt(2N))`, `cols = ceil(2N / rows)`.
+  Capacity lands in [2N, 2N + rows), keeping agent density within a few percent of the
+  published 0.5 agents/cell — density drives encounter rates, so it is load-bearing. (A
+  plain square of side ceil(sqrt(2N)) can dilute density to ~0.31 at small N — rejected.)
+  The abstraction supports arbitrary rectangular compositions — rooms, floors — but the
+  experiments use this near-square; leave the interface open.
 - A cell holds at most **2 agents**. Two agents in a cell = an interaction. Three-agent
   interactions do not exist.
 
@@ -388,9 +392,11 @@ pinning to exactly 0 so agents never become fully deaf).
 
 Worked example: $a$ (certainty 0.62, predicts 1) meets $b$ (predicts 0, confidence 0.71,
 trust 0.78, certainty 0.80, prior_performance 1.1).
-acceptance = 0.38; influence = 0.71 × 0.38 × (0.78 × 0.80) = 0.168;
-corrected = 0.168 × 1.1 = 0.185, negated for disagreement → −0.185.
-a.certainty = 0.62 − 0.185 = 0.435 < 0.5 → $a$ flips to predict 0, certainty = 0.565.
+acceptance = 0.38; influence = 0.71 × 0.38 × (0.78 × 0.80) = 0.1683552;
+corrected = 0.1683552 × 1.1 = 0.18519072, negated for disagreement → −0.18519072.
+a.certainty = 0.62 − 0.18519072 = 0.43480928 < 0.5 → $a$ flips to predict 0,
+certainty = 1 − 0.43480928 = 0.56519072. (v1.2: values are now EXACT — test pins
+recompute from the formulas; never pin rounded display values or rounded intermediates.)
 One confident, trustworthy dissenter can flip a lukewarm agent — that's intended.
 
 **Trust update** (also during the interaction; each side may adjust the *other's*
@@ -425,9 +431,13 @@ persist and accumulate across samples — they are the crowd's long-term social 
 ### 6.7 Ground-truth feedback
 
 After the collective prediction for a sample is recorded, reveal the true label
-(test-set evaluation) and update: each participant's `prior_accuracy` (running fraction
-correct of its *own* end-of-arena predictions), `prior_performance`, and
-interaction-history correctness back-fill. For `prior_performance`, the ruling:
+(test-set evaluation) and update: each participant's `prior_accuracy`, `prior_performance`,
+and interaction-history correctness back-fill. For `prior_accuracy`, the ruling (v1.2 —
+making the variable total): it stays at its eval_accuracy seed until the agent has **≥ 5
+scored inference predictions** (the same cold-start threshold as `prior_performance`),
+then is REPLACED by the running fraction correct of the agent's *own* end-of-arena
+predictions — replaced, not blended (blending is unforced complexity). For
+`prior_performance`, the ruling:
 
 $$priorPerf = clamp\big(1.0 + 0.6 \times (running\_acc - 0.5),\ 0.7,\ 1.3\big)$$
 
@@ -446,8 +456,12 @@ Implement all three; they are each other's baselines and reproduce a published f
 
 1. **UWM (Unweighted Mean Model):** every agent gets 100 votes for its predicted class.
    Majority wins.
-2. **WVM (Weighted Voter Model):** votes = `round(100 × prior_accuracy)`. Before any
-   track record exists, 50 votes.
+2. **WVM (Weighted Voter Model):** votes = `round(100 × prior_accuracy)` — total by
+   construction, since `prior_accuracy` is eval-seeded and transitions to running
+   inference accuracy at ≥ 5 scored predictions (§6.7, v1.2 ruling). The published "50
+   votes until an accuracy can be determined" survives as the no-information default:
+   an agent with NO accuracy information of any kind (possible only for an external
+   agent lacking a validation statement) carries `prior_accuracy = 0.5` → 50 votes.
 3. **Trust-weighted (the contribution):**
 
 $$votes_a = round\left(\frac{a_{priorAcc} + a_{trust}}{2} \times 100\right)$$
@@ -633,8 +647,11 @@ Failure modes this method invites; most were learned the hard way.
    the 20% presenter count all MUST be computed from *this sample's* participant count.
 8. **Degenerate swarm rounds.** With 5 agents, 20% presenters = 1 presenter = instant
    100% agreement = everything Very High confidence. Enforce `k ≥ 2` presenters when
-   N ≥ 10, and treat N < 10 swarm results as "voting fallback" territory (document the
-   ruling). The swarm mechanism earns its keep at crowd sizes of dozens-plus.
+   N ≥ 10. For N < 10 the ruling (v1.2) is exact: 3 ≤ N ≤ 9 → the swarm aggregator
+   DELEGATES to trust-weighted voting (§7 mechanism 3) and labels the result Low
+   confidence, occurrence counted in the manifest; N < 3 → the §3 degenerate-crowd rule
+   (certainty-weighted, Low). The swarm mechanism earns its keep at crowd sizes of
+   dozens-plus.
 9. **The budget+revenue agent contaminating real runs.** It exists to validate the
    pipeline. It sits out every reported experiment; its 100 votes and perfect trust
    would otherwise dominate every aggregation. (Even the published aggregation

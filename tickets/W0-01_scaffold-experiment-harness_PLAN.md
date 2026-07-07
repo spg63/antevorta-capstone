@@ -16,7 +16,7 @@ only**. Mapping: §7-S2 → `W0-02_types-policy-seams.md`; §7-S3 (models) → `
 §7-S3 (harness) + §7-S4 → `W0-04_harness-runner-rng-guard.md`. §10's pins distribute accordingly.
 **W0-01 has its own dedicated plan** (`W0-01_repo-scaffold-ci_PLAN.md`), which supersedes this plan's §7-S1/
 S5/S6 content where they differ; this plan's §3 rulings (O1–O6) and §6 STEP-0 remain shared across the wave. **Precedence:** the spec
-(`docs/WoC-Bots_Implementation_Spec.md` v1.1) > this plan > the tickets. Where the plan and spec
+(`docs/WoC-Bots_Implementation_Spec.md` v1.2) > this plan > the tickets. Where the plan and spec
 disagree, the spec wins and the discrepancy is a plan bug — report it.
 **Wave:** W0. **Blocked by:** —. **Blocks:** every other ticket in the set.
 **Binding spec sections:** §11 (toolkit shape, policy seams), §9.1 (experiment protocol), §0 (MUST/SHOULD/MAY).

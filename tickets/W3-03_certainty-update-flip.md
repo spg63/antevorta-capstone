@@ -33,9 +33,11 @@ consequences-per-line piece of math in the project.
 
 ## Test requirements
 
-1. **The §6.5 worked-example pin (mandatory):** a(cert 0.62, pred 1) meets b(pred 0, conf 0.71, trust 0.78,
-   cert 0.80, priorPerf 1.1) → corrected = −0.18480 (1e-5); a flips to 0 with certainty 0.565 (1e-9).
-2. Agreement mirror: same numbers, same predictions → 0.80480, no flip.
+1. **The §6.5 worked-example pin (mandatory — EXACT arithmetic, spec v1.2):** a(cert 0.62, pred 1) meets
+   b(pred 0, conf 0.71, trust 0.78, cert 0.80, priorPerf 1.1) → corrected = −0.18519072 (1e-9); a flips to 0
+   with certainty 0.56519072 (1e-9). Compute expected values FROM THE FORMULAS — never from rounded display
+   values or rounded intermediates (the pre-v1.2 rounded pin was itself a review-caught bug).
+2. Agreement mirror: same numbers, same predictions → 0.80519072 (1e-9), no flip.
 3. Flip boundary both-sides: post-update 0.499 → flip (→ 0.501); 0.501 → no flip.
 4. Clamp: ten consecutive agreeers pin certainty at 0.99; acceptance never reaches 0.
 5. Symmetry: swap encounter processing order → byte-identical outcomes.

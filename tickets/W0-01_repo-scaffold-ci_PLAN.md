@@ -50,6 +50,11 @@ logic on purpose: its whole job is to make every subsequent ticket's job smaller
 
 ## 3. Decisions (team-ruled; fill into §6's RESULT block)
 
+**Status clarification (review 2026-07-07, finding 4):** "Inherited and NOT re-opened" means these are the
+WAVE plan's decisions, not re-litigated by this plan — it does NOT mean already ratified. O1 and O6 are ruled
+by fact (stakeholder); **O2–O5 remain recommended defaults awaiting the team's wave STEP-0 meeting**,
+alongside this plan's O7–O9.
+
 Inherited and NOT re-opened: **O1 — ✅ RULED BY FACT (stakeholder, 2026-07-07): the repo is
 `antevorta-capstone`** (stakeholder-created; the PACKAGE remains `wocbots`; src layout; **PUBLIC** per the
 §12-Q3 re-ruling of 2026-07-07; bare directory skeleton, seed `.gitignore`, and README pre-laid — §7-S1
@@ -131,8 +136,11 @@ new machine reproduces the toolchain exactly (lockfile-enforced). Both are pinne
 2. The team rules O7–O9 (one sitting; record rationale for any overruled default).
 3. Capture the exact tool versions being pinned (current ruff release, uv version, Python patch versions on
    the CI images) — they go into pyproject/lockfile and are recorded below.
-4. Confirm repository + branch protection settings are applied (screenshot or settings-as-code) and one
-   empty-commit PR has traversed the full path (CI + review + auto-merge) end to end.
+4. Confirm repository access and that GitHub Actions are ENABLED (any trivial workflow run counts — a
+   scratch workflow on a branch is fine). **Sequencing ruling (review 2026-07-07, dissolving the
+   self-dependent gate):** branch protection with required checks CANNOT be applied before the `checks` job
+   exists, so O8 protection is applied at §9 step 5 (after `ci.yml` lands), and the full end-to-end
+   traversal PR (CI + review + auto-merge) is the §10.6 CLOSE-OUT proof — not a pre-code gate.
 
 If any O-ruling overturns a default in a way that changes §7, fold the change into this plan first, then
 implement the amended plan.
@@ -288,13 +296,14 @@ sites. Each is a future ticket's loud decision if ever needed.
 
 ## 9. Sequenced implementation steps
 
-1. **STEP 0** (§6): wave STEP-0 confirmed filled; O7–O9 ruled; versions captured; repo + branch protection
-   live; empty-commit PR traverses CI + review + auto-merge end to end.
+1. **STEP 0** (§6): wave STEP-0 confirmed filled; O7–O9 ruled; versions captured; repo access + Actions
+   enabled confirmed. (Branch protection and the traversal proof come LATER — §6.4's sequencing ruling.)
 2. **S1 layout** — the tree, empty packages, .gitkeeps.
 3. **S2 packaging** — pyproject exactly as specified (STEP-0 versions inserted); `uv lock` → committed
    `uv.lock`.
 4. **S3/S4** — .gitignore with the commented load-bearing entries; CODEOWNERS with real handles.
-5. **S5** — both workflows + PR template; branch protection settings applied per O8; auto-merge on.
+5. **S5** — both workflows + PR template; THEN branch protection applied per O8 (the `checks` job now
+   exists to be required); auto-merge on; THEN the end-to-end traversal PR (the §10.6 proof).
 6. **S6** — README.
 7. **§10 tests** — land with their features (this list is the owed-sweep).
 8. **S7** — the preamble §5 ratification PR (separate PR, ticket-set repo).
@@ -385,4 +394,5 @@ sites. Each is a future ticket's loud decision if ever needed.
 - O8 branch protection & merge policy: ☐ ____
 - O9 coverage posture: ☐ ____
 - Pinned versions (ruff / uv / CI Python patches): ☐ ____
-- Repo + protection live; empty-commit PR traversed CI + review + auto-merge: ☐ (links: ____)
+- Repo access + Actions enabled confirmed: ☐ (link: ____) — protection + the traversal proof land at
+  §9.5/§10.6, not here (§6.4 sequencing ruling)

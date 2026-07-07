@@ -22,7 +22,9 @@ bought 100% accuracy in that band; it is a MUST. Mechanism only; the variance st
 - **S1.** A `HoneybeeSwarm` Aggregator: round 1 agreement = 100% → Very High, stop; rounds 2–101 ≥ 90% →
   High; rounds 102–151 ≥ 75% → Medium; else certainty-weighted vote of ALL agents (`score_c = Σ certainty`;
   tie → class 1) → Low. Thresholds (100/90/75) and budgets (1/100/50) are named config with these defaults.
-  N < 10 → route to the W4-02 degenerate/voting posture, flagged (spec §10.8).
+  Small-N ruling (spec §10.8 v1.2, exact): 3 ≤ N ≤ 9 → the swarm aggregator DELEGATES to trust-weighted
+  voting (spec §7 mechanism 3), labels the result Low confidence, and counts the occurrence in the manifest;
+  N < 3 → the W4-02 degenerate rule (certainty-weighted, Low).
 - **S2.** Between failed votes: within each presenter's group, every watcher interacts with each co-watcher
   and the presenter — W3-03's kernel minus the spatial part — then a fresh W6-01 round. Certainty evolution
   lands in the swarm trace (W6-03 and W8-05 read it).
@@ -40,6 +42,8 @@ bought 100% accuracy in that band; it is a MUST. Mechanism only; the variance st
 3. Fallback pin: hand-built certainties → hand-computed scores; tie → class 1.
 4. Group interactions: 1 presenter + 10 watchers → each watcher performs exactly 10 interactions, counted;
    certainty moves per W3-03 pins.
+5. Small-N fallback pins: N = 6 under HoneybeeSwarm → trust-weighted result, Low label, counter increments;
+   N = 2 → the W4-02 degenerate path; N = 10 → the real ladder runs (boundary both-sides).
 
 ## Acceptance criteria
 

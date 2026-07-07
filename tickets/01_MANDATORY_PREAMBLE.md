@@ -23,7 +23,7 @@ memory), read it now, in full.
 
 ## 1. Binding documents, in precedence order
 
-1. The spec (`docs/WoC-Bots_Implementation_Spec.md`, v1.1) — the ticket's named sections. Its
+1. The spec (`docs/WoC-Bots_Implementation_Spec.md`, v1.2) — the ticket's named sections. Its
    MUST/SHOULD/MAY vocabulary (spec §0) is the normative language of every ticket here.
 2. The dissertation and publications — for published reference numbers and method rationale. Where spec and
    publication disagree, the spec's ruling stands (it says so where it happens); flag anything material.
