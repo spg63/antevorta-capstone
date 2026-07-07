@@ -1,5 +1,11 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.12 (2026-07-07): the wave plan is RENAMED** `W0-01_scaffold-experiment-harness_PLAN.md` →
+> `W0-WAVE_scaffold-experiment-harness_PLAN.md`. The "W0-01" in its filename was a fossil of the pre-split
+> monolithic ticket and read as "W0-01 has two plans" (it doesn't: the dedicated plan owns W0-01; the wave
+> plan owns W0-02..04 + the wave-shared O1–O6/STEP-0). All live references updated; the 02_ review doc keeps
+> its review-time citations with a rename note appended.
+>
 > **v1.11 (2026-07-07): THE CODEX CONTROL-PLANE REVIEW IS FOLDED IN** — the preamble §8 rule's first live
 > execution, run against the governance artifacts themselves. Ten findings, all accepted:
 > `02_CODEX_CONTROL_PLANE_REVIEW_2026-07-07.md` (moved to the 02_ slot; full disposition appended there).
@@ -98,7 +104,7 @@ that did not implement it)** + status flipped here as `✅ (reviewed: <who/what>
 
 **Two plans govern this wave.** `W0-01_repo-scaffold-ci_PLAN.md` (✅ APPROVED — stakeholder, 2026-07-07) is
 the dedicated, per-ticket plan for W0-01 and the exemplar of the preamble §9 invocation at full depth.
-`W0-01_scaffold-experiment-harness_PLAN.md` remains the execution document for W0-02..04 and holds the
+`W0-WAVE_scaffold-experiment-harness_PLAN.md` remains the execution document for W0-02..04 and holds the
 wave-shared §3 rulings (O1–O6) and STEP-0 RESULT block, which must be filled before any W0 code. Read a
 ticket first (the what), then its plan (the how).
 

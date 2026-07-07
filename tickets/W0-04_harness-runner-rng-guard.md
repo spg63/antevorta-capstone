@@ -2,7 +2,7 @@
 
 **Wave:** W0. **Blocked by:** W0-03. **Blocks:** every experiment-bearing ticket.
 **Binding spec sections:** §9.1 (one Generator from the config seed; 10-run statistics).
-**Formal plan:** `W0-01_scaffold-experiment-harness_PLAN.md` §5 (execution-path map), §7-S3 (harness),
+**Formal plan:** `W0-WAVE_scaffold-experiment-harness_PLAN.md` §5 (execution-path map), §7-S3 (harness),
 §7-S4 (the guard), §10 (pins 1–3, 6).
 **Preamble:** `01_MANDATORY_PREAMBLE.md` applies in full.
 

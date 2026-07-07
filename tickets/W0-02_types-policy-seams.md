@@ -2,7 +2,7 @@
 
 **Wave:** W0. **Blocked by:** W0-01. **Blocks:** W2-01, W3-01 (they bind these seams).
 **Binding spec sections:** §11 (policy protocols), §6.5 (the public-profile boundary rationale).
-**Formal plan:** `W0-01_scaffold-experiment-harness_PLAN.md` §7-S2 (exact signatures — normative).
+**Formal plan:** `W0-WAVE_scaffold-experiment-harness_PLAN.md` §7-S2 (exact signatures — normative).
 **Preamble:** `01_MANDATORY_PREAMBLE.md` applies in full.
 
 ## Why this ticket exists (system meaning)

@@ -158,3 +158,8 @@ process fixes are folded into the named documents. This file moved to the `02_` 
 
 **Meta-finding accepted implicitly:** the reviewer's note that no uflogs/manifests exist yet is expected
 pre-implementation state (the first artifact arrives with W0-04); no action.
+
+**Post-disposition note (2026-07-07):** the wave plan this review cites as
+`W0-01_scaffold-experiment-harness_PLAN.md` was RENAMED to `W0-WAVE_scaffold-experiment-harness_PLAN.md`
+(index v1.12) — the "W0-01" in its filename was a fossil of the pre-split monolithic ticket and misled
+readers into thinking W0-01 had two plans. Citations above reflect review-time filenames.

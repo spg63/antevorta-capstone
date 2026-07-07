@@ -10,7 +10,7 @@
 **Wave:** W0. **Blocked by:** —. **Blocks:** W0-02, W0-03, and everything after.
 **Binding spec sections:** §11 (layout). **Formal plan:** `W0-01_repo-scaffold-ci_PLAN.md` — the dedicated,
 APPROVED plan for this ticket (review fix 2026-07-07: this line previously mis-pointed at the wave plan). The
-wave plan (`W0-01_scaffold-experiment-harness_PLAN.md`) is cited ONLY for the shared O1–O6 rulings and wave
+wave plan (`W0-WAVE_scaffold-experiment-harness_PLAN.md`) is cited ONLY for the shared O1–O6 rulings and wave
 STEP-0; its implementation content covers W0-02..04, not this ticket.
 **Preamble:** `01_MANDATORY_PREAMBLE.md` applies in full.
 

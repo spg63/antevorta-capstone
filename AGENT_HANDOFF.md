@@ -1,8 +1,9 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-07 (stakeholder + Claude, Codex-review fold-in) — branch `main` @ `bfd18f3` +
-UNCOMMITTED review-disposition tree (commits happen at explicit stakeholder direction; the standing rule
-remains: humans commit).
+**Last updated:** 2026-07-07 (stakeholder + Claude, Codex-review fold-in + wave-plan rename) — branch
+`main` (commits happen at explicit stakeholder direction; the standing rule remains: humans commit). The
+wave plan is now `W0-WAVE_scaffold-experiment-harness_PLAN.md` (index v1.12) — if you're looking for
+"W0-01's other plan", there isn't one: the dedicated plan owns W0-01, the wave plan owns W0-02..04.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:

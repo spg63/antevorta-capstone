@@ -2,7 +2,7 @@
 
 **Wave:** W0. **Blocked by:** W0-01. **Blocks:** W0-04.
 **Binding spec sections:** §9.1 (what an experiment must record).
-**Formal plan:** `W0-01_scaffold-experiment-harness_PLAN.md` §7-S3 (exact schemas — normative).
+**Formal plan:** `W0-WAVE_scaffold-experiment-harness_PLAN.md` §7-S3 (exact schemas — normative).
 **Preamble:** `01_MANDATORY_PREAMBLE.md` applies in full.
 
 ## Why this ticket exists (system meaning)

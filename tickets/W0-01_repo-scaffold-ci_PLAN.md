@@ -389,7 +389,7 @@ sites. Each is a future ticket's loud decision if ever needed.
 
 ## STEP 0 — RESULT (fill before coding)
 
-- Wave STEP-0 (O1–O6): ☐ filled at `W0-01_scaffold-experiment-harness_PLAN.md` (date: ____)
+- Wave STEP-0 (O1–O6): ☐ filled at `W0-WAVE_scaffold-experiment-harness_PLAN.md` (date: ____)
 - O7 dependency locking: ☐ ____ (ruled by ____, date ____)
 - O8 branch protection & merge policy: ☐ ____
 - O9 coverage posture: ☐ ____

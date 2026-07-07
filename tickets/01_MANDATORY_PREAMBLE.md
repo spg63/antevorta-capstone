@@ -168,7 +168,7 @@ encounter logs, swarm traces; cross-check claimed behavior against what those ar
 "The continuous output / probabilistic system" = the WoC-Bots state and output machinery (continuous
 certainty/trust/confidence in §2, vote margins in §7, agreement thresholds and bands in §8.2) — no boolean
 gate may stand in for a graded quantity, and ties/uncertainty surface as such rather than being collapsed.
-The produced plan follows the exemplar's section skeleton (`W0-01_scaffold-experiment-harness_PLAN.md`'s
+The produced plan follows the exemplar's section skeleton (`W0-WAVE_scaffold-experiment-harness_PLAN.md`'s
 READ-ME-FIRST box lists it) and is approved by the ruling authority before any implementation.
 
 ## 10. The standard invocation: turning a plan into an implementation
