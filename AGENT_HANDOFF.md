@@ -1,9 +1,8 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-07 (stakeholder + Claude + Codex, W0-02 plan landed) — branch `main` (commits
-happen at explicit stakeholder direction; the standing rule remains: humans commit). Plan map: the dedicated
-plans own W0-01 and W0-02; `W0-WAVE_scaffold-experiment-harness_PLAN.md` owns W0-03/04 plus the wave-shared
-O1–O6/STEP-0 (index v1.12 rename note: the wave plan is not "W0-01's other plan").
+**Last updated:** 2026-07-16 (Rutvij driving a Claude session, mode IMPLEMENT) — branch `w0-scaffold`
+(local; W0-01 + W0-02 implemented, NOT merged, NOT closed; humans commit — Rutvij commits/pushes). Plan map
+unchanged: the dedicated plans own W0-01 and W0-02; the wave plan owns W0-03/04 + the shared O1–O6/STEP-0.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -22,7 +21,37 @@ O1–O6/STEP-0 (index v1.12 rename note: the wave plan is not "W0-01's other pla
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-07, repo bring-up)
+## CURRENT STATE (2026-07-16, W0-01 + W0-02 implemented on branch, pending ratification + review)
+
+- **Done:** W0-01 and W0-02 implemented per their APPROVED plans, on branch `w0-scaffold` (implementer:
+  Claude session driven by Rutvij — this identity matters for preamble §8 review independence). Paths:
+  `pyproject.toml`, `CODEOWNERS` (root — S4 location ruling), `.github/pull_request_template.md`,
+  `.github/workflows/{ci,scheduled}.yml`, `src/wocbots/__init__.py` (+ 7 package `__init__.py`),
+  `src/wocbots/types.py`, `src/wocbots/protocols.py`, Agent/Arena constructor-only stubs,
+  `tests/unit/test_scaffold.py` (W0-01 §10 pins), `tests/unit/test_w0_02_seams.py` (W0-02's 3 test
+  requirements), README S6 sections. Check suite green locally (22 tests; ruff 0.15.22 / mypy strict /
+  full + `-m "not slow"` variants). Two mechanical plan completions flagged for review: D1 build backend
+  (hatchling — plan §7-S2 omits one; §10.4 import pin needs it), D2 `types-pyyaml` dev dep (mypy strict).
+  Separately: Rutvij's W2-01 mini-plan drafted (outside the repo), AGENTS stream.
+- **In flight / blocked:** `uv.lock` not yet generated (sandbox had no PyPI route) — Rutvij runs `uv lock`
+  before committing; STEP-0 RESULT blocks NOT filled — the code assumes the recommended defaults
+  (O2–O5, O7–O9), proposal circulated to the team 2026-07-16; CODEOWNERS handles are `*-TBD`
+  placeholders; O8 branch protection + Actions enablement need a repo admin (stakeholder), applied AFTER
+  ci.yml lands (§6.4 sequencing ruling); ticket closes blocked on independent review (must not be Rutvij
+  or this Claude session's lineage — a teammate or a different AI system, e.g. Codex).
+- **Owner-attention:** (1) Team: ratify O2–O5/O7–O9 (adopt-defaults proposal from Rutvij), fill both
+  RESULT blocks named-and-dated, send GitHub handles for CODEOWNERS. (2) Stakeholder: confirm Actions
+  enabled; apply O8 protection once `checks` exists; adjudicate the D1/D2 completions at review.
+  (3) CORE/EVAL: this was your ticket — review the PR (preamble §8) and pair on the close.
+- **Next step:** team ratifies STEP-0 → fill RESULT blocks → `uv lock` → Rutvij pushes `w0-scaffold` →
+  draft PR (W0-01 + W0-02, template filled) → independent review → merge → index status flips with
+  `reviewed:` lines → W2-01/W3-01 unblock.
+- **Five-minute test:** `ls src/wocbots` → 10 entries (7 packages + `__init__.py`, `types.py`,
+  `protocols.py`); `uv run pytest -q` → 22 passed (slow dummy included); `git log main..w0-scaffold`
+  non-empty. If main already contains these files or the index shows W0-01/W0-02 ✅, this entry is stale —
+  fix it FIRST.
+
+## PRIOR (2026-07-07, repo bring-up)
 
 - **Done:** Repository created by the stakeholder (**PUBLIC**, MIT-licensed). Pre-laid: directory skeleton,
   seed `.gitignore`, `README.md`, control documents (`CLAUDE.md`, `AGENTS.md`, this file,
