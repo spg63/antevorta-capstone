@@ -15,14 +15,17 @@ def test_git_sha_matches_head() -> None:
 def test_dirty_suffix_appears_and_is_restored() -> None:
     target = Path("README.md")
     original = target.read_text(encoding="utf-8")
+    # The tree may ALREADY be dirty (unrelated WIP — the normal pre-commit state);
+    # assert relative to that baseline, not against an assumed-clean tree.
+    was_dirty = capture_provenance().git_sha.endswith("+dirty")
     try:
         target.write_text(original + "\n<!-- W0-03 provenance test scratch -->\n", encoding="utf-8")
         prov = capture_provenance()
         assert prov.git_sha.endswith("+dirty")
     finally:
         target.write_text(original, encoding="utf-8")
-    clean_prov = capture_provenance()
-    assert not clean_prov.git_sha.endswith("+dirty")
+    restored = capture_provenance()
+    assert restored.git_sha.endswith("+dirty") == was_dirty
 
 
 def test_all_six_named_packages_present() -> None:

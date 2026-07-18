@@ -9,9 +9,7 @@ from wocbots.experiments.manifest import read_manifest
 
 
 def _cfg(**overrides: Any) -> ExperimentConfig:
-    base: dict[str, Any] = dict(
-        name="harness_test", kind="dummy", seed=42, n_runs=3, params={"n": 100}
-    )
+    base: dict[str, Any] = dict(name="harness_test", kind="dummy", seed=42, n_runs=3, params={"n": 100})
     base.update(overrides)
     return ExperimentConfig(**base)
 

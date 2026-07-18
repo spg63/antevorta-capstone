@@ -29,8 +29,7 @@ def register_kind(key: str, runner: RunnerFn) -> None:
     """
     if key in _REGISTRY:
         raise ValueError(
-            f"experiment kind {key!r} is already registered; "
-            "duplicate registration is not allowed"
+            f"experiment kind {key!r} is already registered; duplicate registration is not allowed"
         )
     _REGISTRY[key] = runner
 

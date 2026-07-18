@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import platform as platform_module
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import version as _dist_version
 
 from pydantic import BaseModel, ConfigDict
@@ -64,7 +64,7 @@ def _package_versions() -> dict[str, str]:
 
 def capture_provenance() -> Provenance:
     """Capture provenance at THIS moment. Call once per experiment invocation."""
-    now = datetime.now(timezone.utc)  # ALLOWLISTED: the one licensed wall-clock read (W0-04 S3)
+    now = datetime.now(UTC)  # ALLOWLISTED: the one licensed wall-clock read (W0-04 S3)
     return Provenance(
         created_utc=now.isoformat(),
         git_sha=_git_sha(),

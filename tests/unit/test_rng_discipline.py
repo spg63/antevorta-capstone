@@ -67,17 +67,13 @@ def check_source(source: str, *, rel_path: str) -> list[Violation]:
                 if alias.name == "random":
                     found.append(Violation(rel_path, node.lineno, "random-import", "import random"))
         elif isinstance(node, ast.ImportFrom) and node.module == "random":
-            found.append(
-                Violation(rel_path, node.lineno, "random-import", "from random import ...")
-            )
+            found.append(Violation(rel_path, node.lineno, "random-import", "from random import ..."))
         elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
             rng_attr = _numpy_random_attr(node.func)
             if rng_attr is not None and (
                 rng_attr not in _RNG_ALLOWED_CALLS or rel_path not in _RNG_ALLOWED_FILES
             ):
-                found.append(
-                    Violation(rel_path, node.lineno, "numpy-random", f"numpy.random.{rng_attr}")
-                )
+                found.append(Violation(rel_path, node.lineno, "numpy-random", f"numpy.random.{rng_attr}"))
             wallclock_attr = _wallclock_attr(node.func)
             if wallclock_attr is not None and rel_path not in _WALLCLOCK_ALLOWED_FILES:
                 found.append(Violation(rel_path, node.lineno, "wall-clock", wallclock_attr))
