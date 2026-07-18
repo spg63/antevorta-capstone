@@ -19,17 +19,17 @@
     "seed": 42
   },
   "provenance": {
-    "created_utc": "2026-07-16T23:31:45.255796+00:00",
-    "git_sha": "6f92a32f09969d1b90efe932fcab2064c14a077f",
+    "created_utc": "2026-07-18T19:22:29.248864+00:00",
+    "git_sha": "a4fb658a3f7f643f9fdd3c3910ffe8cdd7c24654",
     "package_versions": {
-      "numpy": "2.4.4",
-      "pandas": "3.0.2",
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
       "pydantic": "2.13.4",
-      "python": "3.12.3",
-      "sklearn": "1.8.0",
+      "python": "3.14.4",
+      "sklearn": "1.9.0",
       "wocbots": "0.1.0"
     },
-    "platform": "Linux-6.18.5-x86_64-with-glibc2.39"
+    "platform": "Windows-11-10.0.26200-SP0"
   },
   "runs": [
     {
