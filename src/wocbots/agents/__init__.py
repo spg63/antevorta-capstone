@@ -1,13 +1,9 @@
-"""Agent layer. W0-02 lands the shell only; W2 fills it (AGENTS stream)."""
+"""Agent layer (AGENTS stream). W2-01 lands Agent state + the §6.5 profile boundary.
 
+The W0-02 constructor-only stub is replaced; the seam import path
+`from wocbots.agents import Agent` is unchanged (tighten-never-loosen).
+"""
 
-class Agent:
-    """Placeholder Agent shell. W2-01 owns Agent state and behavior.
+from wocbots.agents.agent import HOLLYWOOD_WEIGHTS, Agent, ConfidenceWeights
 
-    Constructor-only stub (W0-02 plan D2 ruling, amending the wave plan §7-S2 stub rule):
-    no fields, methods, classifier handles, public-profile method, or state names land in
-    W0-02. W2-01 replaces the internals and may tighten types without renaming the seam.
-    """
-
-    def __init__(self) -> None:
-        raise NotImplementedError("W2-01 owns Agent")
+__all__ = ["HOLLYWOOD_WEIGHTS", "Agent", "ConfidenceWeights"]

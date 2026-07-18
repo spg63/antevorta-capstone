@@ -1,8 +1,9 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-16 (Rutvij driving a Claude session, mode IMPLEMENT) — branch `w0-scaffold`
-(local; W0-01 + W0-02 implemented, NOT merged, NOT closed; humans commit — Rutvij commits/pushes). Plan map
-unchanged: the dedicated plans own W0-01 and W0-02; the wave plan owns W0-03/04 + the shared O1–O6/STEP-0.
+**Last updated:** 2026-07-17 (Rutvij driving a Claude session, mode IMPLEMENT) — W2-01 implemented in the
+working tree, to be committed on a new branch off `develop` (humans commit — Rutvij commits/pushes). Repo
+facts since last entry: W0-01+W0-02 MERGED to main (PR #11); `develop` is now the integration target
+(PRs point there); W0-03/04 are in flight as PR #13 (Anurag, `ars589`). Plan map unchanged.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -21,7 +22,41 @@ unchanged: the dedicated plans own W0-01 and W0-02; the wave plan owns W0-03/04 
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-16, W0-01 + W0-02 implemented on branch, pending ratification + review)
+## CURRENT STATE (2026-07-17, W2-01 implemented, pending mini-plan ratification + review)
+
+- **Done:** W2-01 (Agent state + public profile) implemented per its mini-plan
+  (`W2-01_agent-state-profile_MINIPLAN.md`, drafted 2026-07-16, DRAFT — its proposed Q1–Q6 rulings are
+  applied but NOT yet ratified; implementer: Claude session driven by Rutvij — preamble §8 review
+  independence). Paths: `src/wocbots/agents/agent.py` (`ConfidenceWeights`, `HOLLYWOOD_WEIGHTS`,
+  `Agent` with the §2 table + §6.5 `public_profile()` + §6.6 `reset_certainty()`),
+  `src/wocbots/agents/__init__.py` (stub replaced, seam import path unchanged),
+  `tests/unit/test_w2_01_agent_state.py` (15 tests incl. the ticket's 1e-12 init pins). One mechanical
+  completion to adjudicate at review (the W0 D1/D2 pattern): `test_w0_02_seams.py`'s Agent-stub
+  assertion retired (the stub no longer exists — its contract said W2-01 replaces it). Check suite
+  green locally: 36 passed, ruff check + format clean, mypy strict clean. Pure-code ticket: results
+  manifest N/A (mini-plan §2-S6).
+- **In flight / blocked:** W2-01 close blocked on: (a) mini-plan Q1–Q6 ratification + independent
+  review (must not be Rutvij or this Claude lineage — CORE teammate or a different AI system), (b) PR
+  review + merge to `develop`, (c) index flip with a `reviewed:` line. Separately, W0-01/W0-02
+  governance close-out was never done: PR #11 merged with NO recorded independent review, index not
+  flipped, `AGENT_HANDOFF` was stale until this entry, STEP-0 RESULT blocks still unfilled, CODEOWNERS
+  handles still `*-TBD`, GitHub issues #2/#3 (W0-01/02) still open. PR #13 (W0-03/04) has no filled
+  template and no reviewer.
+- **Owner-attention:** (1) CORE (Anurag): ratify/adjust the W2-01 mini-plan's Q1–Q6, review the W2-01
+  PR; also a post-merge review of PR #11 so W0-01/02 can flip with a `reviewed:` line. (2) Team: fill
+  both STEP-0 RESULT blocks (named-and-dated), send GitHub handles for CODEOWNERS. (3) EVAL: review
+  PR #13 (consumer-reviews-producer). (4) Stakeholder: O8 branch protection now that CI exists, and on
+  `develop` too if it stays the integration branch (ruling wanted: is `develop` official? Nothing in
+  the control plane names it).
+- **Next step:** Rutvij (native git, not the sandbox): `git fetch origin`, `git switch -c
+  w2-01-agent-state origin/develop`, commit ONLY `src/wocbots/agents/`, the two test files, and this
+  handoff (the tree shows ~58 CRLF-noise "modified" files — do NOT `git add -A`), push, open a PR to
+  `develop` with the template filled, Q1–Q6 listed for ratification in the PR body.
+- **Five-minute test:** `uv run pytest -q` → 36 passed; `grep -l current_prediction
+  src/wocbots/agents/agent.py` non-empty. If the index shows W2-01 ✅ or `agents/agent.py` doesn't
+  match the description above, this entry is stale — fix it FIRST.
+
+## PRIOR (2026-07-16, W0-01 + W0-02 implemented on branch, pending ratification + review)
 
 - **Done:** W0-01 and W0-02 implemented per their APPROVED plans, on branch `w0-scaffold` (implementer:
   Claude session driven by Rutvij — this identity matters for preamble §8 review independence). Paths:
