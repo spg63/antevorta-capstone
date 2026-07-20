@@ -1,9 +1,9 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-17 (Rutvij driving a Claude session, mode IMPLEMENT) — W2-01 implemented in the
-working tree, to be committed on a new branch off `develop` (humans commit — Rutvij commits/pushes). Repo
-facts since last entry: W0-01+W0-02 MERGED to main (PR #11); `develop` is now the integration target
-(PRs point there); W0-03/04 are in flight as PR #13 (Anurag, `ars589`). Plan map unchanged.
+**Last updated:** 2026-07-20 (Rutvij driving a Claude session, mode IMPLEMENT) — W2-03 implemented in the
+working tree on branch `rootwij/w2-03-feature-assignment-crowd` (off `w2-02-classifier-train-eval`),
+uncommitted, pending independent review (humans commit — Rutvij commits/pushes). Lineage: W2-02 was
+implemented 2026-07-20 on `w2-02-classifier-train-eval` (= W2-01 + the W0-03/04 harness), also pending review.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -22,7 +22,42 @@ facts since last entry: W0-01+W0-02 MERGED to main (PR #11); `develop` is now th
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-17, W2-01 implemented, pending mini-plan ratification + review)
+## CURRENT STATE (2026-07-20, W2-03 implemented on branch, pending review)
+
+- **Done:** W2-03 (feature-assignment policy + crowd builder) implemented on
+  `rootwij/w2-03-feature-assignment-crowd` (based off `w2-02-classifier-train-eval`; implementer: Claude
+  session driven by Rutvij — preamble §8 review independence). Paths: `src/wocbots/agents/crowd.py`
+  (`AssignmentPolicy` seam + `SeededRandomAssignment` (§5.1) / `ExplicitAssignment`; `CrowdConfig` +
+  `SeededAssignmentConfig` / `ExplicitAssignmentConfig` / `AgentGroup` with `from_yaml`; `build_crowd`
+  config→roster→train_crowd→prune; `CrowdManifest` + `write_/read_crowd_manifest`),
+  `configs/crowd_hollywood_26agent.yaml` (§9.3 seeded 1/5/10/10 mix), `configs/crowd_hollywood_5agent.yaml`
+  (§9.2 explicit matched crowd), `configs/crowd_smoke.yaml` (synthetic, runnable), and
+  `tests/unit/test_w2_03_crowd.py` (30 tests: the 3 ticket reqs + §10.9 barrier + edges). Assignment yields
+  feature-name rosters only (decoupled from agent internals — the forbidden shortcut); one Generator threads
+  deal→train so same config+seed ⇒ byte-identical crowd manifest; `revenue` barred at config validation AND by
+  the builder's roster guard (§10.9). Check suite green (ruff / ruff-format / mypy-strict / pytest:
+  **112 passed, 1 skipped**, the skip = W2-02's W1-05 slow band test). No source outside this ticket touched
+  (`agents/__init__.py`, `pyproject.toml`, W2-02 modules all unchanged). Pure-mechanism ticket: results
+  manifest N/A. Closing report: `../W2-03_feature-assignment-crowd_CLOSING-REPORT.md`.
+- **In flight / blocked:** W2-03 close blocked on independent review (§8 — NOT Rutvij or this Claude lineage;
+  a CORE teammate reviewing AGENTS, or a different AI e.g. Codex). Upstream: **W1-06 (the anchor RESULT) is
+  unfilled** and the W1 DATA wave hasn't landed — so the Hollywood configs encode the spec-named anchor
+  (`budget`, §5.1) + §9.2 columns as **provisional**, and W2-04's real §9.2 reproduction stays gated on W1-05
+  (eval slice) + W1-06 (final anchors/column names). W2-02 is likewise implemented-but-unreviewed on its branch.
+- **Owner-attention:** (1) Reviewer (CORE/consumer-reviews-producer, or Codex): read the full W2-03 diff vs the
+  ticket, check the forbidden-shortcut register (assignment⊥internals; §10.9 barrier) against the code, confirm
+  the test pins (26-agent mix, prune integration, determinism). (2) DATA: W1-05 + W1-06 unblock W2-04's
+  reproduction and let the Hollywood configs' names be finalized. (3) Rutvij: commit the branch (recipe in the
+  closing report §5) — add only the 5 W2-03 paths + this handoff; **do NOT stage `README.md`** (CRLF mount
+  noise, not a real change).
+- **Next step:** independent review of W2-03 → flip W2-03 in `00_INDEX.md` to `✅ (reviewed: <who>, <date>)` →
+  W2-04 / W5-02 unblock.
+- **Five-minute test:** `pytest -q` → 112 passed, 1 skipped; `ls src/wocbots/agents` → `__init__.py agent.py
+  classifier.py crowd.py training.py`; `python -c "from wocbots.agents.crowd import build_crowd, CrowdConfig"`
+  imports clean; `git log w2-02-classifier-train-eval..rootwij/w2-03-feature-assignment-crowd` non-empty once
+  committed. If `crowd.py` is absent or the index shows W2-03 ✅, this entry is stale — fix it FIRST.
+
+## PRIOR (2026-07-17, W2-01 implemented, pending mini-plan ratification + review)
 
 - **Done:** W2-01 (Agent state + public profile) implemented per its mini-plan
   (`W2-01_agent-state-profile_MINIPLAN.md`, drafted 2026-07-16, DRAFT — its proposed Q1–Q6 rulings are

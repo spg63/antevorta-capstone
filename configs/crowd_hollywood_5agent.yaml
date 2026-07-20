@@ -1,0 +1,29 @@
+# W2-03 §9.2 — the matched 5-agent reference crowd (explicit roster).
+#
+# Spec §9.2 crowd-level: "5 features — budget, vote_count, vote_average, runtime, popularity
+# — five agents: four 2-feature agents each anchored on budget, one 5-feature agent." This is
+# the deliberately-matched configuration W5-02 compares head-to-head against the monolithic
+# MLP, so the roster is pinned EXACTLY via the explicit policy (not dealt), with the four
+# 2-feature agents covering the four non-anchor features once each.
+#
+# `anchors: [budget]` is a validated invariant here, not a dealing instruction: every listed
+# agent must contain budget (spec §5.1). Column names track the §9.2 crowd-level set; W1-06's
+# anchor RESULT finalizes them when the Hollywood ETL (W1) lands.
+name: crowd_hollywood_5agent
+
+assignment:
+  policy: explicit
+  anchors: [budget]
+  agents:
+    - [budget, vote_count]
+    - [budget, vote_average]
+    - [budget, runtime]
+    - [budget, popularity]
+    - [budget, vote_count, vote_average, runtime, popularity]
+
+classifier:
+  variant: mlp
+  epochs: 20
+  hidden_width: 32
+
+confidence_weights: {w_acc: 0.3, w_prec: 0.5, w_rec: 0.2}   # Hollywood biases precision (§5.4)
