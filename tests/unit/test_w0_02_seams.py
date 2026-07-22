@@ -76,13 +76,13 @@ def test_fake_satisfies_seam(fake: object, protocol: type) -> None:
     assert isinstance(fake, protocol)
 
 
-def test_agent_stub_names_owner() -> None:
-    """W0-02 test 2 — the stub fails loud and says who owns the real thing."""
-    with pytest.raises(NotImplementedError, match="W2-01 owns Agent"):
-        Agent()
-
-
 def test_arena_stub_names_owner() -> None:
+    """W0-02 test 2 — the stub fails loud and says who owns the real thing.
+
+    The Agent half of this test retired when W2-01 replaced the Agent stub (the stub
+    contract: W2-01 replaces the internals; the seam import path is unchanged — covered
+    by `test_w2_01_agent_state.test_seam_import_path_unchanged`).
+    """
     with pytest.raises(NotImplementedError, match="W3-01 owns Arena"):
         Arena()
 

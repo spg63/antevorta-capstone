@@ -44,6 +44,13 @@ select = ["E", "F", "I", "UP", "B", "SIM"]     # errors, pyflakes, isort, pyupgr
 strict = true
 # per-module relaxations: NONE at scaffold time; any later exception is named + commented (wave plan §3-O4)
 
+[[tool.mypy.overrides]]
+# W2-02: scikit-learn and threadpoolctl ship no type stubs / py.typed marker upstream
+# (untyped third parties). Ignore their missing imports ONLY; the wocbots classifier
+# wrappers are fully typed at the seam. Named + commented per the relaxation rule above.
+module = ["sklearn.*", "threadpoolctl", "threadpoolctl.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 markers = ["slow: multi-minute integration runs"]
 addopts = "--strict-markers"                   # unknown marks are ERRORS, not silent no-ops
