@@ -1,0 +1,10 @@
+# The harness's own smoke-test config (W0-04 S2).
+# Runs the trivial "dummy" kind: draws `params.n` standard-normal samples
+# per run and reports their mean/std. Exists so the harness is testable
+# before any real experiment lands.
+name: dummy_smoke
+kind: dummy
+seed: 42
+n_runs: 3
+params:
+  n: 1000

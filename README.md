@@ -1,5 +1,7 @@
 # WoC-Bots Reimagined
 
+[![CI](https://github.com/spg63/antevorta-capstone/actions/workflows/ci.yml/badge.svg)](https://github.com/spg63/antevorta-capstone/actions/workflows/ci.yml)
+
 A clean-room Python reimplementation of **WoC-Bots** — a wisdom-of-crowds, swarm-based binary classifier in
 which many small, feature-diverse agents train independently, exchange opinions through local interactions in
 a simulated arena, and aggregate a collective prediction with an earned confidence label. The method is fully
@@ -24,6 +26,39 @@ update it when you finish).
 
 Precedence when documents disagree: **spec > plan > ticket** — and a disagreement is a bug to report, never
 something to reconcile silently.
+
+## Setup
+
+One tool: [uv](https://docs.astral.sh/uv/) (O7 ruling — venv + lockfile + installs). From a fresh clone:
+
+```bash
+uv sync          # creates .venv from the committed uv.lock
+```
+
+Any OS. If you're stuck without uv, `pip install -e .` works from the same pyproject — but CI truth is
+uv + the lockfile, so fix your uv install before opening a PR.
+
+## The check suite
+
+All four green before any merge; plain `pytest` (full suite, slow marks included) is the ticket-close gate
+(preamble §5):
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src tests
+uv run pytest
+```
+
+Per-commit CI runs the fast variant (`pytest -m "not slow"`) on Python 3.11 + 3.12; a weekly scheduled job
+runs the full suite on `main`.
+
+## The reproducibility contract
+
+One seeded `numpy.random.Generator` threads from the experiment config into everything stochastic; derived
+streams are spawned, never re-seeded ad hoc. Every experiment is a config + seed + git SHA, written to a
+committed results manifest — a number that can't be regenerated from its manifest does not exist. Reported
+numbers are 10-run means ± std. Same config + same seed ⇒ a byte-identical manifest results block.
 
 ## How we work (the one-paragraph version)
 

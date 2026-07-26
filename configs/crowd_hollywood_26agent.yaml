@@ -1,0 +1,30 @@
+# W2-03 §9.3 — the 26-agent reference crowd (seeded assignment policy).
+#
+# Spec §9.3: "26 agents at 5 features (one 5-feature, five 4-feature, ten 3-feature, ten
+# 2-feature)." Every agent is anchored on `budget` (spec §5.1: "in practice, budget is the
+# anchor feature every agent gets"); the remaining features are dealt randomly from the pool.
+# Duplicate feature sets across agents are allowed — with a 4-feature pool the ten 2-feature
+# agents necessarily repeat, which is exactly the "neither limited nor encouraged" regime.
+#
+# Feature names follow the §9.2 crowd-level five-feature set (budget, vote_count,
+# vote_average, runtime, popularity). The exact column names + the finalized anchor set are
+# pinned by W1-06's anchor RESULT once the Hollywood ETL (W1) lands; this file is the
+# COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
+name: crowd_hollywood_26agent
+
+assignment:
+  policy: seeded
+  anchors: [budget]
+  pool: [vote_count, vote_average, runtime, popularity]
+  groups:
+    - {count: 1, n_features: 5}    # one 5-feature agent  (budget + all 4 pool features)
+    - {count: 5, n_features: 4}    # five 4-feature agents (budget + 3 of 4)
+    - {count: 10, n_features: 3}   # ten 3-feature agents  (budget + 2 of 4)
+    - {count: 10, n_features: 2}   # ten 2-feature agents  (budget + 1 of 4)
+
+classifier:
+  variant: mlp
+  epochs: 20
+  hidden_width: 32
+
+confidence_weights: {w_acc: 0.3, w_prec: 0.5, w_rec: 0.2}   # Hollywood biases precision (§5.4)

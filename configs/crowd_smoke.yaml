@@ -1,0 +1,22 @@
+# W2-03 — the crowd builder's own smoke config (seeded, dataset-agnostic).
+#
+# Deliberately synthetic feature names (f0..f4) so it runs end-to-end on the tests' separable
+# blobs BEFORE any real Hollywood data exists — the cheap-before-expensive check (preamble
+# §0.3): build one small crowd through config -> roster -> train -> prune -> manifest, no ETL
+# required. f0 is the separable signal (the budget analogue); f1..f4 are the dealt pool.
+name: crowd_smoke
+
+assignment:
+  policy: seeded
+  anchors: [f0]
+  pool: [f1, f2, f3, f4]
+  groups:
+    - {count: 1, n_features: 5}   # one 5-feature agent  (f0 + all 4)
+    - {count: 2, n_features: 3}   # two 3-feature agents (f0 + 2 of 4)
+    - {count: 3, n_features: 2}   # three 2-feature agents (f0 + 1 of 4)
+
+classifier:
+  variant: mlp
+  epochs: 5
+
+confidence_weights: {w_acc: 0.3, w_prec: 0.5, w_rec: 0.2}
