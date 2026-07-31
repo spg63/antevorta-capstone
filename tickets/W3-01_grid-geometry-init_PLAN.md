@@ -159,10 +159,10 @@ class Arena:
         return row * self._cols + col
 
     def is_empty(self, cell: Cell) -> bool:
-        return not self._grid[self._index(cell)].empty()
+        return self._grid[self._index(cell)].empty()
 
     def is_full(self, cell: Cell) -> bool:
-        return not self._grid[self._index(cell)].full()
+        return self._grid[self._index(cell)].full()
 
     def place(self, agent: Agent, cell: Cell) -> None:
         self._grid[self._index(cell)].place(agent)
@@ -229,6 +229,8 @@ No logs, manifests, traces, or debug hooks are added in this ticket.
 1. Add `tests/unit/test_grid_geometry.py`
 1. Add `tests/unit/test_init_policy.py`
 1. Update `arena/__init__.py` to import and reexport `Arena` from `arena.py`
+1. Retire the `test_arena_stub_names_owner` in `tests/unit/test_w0_02_seams.py`
+1. Add `test_seam_import_path_unchanged` to `tests/unit/test_grid_geometry.py`
 
 ---
 
@@ -270,17 +272,17 @@ tests live in `tests/unit/test_init_policy.py`.
 
 ## 13. Definition of Done (preamble §6, instantiated)
 
-1. [ ] W0 is OK before implementation starts.
-1. [ ] `Arena` class exists exactly as specified.
-1. [ ] `RandomInitPolicy` class exists exactly as specified.
-1. [ ] The `Arena` and `InitPolicy` work on fake agents, reproducible with given
+1. [X] W0 is OK before implementation starts.
+1. [X] `Arena` class exists exactly as specified.
+1. [X] `RandomInitPolicy` class exists exactly as specified.
+1. [X] The `Arena` and `InitPolicy` work on fake agents, reproducible with given
    seed.
-1. [ ] Tests in §10 land in the same change set.
-1. [ ] `ruff check .` passes.
-1. [ ] `ruff format --check .` passes.
-1. [ ] `mypy src tests` passes.
-1. [ ] `pytest` passes.
-1. [ ] No results manifest is claimed or expected for this pure interface ticket.
+1. [X] Tests in §10 land in the same change set.
+1. [X] `ruff check .` passes.
+1. [X] `ruff format --check .` passes.
+1. [X] `mypy src tests` passes.
+1. [X] `pytest` passes.
+1. [X] No results manifest is claimed or expected for this pure interface ticket.
 1. [ ] Touched paths are listed in close report.
 1. [ ] Independent review signs off and `tickets/00_INDEX.md` is flipped with
     `OK (reviewed: <who/what>, <date>)`.
