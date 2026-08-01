@@ -1,9 +1,11 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-20 (Rutvij driving a Claude session, mode IMPLEMENT) — W2-03 implemented in the
-working tree on branch `rootwij/w2-03-feature-assignment-crowd` (off `w2-02-classifier-train-eval`),
-uncommitted, pending independent review (humans commit — Rutvij commits/pushes). Lineage: W2-02 was
-implemented 2026-07-20 on `w2-02-classifier-train-eval` (= W2-01 + the W0-03/04 harness), also pending review.
+**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
+session used for plan and code review, not implementation) — W3-01 implemented
+in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
+pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
+`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -22,7 +24,33 @@ implemented 2026-07-20 on `w2-02-classifier-train-eval` (= W2-01 + the W0-03/04 
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-20, W2-03 implemented on branch, pending review)
+## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
+
+- **Done:** W3-01 (grid geometry + random init) implemented on branch
+  `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via
+  `_GridCell`) + `RandomInitPolicy` (uniformly random empty cell, spec §6.2)
+  land in `src/wocbots/arena/`, replacing the W0-02 constructor-only stub.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass
+  (arena scope: 21 passed). Pure-mechanism ticket: results manifest N/A.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass (136
+  passed, 1 skipped — the skip is test_w2_02_classifier.py's W1-05 real-data
+  band check, pre-existing, unrelated to W3-01).
+  Closing report: `../W3-01_grid-geometry-init_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-01 close blocked on independent review (§8 —
+  someone who didn't implement it). W3-02 (movement/rounds) can start its
+  mini-plan now that `Arena`/`RandomInitPolicy` exist, but stays blocked on
+  W3-01's review sign-off per the index.
+- **Owner-attention:** Reviewer needed for W3-01 — read the diff vs. the
+  ticket and plan, check the forbidden-shortcut register, confirm the test
+  pins (N=5/10/26 geometry, density sweep 3–200, occupancy-cap, init
+  determinism).
+- **Next step:** independent review of W3-01 → flip W3-01 in `00_INDEX.md` →
+  W3-02 fully unblocked.
+- **Five-minute test:** `uv run pytest tests/unit/test_grid_geometry.py
+  tests/unit/test_random_init_policy.py -q` → 12 passed;
+  `python -c "from wocbots.arena import Arena, RandomInitPolicy"`.
+
+## PRIOR (2026-07-20, W2-03 implemented on branch, pending review)
 
 - **Done:** W2-03 (feature-assignment policy + crowd builder) implemented on
   `rootwij/w2-03-feature-assignment-crowd` (based off `w2-02-classifier-train-eval`; implementer: Claude

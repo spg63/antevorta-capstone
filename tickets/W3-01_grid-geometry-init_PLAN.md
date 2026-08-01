@@ -1,6 +1,6 @@
 # W3-01 — Arena grid geometry and random initialization - IMPLEMENTATION PLAN
 
-> **STATUS: DRAFT**
+> **STATUS: IMPLEMENTED, PENDING INDEPENDENT REVIEW**
 >
 > **About this plan.** This is the per-ticket execution plan for
 > `W3-01_grid-geometry-init.md`, following the W3 plan skeleton.
@@ -283,7 +283,7 @@ tests live in `tests/unit/test_init_policy.py`.
 1. [X] `mypy src tests` passes.
 1. [X] `pytest` passes.
 1. [X] No results manifest is claimed or expected for this pure interface ticket.
-1. [ ] Touched paths are listed in close report.
+1. [X] Touched paths are listed in close report.
 1. [ ] Independent review signs off and `tickets/00_INDEX.md` is flipped with
     `OK (reviewed: <who/what>, <date>)`.
-1. [ ] `AGENT_HANDOFF.md` is updated with the new CURRENT STATE.
+1. [X] `AGENT_HANDOFF.md` is updated with the new CURRENT STATE.
