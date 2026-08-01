@@ -227,7 +227,7 @@ No logs, manifests, traces, or debug hooks are added in this ticket.
 1. Add `src/wocbots/arena/arena.py`
 1. Add `src/wocbots/arena/init_policy.py`
 1. Add `tests/unit/test_grid_geometry.py`
-1. Add `tests/unit/test_init_policy.py`
+1. Add `tests/unit/test_random_init_policy.py`
 1. Update `arena/__init__.py` to import and reexport `Arena` from `arena.py`
 1. Retire the `test_arena_stub_names_owner` in `tests/unit/test_w0_02_seams.py`
 1. Add `test_seam_import_path_unchanged` to `tests/unit/test_grid_geometry.py`

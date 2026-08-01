@@ -35,7 +35,7 @@ def test_arena_accepts_valid_size() -> None:
     assert arena.cols == 10
 
 
-def test_arena_rejects_valid_size() -> None:
+def test_arena_rejects_invalid_size() -> None:
     with pytest.raises(ValueError):
         _ = Arena(-1)
 
@@ -62,12 +62,12 @@ def test_arena_n10_is_right_size() -> None:
 
 def test_arena_n26_is_right_size() -> None:
     # arrange
-    n = 10
+    n = 26
     # act
     arena = Arena(n)
     # assert
-    assert arena.rows == 4
-    assert arena.cols == 5
+    assert arena.rows == 7
+    assert arena.cols == 8
 
 
 def test_arena_n3_to_200_has_right_density() -> None:
