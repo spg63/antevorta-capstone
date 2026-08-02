@@ -1,11 +1,11 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-25 (Claude session, mode IMPLEMENT) — the W1 DATA-stream tree (drafted independently,
-never committed, no shared git history with this working copy) has been folded into this working tree by
-file-level reconciliation. Branch: none (no git repo initialized in this working copy — AI sessions never
-commit). Lineage: sits on top of W2-03 (2026-07-20, `rootwij/w2-03-feature-assignment-crowd`, still pending its
-own independent review) and brings in the W1 wave (drafted 2026-07-25 on a divergent branch that predates
-W0-01's later CI/typing/uv ratifications on this side).
+**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
+session used for plan and code review, not implementation) — W3-01 implemented
+in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
+pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
+`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -24,7 +24,33 @@ W0-01's later CI/typing/uv ratifications on this side).
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-25, W1 DATA stream merged into this tree — NOT independently reviewed, NOT committed)
+## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
+
+- **Done:** W3-01 (grid geometry + random init) implemented on branch
+  `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via
+  `_GridCell`) + `RandomInitPolicy` (uniformly random empty cell, spec §6.2)
+  land in `src/wocbots/arena/`, replacing the W0-02 constructor-only stub.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass
+  (arena scope: 21 passed). Pure-mechanism ticket: results manifest N/A.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass (136
+  passed, 1 skipped — the skip is test_w2_02_classifier.py's W1-05 real-data
+  band check, pre-existing, unrelated to W3-01).
+  Closing report: `../W3-01_grid-geometry-init_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-01 close blocked on independent review (§8 —
+  someone who didn't implement it). W3-02 (movement/rounds) can start its
+  mini-plan now that `Arena`/`RandomInitPolicy` exist, but stays blocked on
+  W3-01's review sign-off per the index.
+- **Owner-attention:** Reviewer needed for W3-01 — read the diff vs. the
+  ticket and plan, check the forbidden-shortcut register, confirm the test
+  pins (N=5/10/26 geometry, density sweep 3–200, occupancy-cap, init
+  determinism).
+- **Next step:** independent review of W3-01 → flip W3-01 in `00_INDEX.md` →
+  W3-02 fully unblocked.
+- **Five-minute test:** `uv run pytest tests/unit/test_grid_geometry.py
+  tests/unit/test_random_init_policy.py -q` → 12 passed;
+  `python -c "from wocbots.arena import Arena, RandomInitPolicy"`.
+
+## PRIOR (2026-07-25, W1 DATA stream merged into this tree — needs review)
 
 - **Done:** Reconciled the W1 DATA-stream tree (drafted independently on a divergent branch, never committed,
   no shared git history with this tree) into `develop` by file-level merge — no `git merge` was possible, so
@@ -87,25 +113,6 @@ W0-01's later CI/typing/uv ratifications on this side).
   git repository` in a bare working copy — that's the pre-existing baseline, not new). `uv run mypy src tests`
   → `Success: no issues found`. If `src/wocbots/data/hollywood.py` is absent, this entry is stale — fix it
   FIRST.
-
-## PRIOR (2026-07-25, W1 wave drafted independently on a divergent, never-merged branch)
-
-- **What this was:** a separate working tree (not `develop`, no shared git history) where the DATA stream was
-  carried through W1-01/03/04(partial)/05/06 while `develop` moved through W0→W2-03 on the AGENTS/CORE side.
-  The two were reconciled into this tree by the entry above — read that one for the present. Preserved here
-  only so the original session's own record isn't lost.
-- **Done (on that branch):** W1-01 (`DATA_PROVENANCE.md`, fixtures, `provenance.py`) and W1-03
-  (`hollywood.py`, 29 green tests) fully implemented; W1-04 partially (`labels.py` variant (a) only, class
-  balance pin `xfail(strict=True)`); W1-05 (`splits.py`) fully implemented (8 green tests, leakage-guard +
-  no-revenue-guard pins); W1-06 (`anchor_analysis.py`) implemented but provisional (see below). A scaffold
-  `pyproject.toml` was added on that branch purely so the package was importable — superseded by `develop`'s
-  own W0-01-ratified `pyproject.toml` in the merge above.
-- **In flight / blocked (on that branch, now carried forward — see CURRENT STATE):** W1-02 blocked (no
-  `antevorta-db` supplied); W1-04's gate escalated (measured 43.9/56.1 vs. published 47.5/52.5 ±1pt, root
-  cause unconfirmed); W1-06's ranking provisional and contradicts spec §9.2 (`budget` ranks last, not first)
-  for the same reason. No independent review had happened on this branch either.
-- **Owner-attention / Next step (on that branch):** identical to what's now in CURRENT STATE — see above,
-  not duplicated here.
 
 ## PRIOR (2026-07-20, W2-03 implemented on branch, pending review)
 
