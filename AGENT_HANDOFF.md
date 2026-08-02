@@ -1,11 +1,11 @@
 # Agent Handoff
 
-**Last updated:** 2026-07-25 (Claude session, mode IMPLEMENT) — the W1 DATA-stream tree (drafted independently,
-never committed, no shared git history with this working copy) has been folded into this working tree by
-file-level reconciliation. Branch: none (no git repo initialized in this working copy — AI sessions never
-commit). Lineage: sits on top of W2-03 (2026-07-20, `rootwij/w2-03-feature-assignment-crowd`, still pending its
-own independent review) and brings in the W1 wave (drafted 2026-07-25 on a divergent branch that predates
-W0-01's later CI/typing/uv ratifications on this side).
+**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
+session used for plan and code review, not implementation) — W3-01 implemented
+in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
+pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
+`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -24,88 +24,31 @@ W0-01's later CI/typing/uv ratifications on this side).
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-25, W1 DATA stream merged into this tree — NOT independently reviewed, NOT committed)
+## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
 
-- **Done:** Reconciled the W1 DATA-stream tree (drafted independently on a divergent branch, never committed,
-  no shared git history with this tree) into `develop` by file-level merge — no `git merge` was possible, so
-  every overlapping file was diffed and resolved by hand, then validated by actually running the check suite.
-  Brought in: `src/wocbots/data/{provenance,hollywood,labels,splits,anchor_analysis}.py`,
-  `tests/unit/data/` (6 files) + `tests/fixtures/{tmdb5000,movielens20m}/`, `data/DATA_PROVENANCE.md`,
-  `docs/WAVE_GUIDE.md`, and the completed `tickets/W1-04_labels-validation-gate.md` /
-  `tickets/W1-06_anchor-analysis.md` (over develop's blank templates). Rewrote `src/wocbots/data/__init__.py`
-  (was a placeholder stub) to export the public API, matching the sibling-package convention. Two real
-  conflicts had to be resolved, not just copied over: (1) `splits.py`/`anchor_analysis.py` called
-  `numpy.random.default_rng()` directly, which trips the W0-04 RNG-discipline guard (only
-  `experiments/harness.py` may originate a Generator) — refactored both to take a threaded
-  `rng: np.random.Generator` param instead (mirrors `agents/classifier.py`'s `_seed_from` pattern); the W1
-  tests that called `make_split(..., seed=N, ...)` / `rank_features(..., seed=N)` were updated to pass
-  `rng=np.random.default_rng(N)`. (2) `pyproject.toml` was missing `scipy` (used by `anchor_analysis.py`'s
-  point-biserial correlation) and `pandas-stubs` (mypy-strict needs it now that `data/` imports pandas) — added
-  both, plus a named `scipy.*` mypy override alongside the existing `sklearn.*` one, and regenerated `uv.lock`
-  (`uv lock`) so the two stay in sync. Also dropped `data/hollywood_features_labeled_variant_a.csv`, which the
-  W1 tree carried but which contradicts this repo's own `.gitignore`/`data/README.md` policy (derived CSVs are
-  never committed — only `DATA_PROVENANCE.md` belongs in `data/`) and isn't documented anywhere as an intended
-  deliverable; looked like session scratch output. ~40 W1 test functions got `mypy --strict` return/param
-  annotations they were missing (develop's test suite is fully strict-typed; W1's wasn't). Check suite green
-  via the documented `uv` workflow: `uv run ruff check .` / `uv run ruff format --check .` / `uv run mypy src
-  tests` all clean; `uv run pytest -q` → **156 passed, 11 skipped, 1 xfailed** (the xfail is W1-04's own
-  documented class-balance pin, not new). The pre-existing git-repo-dependent test failures in
-  `test_harness.py`/`test_manifest.py`/`test_provenance.py` (they shell out to `git rev-parse HEAD`) are
-  unrelated to this merge — confirmed identical on unmodified `develop` before touching anything; they'll pass
-  once this lands inside a real git checkout.
-- **In flight / blocked:**
-  1. **Carried forward, still open — W1-04's gate is escalated, not closed; W1-02 is still blocked.** Merging
-     the code did NOT resolve this. Variant (a) `revenue > 2×budget` label balance measured 43.9/56.1 against
-     the spec's published 47.5/52.5 (±1pt tolerance) — outside tolerance, root-caused (not confirmed) in
-     `data/DATA_PROVENANCE.md` §6 to a likely MovieLens `link.csv`/`movie.csv` snapshot-vintage mismatch. W1-02
-     (the `antevorta-db` ground-truth reconciliation that would confirm or refute this) never ran — no
-     `antevorta-db` source or built SQLite has been supplied. **No label has shipped.** W1-06's anchor ranking
-     (`budget` ranks last against spec's §9.2 expectation that it tops the list) is provisional for the same
-     reason and hasn't been re-run against a validated label.
-  2. W2-03's own upstream note (see the demoted entry below) — the Hollywood crowd configs
-     (`configs/crowd_hollywood_*.yaml`) encode `budget` as anchor **provisionally**, pending exactly this. That
-     dependency is now unblocked at the code level (the DATA modules exist) but not at the data-quality level
-     (item 1 above) — re-running W1-06 for real numbers is still gated on W1-02/a stakeholder ruling.
-  3. This merge itself has had no independent review (preamble §8) — I (Claude) did both the reconciliation and
-     its own validation; that doesn't count. Not committed (AI sessions don't commit).
-  4. W2-03 is also still pending its own independent review, unchanged by this merge (see demoted entry).
-- **Owner-attention (Dr. Grimes / the team):**
-  1. Same asks as the W1 branch originally raised, still outstanding: supply `antevorta-db` (source or built
-     SQLite) to unblock W1-02, or rule on how to proceed without it; rule on whether the W1-04 join shortfall
-     (4,227 matched movies vs. spec reference 4,722) is a data-vintage issue, a pipeline defect, or grounds to
-     accept revised reference numbers for this dataset snapshot.
-  2. A human or different-AI reviewer (not this session): check the merge diff, in particular (a) whether
-     dropping `hollywood_features_labeled_variant_a.csv` was the right call, and (b) the `seed: int` →
-     `rng: Generator` signature change to `make_split`/`rank_features` — a real API change, not a mechanical
-     port, worth a second pair of eyes before anything downstream (W2-04, W5-*) builds on it.
-  3. Rutvij: W2-03 still needs committing per its own closing report, independent of this merge.
-- **Next step:** get an `antevorta-db` artifact (or a stakeholder ruling on the MovieLens snapshot question)
-  to unblock W1-02, then re-run the W1-03→W1-04 chain for real and choose/ratify a shipped label; re-run W1-06
-  once that lands. In parallel, get this merge independently reviewed and committed.
-- **Five-minute test:** `uv sync && uv run pytest -q` → expect `156 passed, 11 skipped, 1 xfailed` (needs a
-  real git repo for the harness/manifest/provenance tests to pass; they'll show as failures with `fatal: not a
-  git repository` in a bare working copy — that's the pre-existing baseline, not new). `uv run mypy src tests`
-  → `Success: no issues found`. If `src/wocbots/data/hollywood.py` is absent, this entry is stale — fix it
-  FIRST.
-
-## PRIOR (2026-07-25, W1 wave drafted independently on a divergent, never-merged branch)
-
-- **What this was:** a separate working tree (not `develop`, no shared git history) where the DATA stream was
-  carried through W1-01/03/04(partial)/05/06 while `develop` moved through W0→W2-03 on the AGENTS/CORE side.
-  The two were reconciled into this tree by the entry above — read that one for the present. Preserved here
-  only so the original session's own record isn't lost.
-- **Done (on that branch):** W1-01 (`DATA_PROVENANCE.md`, fixtures, `provenance.py`) and W1-03
-  (`hollywood.py`, 29 green tests) fully implemented; W1-04 partially (`labels.py` variant (a) only, class
-  balance pin `xfail(strict=True)`); W1-05 (`splits.py`) fully implemented (8 green tests, leakage-guard +
-  no-revenue-guard pins); W1-06 (`anchor_analysis.py`) implemented but provisional (see below). A scaffold
-  `pyproject.toml` was added on that branch purely so the package was importable — superseded by `develop`'s
-  own W0-01-ratified `pyproject.toml` in the merge above.
-- **In flight / blocked (on that branch, now carried forward — see CURRENT STATE):** W1-02 blocked (no
-  `antevorta-db` supplied); W1-04's gate escalated (measured 43.9/56.1 vs. published 47.5/52.5 ±1pt, root
-  cause unconfirmed); W1-06's ranking provisional and contradicts spec §9.2 (`budget` ranks last, not first)
-  for the same reason. No independent review had happened on this branch either.
-- **Owner-attention / Next step (on that branch):** identical to what's now in CURRENT STATE — see above,
-  not duplicated here.
+- **Done:** W3-01 (grid geometry + random init) implemented on branch
+  `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via
+  `_GridCell`) + `RandomInitPolicy` (uniformly random empty cell, spec §6.2)
+  land in `src/wocbots/arena/`, replacing the W0-02 constructor-only stub.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass
+  (arena scope: 21 passed). Pure-mechanism ticket: results manifest N/A.
+  Check suite green: ruff / ruff-format / mypy-strict / pytest all pass (136
+  passed, 1 skipped — the skip is test_w2_02_classifier.py's W1-05 real-data
+  band check, pre-existing, unrelated to W3-01).
+  Closing report: `../W3-01_grid-geometry-init_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-01 close blocked on independent review (§8 —
+  someone who didn't implement it). W3-02 (movement/rounds) can start its
+  mini-plan now that `Arena`/`RandomInitPolicy` exist, but stays blocked on
+  W3-01's review sign-off per the index.
+- **Owner-attention:** Reviewer needed for W3-01 — read the diff vs. the
+  ticket and plan, check the forbidden-shortcut register, confirm the test
+  pins (N=5/10/26 geometry, density sweep 3–200, occupancy-cap, init
+  determinism).
+- **Next step:** independent review of W3-01 → flip W3-01 in `00_INDEX.md` →
+  W3-02 fully unblocked.
+- **Five-minute test:** `uv run pytest tests/unit/test_grid_geometry.py
+  tests/unit/test_random_init_policy.py -q` → 12 passed;
+  `python -c "from wocbots.arena import Arena, RandomInitPolicy"`.
 
 ## PRIOR (2026-07-20, W2-03 implemented on branch, pending review)
 
