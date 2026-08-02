@@ -50,6 +50,70 @@ pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
   tests/unit/test_random_init_policy.py -q` → 12 passed;
   `python -c "from wocbots.arena import Arena, RandomInitPolicy"`.
 
+## PRIOR (2026-07-25, W1 DATA stream merged into this tree — needs review)
+
+- **Done:** Reconciled the W1 DATA-stream tree (drafted independently on a divergent branch, never committed,
+  no shared git history with this tree) into `develop` by file-level merge — no `git merge` was possible, so
+  every overlapping file was diffed and resolved by hand, then validated by actually running the check suite.
+  Brought in: `src/wocbots/data/{provenance,hollywood,labels,splits,anchor_analysis}.py`,
+  `tests/unit/data/` (6 files) + `tests/fixtures/{tmdb5000,movielens20m}/`, `data/DATA_PROVENANCE.md`,
+  `docs/WAVE_GUIDE.md`, and the completed `tickets/W1-04_labels-validation-gate.md` /
+  `tickets/W1-06_anchor-analysis.md` (over develop's blank templates). Rewrote `src/wocbots/data/__init__.py`
+  (was a placeholder stub) to export the public API, matching the sibling-package convention. Two real
+  conflicts had to be resolved, not just copied over: (1) `splits.py`/`anchor_analysis.py` called
+  `numpy.random.default_rng()` directly, which trips the W0-04 RNG-discipline guard (only
+  `experiments/harness.py` may originate a Generator) — refactored both to take a threaded
+  `rng: np.random.Generator` param instead (mirrors `agents/classifier.py`'s `_seed_from` pattern); the W1
+  tests that called `make_split(..., seed=N, ...)` / `rank_features(..., seed=N)` were updated to pass
+  `rng=np.random.default_rng(N)`. (2) `pyproject.toml` was missing `scipy` (used by `anchor_analysis.py`'s
+  point-biserial correlation) and `pandas-stubs` (mypy-strict needs it now that `data/` imports pandas) — added
+  both, plus a named `scipy.*` mypy override alongside the existing `sklearn.*` one, and regenerated `uv.lock`
+  (`uv lock`) so the two stay in sync. Also dropped `data/hollywood_features_labeled_variant_a.csv`, which the
+  W1 tree carried but which contradicts this repo's own `.gitignore`/`data/README.md` policy (derived CSVs are
+  never committed — only `DATA_PROVENANCE.md` belongs in `data/`) and isn't documented anywhere as an intended
+  deliverable; looked like session scratch output. ~40 W1 test functions got `mypy --strict` return/param
+  annotations they were missing (develop's test suite is fully strict-typed; W1's wasn't). Check suite green
+  via the documented `uv` workflow: `uv run ruff check .` / `uv run ruff format --check .` / `uv run mypy src
+  tests` all clean; `uv run pytest -q` → **156 passed, 11 skipped, 1 xfailed** (the xfail is W1-04's own
+  documented class-balance pin, not new). The pre-existing git-repo-dependent test failures in
+  `test_harness.py`/`test_manifest.py`/`test_provenance.py` (they shell out to `git rev-parse HEAD`) are
+  unrelated to this merge — confirmed identical on unmodified `develop` before touching anything; they'll pass
+  once this lands inside a real git checkout.
+- **In flight / blocked:**
+  1. **Carried forward, still open — W1-04's gate is escalated, not closed; W1-02 is still blocked.** Merging
+     the code did NOT resolve this. Variant (a) `revenue > 2×budget` label balance measured 43.9/56.1 against
+     the spec's published 47.5/52.5 (±1pt tolerance) — outside tolerance, root-caused (not confirmed) in
+     `data/DATA_PROVENANCE.md` §6 to a likely MovieLens `link.csv`/`movie.csv` snapshot-vintage mismatch. W1-02
+     (the `antevorta-db` ground-truth reconciliation that would confirm or refute this) never ran — no
+     `antevorta-db` source or built SQLite has been supplied. **No label has shipped.** W1-06's anchor ranking
+     (`budget` ranks last against spec's §9.2 expectation that it tops the list) is provisional for the same
+     reason and hasn't been re-run against a validated label.
+  2. W2-03's own upstream note (see the demoted entry below) — the Hollywood crowd configs
+     (`configs/crowd_hollywood_*.yaml`) encode `budget` as anchor **provisionally**, pending exactly this. That
+     dependency is now unblocked at the code level (the DATA modules exist) but not at the data-quality level
+     (item 1 above) — re-running W1-06 for real numbers is still gated on W1-02/a stakeholder ruling.
+  3. This merge itself has had no independent review (preamble §8) — I (Claude) did both the reconciliation and
+     its own validation; that doesn't count. Not committed (AI sessions don't commit).
+  4. W2-03 is also still pending its own independent review, unchanged by this merge (see demoted entry).
+- **Owner-attention (Dr. Grimes / the team):**
+  1. Same asks as the W1 branch originally raised, still outstanding: supply `antevorta-db` (source or built
+     SQLite) to unblock W1-02, or rule on how to proceed without it; rule on whether the W1-04 join shortfall
+     (4,227 matched movies vs. spec reference 4,722) is a data-vintage issue, a pipeline defect, or grounds to
+     accept revised reference numbers for this dataset snapshot.
+  2. A human or different-AI reviewer (not this session): check the merge diff, in particular (a) whether
+     dropping `hollywood_features_labeled_variant_a.csv` was the right call, and (b) the `seed: int` →
+     `rng: Generator` signature change to `make_split`/`rank_features` — a real API change, not a mechanical
+     port, worth a second pair of eyes before anything downstream (W2-04, W5-*) builds on it.
+  3. Rutvij: W2-03 still needs committing per its own closing report, independent of this merge.
+- **Next step:** get an `antevorta-db` artifact (or a stakeholder ruling on the MovieLens snapshot question)
+  to unblock W1-02, then re-run the W1-03→W1-04 chain for real and choose/ratify a shipped label; re-run W1-06
+  once that lands. In parallel, get this merge independently reviewed and committed.
+- **Five-minute test:** `uv sync && uv run pytest -q` → expect `156 passed, 11 skipped, 1 xfailed` (needs a
+  real git repo for the harness/manifest/provenance tests to pass; they'll show as failures with `fatal: not a
+  git repository` in a bare working copy — that's the pre-existing baseline, not new). `uv run mypy src tests`
+  → `Success: no issues found`. If `src/wocbots/data/hollywood.py` is absent, this entry is stale — fix it
+  FIRST.
+
 ## PRIOR (2026-07-20, W2-03 implemented on branch, pending review)
 
 - **Done:** W2-03 (feature-assignment policy + crowd builder) implemented on
