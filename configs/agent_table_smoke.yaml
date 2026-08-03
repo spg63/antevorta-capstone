@@ -1,0 +1,16 @@
+# W2-04 smoke — the same experiment path on synthetic data, so the machinery is runnable and
+# testable without the (gitignored) raw datasets. Mirrors `crowd_smoke.yaml`'s posture.
+#
+# This config CANNOT reproduce §9.2 and is not meant to: its numbers come from an invented
+# frame. It exists to prove config → split → train → manifest → comparison runs end to end.
+# The real reproduction is `agent_table_hollywood.yaml`, whose test is slow-marked.
+name: agent_table_smoke
+kind: agent_table
+seed: 7
+n_runs: 2
+
+params:
+  crowd_config: configs/crowd_hollywood_agent_table.yaml
+  dataset: synthetic
+  synthetic_rows: 400
+  epochs: [5, 50]

@@ -1,0 +1,23 @@
+# W2-04 S1 — the §9.2 agent-table reproduction experiment.
+#
+# One config, one manifest, one comparison table. Ten seeded runs (spec §9.1: every reported
+# number is a 10-run mean ± std), both published epoch columns, the nine-row explicit roster
+# plus the budget+revenue canary on its own path.
+#
+#   uv run python -m wocbots.experiments.harness configs/agent_table_hollywood.yaml
+#
+# Requires the raw datasets at `data/raw/` (gitignored, never committed — see
+# `data/DATA_PROVENANCE.md`). Without them the runner raises a named FileNotFoundError.
+#
+# `seed` is the ONE master seed; the harness spawns ten independent child streams from it.
+# Changing it to hunt for a better-looking table is the ticket's named forbidden shortcut —
+# a miss is a bug filed upstream, not a seed to re-roll.
+name: agent_table_hollywood
+kind: agent_table
+seed: 20260803
+n_runs: 10
+
+params:
+  crowd_config: configs/crowd_hollywood_agent_table.yaml
+  dataset: hollywood
+  epochs: [5, 50] # both columns; dropping 5 is a forbidden shortcut

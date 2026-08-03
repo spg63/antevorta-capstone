@@ -1,0 +1,41 @@
+# W2-04 §9.2 — the agent-table roster (explicit, pinned).
+#
+# The nine REAL rows of the spec §9.2 ten-row table, in the spec's own order. The tenth row
+# (budget+revenue) is deliberately ABSENT: it is the pipeline canary, it is built by
+# `training.build_sanity_agent` on its own path, and a `revenue` here would be rejected at
+# config load (spec §10.9). "Nine agents + one canary" is what "the ten-row table" means in
+# code — see `wocbots.experiments.agent_table`.
+#
+# Feature names are W1-03's ETL output vocabulary (`wocbots.data.hollywood.OUTPUT_COLUMNS`),
+# which is the vocabulary §9.2's table itself uses: `vote_average`/`vote_count` are the
+# §4.3.5 COMBINED columns, distinct from the per-source `tmdb_*` / `ml_*` ones that also
+# appear in the table. `anchors: [budget]` is a validated invariant, not a dealing
+# instruction — every listed agent must carry budget (spec §5.1).
+#
+# `epochs` here is only the file's resting value; the experiment runner overrides it per
+# column (5 and 50) — both §9.2 columns are trained from this one roster.
+#
+# This file is pinned by `tests/unit/test_w2_04_agent_table.py::test_shipped_roster_matches_published_table`
+# against `PUBLISHED_ROWS`, so it cannot drift away from the spec table by hand-edit.
+name: crowd_hollywood_agent_table
+
+assignment:
+  policy: explicit
+  anchors: [budget]
+  agents:
+    - [budget, vote_average, vote_count]
+    - [budget, tmdb_popularity, vote_average, vote_count]
+    - [budget, vote_count]
+    - [budget, tmdb_popularity, tmdb_vote_average, tmdb_vote_count]
+    - [budget, tmdb_vote_count, ml_vote_count]
+    - [budget, ml_vote_average, ml_vote_count]
+    - [budget, ml_vote_count]
+    - [budget, tmdb_vote_average]
+    - [budget, runtime]
+
+classifier:
+  variant: mlp
+  epochs: 50
+  hidden_width: 32
+
+confidence_weights: {w_acc: 0.3, w_prec: 0.5, w_rec: 0.2}   # Hollywood biases precision (§5.4)

@@ -7,15 +7,20 @@
 # agents necessarily repeat, which is exactly the "neither limited nor encouraged" regime.
 #
 # Feature names follow the §9.2 crowd-level five-feature set (budget, vote_count,
-# vote_average, runtime, popularity). The exact column names + the finalized anchor set are
-# pinned by W1-06's anchor RESULT once the Hollywood ETL (W1) lands; this file is the
-# COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
+# vote_average, runtime, popularity), resolved to W1-03's ETL output vocabulary now that the
+# DATA wave has landed: the spec's "popularity" is `tmdb_popularity` in
+# `wocbots.data.hollywood.OUTPUT_COLUMNS` (there is no combined popularity column — §4.3.5
+# combines only the vote columns). `test_hollywood_configs_use_real_etl_columns` pins every
+# name here against that list, so a dangling column is a test failure, not a runtime KeyError
+# on the day someone finally runs it. W1-06's anchor RESULT still owes the finalized ANCHOR
+# SET; `budget` is the spec §5.1 anchor and stands until that ruling lands.
+# This file is the COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
 name: crowd_hollywood_26agent
 
 assignment:
   policy: seeded
   anchors: [budget]
-  pool: [vote_count, vote_average, runtime, popularity]
+  pool: [vote_count, vote_average, runtime, tmdb_popularity]
   groups:
     - {count: 1, n_features: 5}    # one 5-feature agent  (budget + all 4 pool features)
     - {count: 5, n_features: 4}    # five 4-feature agents (budget + 3 of 4)

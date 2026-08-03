@@ -161,7 +161,7 @@ def test_26_agent_mix_constructs_exactly() -> None:
     assert dict(sorted(Counter(len(agent) for agent in roster).items())) == {2: 10, 3: 10, 4: 5, 5: 1}
     # every agent budget-anchored, only §9.2 five-feature-set columns dealt (invariants hold here too)
     assert all("budget" in agent for agent in roster)
-    legal = {"budget", "vote_count", "vote_average", "runtime", "popularity"}
+    legal = {"budget", "vote_count", "vote_average", "runtime", "tmdb_popularity"}
     assert all(set(agent) <= legal for agent in roster)
 
 
@@ -174,8 +174,8 @@ def test_explicit_roster_is_exact() -> None:
         ("budget", "vote_count"),
         ("budget", "vote_average"),
         ("budget", "runtime"),
-        ("budget", "popularity"),
-        ("budget", "vote_count", "vote_average", "runtime", "popularity"),
+        ("budget", "tmdb_popularity"),
+        ("budget", "vote_count", "vote_average", "runtime", "tmdb_popularity"),
     )
 
 
@@ -369,6 +369,30 @@ def test_example_configs_load(filename: str) -> None:
     config = CrowdConfig.from_yaml(CONFIGS_DIR / filename)
     assert config.assignment.n_agents >= 1
     assert isinstance(config.confidence_weights, type(HOLLYWOOD_WEIGHTS))
+
+
+@pytest.mark.parametrize("filename", ["crowd_hollywood_26agent.yaml", "crowd_hollywood_5agent.yaml"])
+def test_hollywood_configs_use_real_etl_columns(filename: str) -> None:
+    """Every feature name in a Hollywood crowd config must exist in W1-03's ETL output.
+
+    These configs shipped with the spec's prose names while the DATA wave was unbuilt (the
+    §9.2 crowd-level set says "popularity"; the ETL emits `tmdb_popularity` — §4.3.5 combines
+    only the vote columns, not popularity). A name that does not exist is not a cosmetic
+    mismatch: `LabeledData.select` raises `KeyError` rather than imputing (spec §3), so the
+    config would die at the first real run. Now that W1 has landed, that is a test failure
+    here instead of a surprise then.
+    """
+    from wocbots.data.hollywood import OUTPUT_COLUMNS
+
+    config = CrowdConfig.from_yaml(CONFIGS_DIR / filename)
+    assignment = config.assignment
+    named = set(assignment.anchors)
+    if isinstance(assignment, ExplicitAssignmentConfig):
+        named |= {feature for agent in assignment.agents for feature in agent}
+    else:
+        named |= set(assignment.pool)
+    unknown = sorted(named - set(OUTPUT_COLUMNS))
+    assert not unknown, f"{filename} names columns the W1-03 ETL does not produce: {unknown}"
 
 
 def test_smoke_config_builds_end_to_end() -> None:

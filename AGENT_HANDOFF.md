@@ -1,10 +1,11 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation) — W3-01 implemented
-in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
-pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
-`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+**Last updated:** 2026-08-03 (Claude session driven by Rutvij — implementer, so
+NOT an independent reviewer) — W2-04 implemented in the working tree on
+`develop` @ `b7bc127`, uncommitted, pending independent review; `develop`'s red
+CI (mypy) fixed in the same tree. Lineage: W2-03 was implemented 2026-07-20 on
+`rootwij/w2-03-feature-assignment-crowd` and merged as PR #16, still pending
+independent review and its index flip.
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -24,7 +25,103 @@ pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
+## CURRENT STATE (2026-08-03, W2-04 implemented + CI unblocked, pending review)
+
+- **Done:** Two things, deliberately separable.
+  1. **`develop`'s CI was RED and is now green.** The required `checks` job
+     failed at `uv run mypy src tests` on `b7bc127` (GitHub Actions run
+     30731327286) with 11 errors: missing stubs for `pandas` (10) and
+     `scipy.stats` (1). Root cause is dependency drift, not typing: the W1
+     DATA merge landed `src/wocbots/data/` without the `pyproject.toml` /
+     `uv.lock` half of its own change. `anchor_analysis.py` imports
+     `scipy.stats` directly but `scipy` was never declared (it arrived
+     transitively via scikit-learn), and `pandas` ships no `py.typed` so
+     mypy-strict needs `pandas-stubs`, which was never added. Fix:
+     `scipy>=1.11` into `[project].dependencies`, `pandas-stubs>=2.2` into the
+     `dev` group, `scipy.*` onto the existing named `sklearn.*` mypy override,
+     `uv.lock` regenerated. Verified in a lockfile-exact environment
+     (`uv sync --frozen --exact`) on BOTH CI Python versions, 3.11 and 3.12.
+  2. **W2-04 (§9.2 agent-table reproduction) implemented.** New:
+     `src/wocbots/experiments/agent_table.py` (the §9.2 table as data; the
+     `agent_table` experiment kind; the published-vs-measured comparison
+     manifest with signed per-row deltas, band flags, the three §9.2 ordering
+     checks and a prose `notes` block), `configs/crowd_hollywood_agent_table.yaml`
+     (the explicit nine-row roster), `configs/agent_table_hollywood.yaml`
+     (10 runs, epochs 5 and 50, one master seed), `configs/agent_table_smoke.yaml`
+     (same path on synthetic data), `tests/unit/test_w2_04_agent_table.py`
+     (40 tests). One line added to `src/wocbots/experiments/kinds.py` so the
+     harness CLI resolves the new kind. The tenth row (budget+revenue) is built
+     by `build_sanity_agent` on its own path and is absent from the roster —
+     "ten rows" is nine crowd agents + one canary, which is what §10.9 requires.
+     Nothing in W2-02/W2-03/arena/aggregation was touched: this ticket is a
+     detector, and a miss files a bug upstream rather than tuning this layer.
+  3. **One real W2-03 defect fixed while verifying it.** Both Hollywood crowd
+     configs named `popularity`, which W1-03's ETL does not emit (it is
+     `tmdb_popularity` — §4.3.5 combines only the vote columns). W2-03 shipped
+     that name explicitly provisional, "pinned by W1-06 once the ETL lands"; W1
+     has landed, so this is that resolution. It was not cosmetic —
+     `LabeledData.select` raises `KeyError` rather than imputing, so both configs
+     would have died at the first real-data run (W5-02 and W5-04 consume them).
+     Guarded now by `test_hollywood_configs_use_real_etl_columns`.
+  Check suite green on 3.11 and 3.12: ruff / ruff-format / mypy-strict clean;
+  `pytest` → **208 passed, 12 skipped, 1 xfailed**; `pytest -m "not slow"` (the
+  CI invocation) → 207 passed, 10 skipped, 3 deselected, 1 xfailed. Baseline
+  before this session was 167 passed / 11 skipped. Closing report:
+  `tickets/W2-04_agent-table-reproduction_CLOSING-REPORT.md`.
+- **In flight / blocked:**
+  1. **W2-04's results manifest is owed and cannot be produced here.** It is an
+     experiment ticket, but `data/raw/` does not exist on this machine (the
+     datasets are gitignored and never committed), so
+     `test_reproduction_hollywood_real_data` SKIPS with that named reason. A
+     manifest generated from the synthetic config would record numbers that mean
+     nothing, so none was written. Run
+     `uv run python -m wocbots.experiments.harness configs/agent_table_hollywood.yaml`
+     on a machine that has the datasets, then commit the manifest plus the
+     rendered comparison table.
+  2. **Upstream, unresolved, and bounding what W2-04 can conclude:** W1-02 is
+     still blocked (no `antevorta-db` source or built SQLite has ever been
+     supplied) and W1-04's reconciliation gate is escalated, not closed —
+     variant (a)'s class balance measures 43.9/56.1 against the published
+     47.5/52.5, root-caused (not confirmed) in `data/DATA_PROVENANCE.md` §6 to a
+     MovieLens snapshot-vintage mismatch (4,227 matched movies vs the reference
+     4,722). W1-06's anchor ranking is provisional for the same reason and
+     currently ranks `budget` LAST, against §9.2's expectation. If the §9.2 table
+     comes back red, read it against these first: the finding is "W1 is
+     unresolved," not "the agent layer is miscalibrated."
+  3. **W2-04 and the CI fix have had no independent review** (preamble §8) — I
+     both implemented and validated them, which does not count. Not committed.
+  4. W3-01 (2026-08-01, Samuel Gauthier) is merged into `develop` via PR #21 and
+     still pending its own independent review and index flip. W2-03 likewise.
+- **Owner-attention:**
+  1. **Anyone who is not this Claude lineage or Rutvij:** review the W2-04 diff
+     against the ticket and the forbidden-shortcut register — in particular that
+     the canary never reaches the crowd path, that pruned rows still report a
+     cell, that the eval slice (never the test split) is the source of every
+     number, and that nothing in W2-02/W2-03 was tuned from inside this ticket.
+  2. **Consider landing the CI fix separately and first.** It is unrelated to
+     W2-04, it unblocks every other branch, and it should not wait on this
+     ticket's review.
+  3. **Team / stakeholder, carried forward and still outstanding:** supply
+     `antevorta-db` (source or built SQLite) to unblock W1-02, or rule on how to
+     proceed without it; rule on the W1-04 join shortfall. And rule on the
+     governance backlog — `00_INDEX.md` still carries ZERO status flips, and
+     PRs #13/#15/#16 were all merged by the implementer's own driver with no
+     recorded reviewer, so no honest `✅ (reviewed: <who>, <date>)` line can be
+     written for any ticket until someone confirms who actually reviewed what.
+  4. **Rutvij:** commit this tree (recipe in the closing report §7). Do NOT stage
+     `README.md` — it is CRLF mount noise, not a change
+     (`git diff --ignore-cr-at-eol -- README.md` is empty).
+- **Next step:** get the CI fix committed and pushed so `develop` is green again;
+  in parallel, independent review of W2-04. The reproduction itself stays gated on
+  someone running it where `data/raw/` exists.
+- **Five-minute test:** `uv sync --frozen && uv run mypy src tests` →
+  `Success: no issues found in 57 source files` (if this fails with missing
+  `pandas`/`scipy` stubs, the CI fix has not landed and this entry is stale).
+  `uv run pytest -q` → `208 passed, 12 skipped, 1 xfailed`.
+  `uv run python -c "from wocbots.experiments.kinds import *; from wocbots.experiments.registry import registered_kinds; print(registered_kinds())"`
+  → `('agent_table', 'dummy')`.
+
+## PRIOR (2026-07-31, W3-01 implemented on branch, pending review)
 
 - **Done:** W3-01 (grid geometry + random init) implemented on branch
   `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via
