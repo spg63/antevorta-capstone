@@ -1,10 +1,8 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation) — W3-01 implemented
-in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
-pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
-`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+**Last updated:** 2026-08-03 (Samuel Gauthier, hand-implemented; Claude chat
+session used for plan and code review, not implementation) ticket/w3-01-plan
+merged on branch develop.
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -24,7 +22,16 @@ pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
+## CURRENT STATE (2026-08-01, W3-01 reviewed and merged on develop)
+
+- **Done:** @rootwij merged and reviewed W3-01 in #21
+- **In flight / blocked:** W3-02 unblocked, plan and implementation in progress
+- **Owner-attention:** Reviewer didn't update 00_INDEX.md nor pull request
+  checklist nor PLAN's DoD.
+- **Next step:** Finish W3-02's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
+## PRIOR (2026-07-31, W3-01 implemented on branch, pending review)
 
 - **Done:** W3-01 (grid geometry + random init) implemented on branch
   `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via

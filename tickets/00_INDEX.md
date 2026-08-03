@@ -1,5 +1,8 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.14 (2026-07-07): fixes bookkeeping not done** W3-01's status was not
+> updated after review, this is now fixed.
+>
 > **v1.13 (2026-07-07): the W0-02 PLAN lands** (`W0-02_types-policy-seams_PLAN.md`) — authored by CODEX
 > under the §9 invocation, independently reviewed by CLAUDE (the set's first AI→AI plan review), **✅
 > APPROVED with amendments** (stakeholder): D2 (constructor-only stubs) ruled as an explicit amendment to
@@ -139,7 +142,7 @@ ticket first (the what), then its plan (the how).
 ## Wave W2 — Agent layer
 
 | ID | File | Title | Blocked by |
-|---|---|---|---|
+|---|---|---|---|kl
 | W2-01 | `W2-01_agent-state-profile.md` | Agent state (§2 table) + public profile | W0-02 |
 | W2-02 | `W2-02_classifier-train-eval-prune.md` | Classifiers, train/eval/prune, sanity agent | W2-01, W0-04 (real ACs: W1-05) |
 | W2-03 | `W2-03_feature-assignment-crowd.md` | Feature assignment + crowd builder | W2-02, W1-06 |
@@ -149,8 +152,8 @@ ticket first (the what), then its plan (the how).
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 |
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 |
+| W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | ✅ (reviewed: @rootwij, date: 08/01/26)|
+| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | ✅ |
 | W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 |
 | W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 |
 
