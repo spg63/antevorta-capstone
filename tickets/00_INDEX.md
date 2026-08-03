@@ -142,7 +142,7 @@ ticket first (the what), then its plan (the how).
 ## Wave W2 — Agent layer
 
 | ID | File | Title | Blocked by |
-|---|---|---|---|kl
+|---|---|---|---|
 | W2-01 | `W2-01_agent-state-profile.md` | Agent state (§2 table) + public profile | W0-02 |
 | W2-02 | `W2-02_classifier-train-eval-prune.md` | Classifiers, train/eval/prune, sanity agent | W2-01, W0-04 (real ACs: W1-05) |
 | W2-03 | `W2-03_feature-assignment-crowd.md` | Feature assignment + crowd builder | W2-02, W1-06 |
