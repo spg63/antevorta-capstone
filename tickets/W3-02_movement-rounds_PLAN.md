@@ -61,10 +61,19 @@ irreproducible crowd behavior — hence the shuffle proof in the tests.
     within a 5 round window).
   The current interface of `MovementPolicy` cannot be touched, so
   `RandomMovementPolicy` keeps track of the number of times `move()` was called
-  with each agent, and infers based in this information the the current round
-  number. This means that it assumes that `RoundEngine` always moves every
-  agent only once in a round. Furthermore, unit tests need to take into account
-  this coupling.
+  with each agent. Based on this information it infers the current round number.
+  Therefore it assumes that `RoundEngine` always moves every agent only once in
+  a round. Furthermore, unit tests need to take into account this coupling.
+  Storing the current round number in a DB, with `RoundEngine` writing it per
+  `round()` call and `RandomMovementPolicy` reading it in each `move()` was
+  rejected due to the I/O cost it would imply in the hot loop of the simulation.
+  Additionally there is currently no in-process boundary this value needs to
+  cross.
+
+- D3 `RoundEngine` needs to track agent encounters as well besides the
+  `MovementPolicy`. Given that the movment policy returns a `Cell`, the engine
+  can check via the `Arena` the agents at that cell and record the encounter in
+  a log. The log contains only interaction between two agents.
 
 ---
 
@@ -187,16 +196,17 @@ class Arena:
 ```python
 from __future__ import annotations
 from collections import deque, defaultdict
-from typing import Tuple
 import numpy as np
+from wocbots.arena import Arena
+from wocbots.types import Cell
+from wocbots.agents import Agent
 
 class RandomMovementPolicy:
     def __init__(self, teleport_rate: float = 0.05) -> None:
-        self._moves: list[Tuple] = [(1, 0),(-1, 0),(0, 1),(0, -1)]
+        self._moves: list[tuple[int, int]] = [(1, 0),(-1, 0),(0, 1),(0, -1)]
         self._teleport_rate: float = teleport_rate
         self._cur_round = 0
         self._moved_this_round: set[Agent] = set()
-        self._current_encounter: tuple[Agent, Agent] | None = None
         self._pair_history: dict[frozenset[Agent], deque[int]] = defaultdict(deque)
 
     def move(self, agent: Agent, arena: Arena, rng: np.random.Generator) -> Cell:
@@ -208,8 +218,8 @@ class RandomMovementPolicy:
         cur_cell = arena.cell(agent)
         if rng.random() < self._teleport_rate:
             while True:
-                col = rng.integers(0, arena.cols)
-                row = rng.integers(0, arena.rows)
+                col = int(rng.integers(0, arena.cols))
+                row = int(rng.integers(0, arena.rows))
                 cell: Cell = (row, col)
                 if cur_cell != cell and self._can_move_to(agent, arena, cell):
                     break
@@ -217,25 +227,21 @@ class RandomMovementPolicy:
             if agents:
                 other_agent = arena.agents_at(cell)[0]
                 self._encounter(agent, other_agent)
-                self._current_encounter = (agent, other_agent)
-            else:
-                self._current_encounter = None
             arena.move_to(agent, cell)
             return cell
 
         if not self._has_moves(agent, arena):
             while True:
-                col = rng.integers(0, arena.cols)
-                row = rng.integers(0, arena.rows)
+                col = int(rng.integers(0, arena.cols))
+                row = int(rng.integers(0, arena.rows))
                 cell: Cell = (row, col)
                 if arena.is_empty(cell):
                     break
-            self._current_encounter = None
             arena.move_to(agent, cell)
             return cell
             
         while True:
-            i = rng.integers(0, len(self._moves))
+            i = int(rng.integers(0, len(self._moves)))
             dir = self._moves[i]
             next_cell = (cur_cell[0] + dir[0], cur_cell[1] + dir[1])
             if self._can_move_to(agent, arena, next_cell):
@@ -245,14 +251,9 @@ class RandomMovementPolicy:
         if agents:
             other_agent = agents[0]
             self._encounter(agent, other_agent)
-        else:
-            self._current_encounter = None
         arena.move_to(agent, next_cell)
         return next_cell
 
-    def current_encounter(self) -> tuple[Agent, Agent] | None:
-        return self._current_encounter
-        
 
     def _can_move_to(self, agent: Agent, arena: Arena, cell: Cell) -> bool:
         row, col = cell
@@ -283,16 +284,13 @@ class RandomMovementPolicy:
         for round in self._pair_history[key]:
             if round > self._cur_round - 5:
                 count +=1
-        if count >= 2:
-            return False
-        return True
+        return not count >= 2
 
     def _encounter(self, a: Agent, b: Agent) -> None:
         key = frozenset((a,b))
         self._pair_history[key].append(self._cur_round)
 
-        if len(self._pair_history[key]) >= 2:
-            if self._pair_history[key][-1] - self._pair_history[key][0] >= 5:
+        if ( len(self._pair_history[key]) >= 2 ) and ( self._pair_history[key][-1] - self._pair_history[key][0] >= 5 ):
                 self._pair_history[key].popleft()
 
 ```
@@ -300,8 +298,12 @@ class RandomMovementPolicy:
 ### S2 - `src/wocbots/arena/round_engine.py`
 
 ```python
+import numpy as np
 from collections import defaultdict
-from typing import Tuple
+from wocbots.arena import Arena
+from wocbots.types import Cell
+from wocbots.agents import Agent
+from wocbots.protocols import MovementPolicy
 
 class RoundEngine:
     def __init__(self,
@@ -318,7 +320,7 @@ class RoundEngine:
         self._arena: Arena = arena
         self._movement_policy: MovementPolicy = movement_policy
         self._rng: np.random.Generator = rng
-        self._encounter_log: dict[int, tuple[tuple[Agent, Agent] | None, Cell]] = defaultdict()
+        self._encounter_log: dict[int, list[tuple[tuple[Agent, Agent], Cell]]] = defaultdict(list)
 
     def round(self) -> None:
         if self._cur_round >= self._max_rounds:
@@ -328,15 +330,17 @@ class RoundEngine:
         self._rng.shuffle(self._agent_indices)
         for i in self._agent_indices:
             cell = self._movement_policy.move(self._agents[i], self._arena, self._rng)
-            encounter = self._movement_policy.current_encounter()
-            self._encounter_log[self._cur_round].append((encounter, cell))
+            occupants = self._arena.agents_at(cell)
+            if len(occupants) == 2:
+                other = occupants[0] if occupants[1] == self._agents[i] else occupants[1]
+                self._encounter_log[self._cur_round].append(((self._agents[i], other), cell))
         self._cur_round += 1
 
     def finished(self) -> bool:
         return self._cur_round >= self._max_rounds
 
     @property
-    def encounter_log(self) -> dict[int, tuple[tuple[Agent, Agent] | None, Cell]]:
+    def encounter_log(self) -> dict[int, list[tuple[tuple[Agent, Agent], Cell]]]:
         return self._encounter_log
 
 ```
@@ -361,12 +365,13 @@ class RoundEngine:
 ## 9. Sequenced implementation steps
 
 1. Run pre-code gates in §6.
+1. Update the stale index and agent handoff from W3-01
 1. Add `src/wocbots/arena/round_engine.py`
 1. Add `src/wocbots/arena/movement_policy.py`
 1. Update `src/wocbots/arena/arena.py`
 1. Update `src/wocbots/arena/__init__.py`
-1. Add `test/unit/test_round_engine.py`
-1. Add `test/unit/test_movement_policy.py`
+1. Add `tests/unit/test_round_engine.py`
+1. Add `tests/unit/test_movement_policy.py`
 
 ---
 
@@ -406,13 +411,16 @@ tests live in `tests/unit/test_round_engine.py`.
 
 ## 12. Risks, alternatives, open questions FOR THE STAKEHOLDER
 
-- R1 - The agents are processed in the same order in each round.
+- R1 - Because the `MovementPolicy` cannot be widened, a coupling emerged
+  between `RoundEngine` and `RandomMovementPolicy`: both need to keep track of
+  the current round. The `RandomMovementPolicy` assumes an agent is moved only
+  once per round, which could break if the `RoundEngine` modifies its behavior.
 
 ---
 
 ## 13. Definition of Done (preamble §6, instantiated)
 
-1. [ ] W3-01 is OK before implementation starts.
+1. [X] W3-01 is OK before implementation starts.
 1. [ ] `RandomMovementPolicy` class exists exactly as specified.
 1. [ ] `RoundEngine` class exists exactly as specified.
 1. [ ] Tests in §10 land in the same change set.
