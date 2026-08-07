@@ -75,6 +75,49 @@ irreproducible crowd behavior — hence the shuffle proof in the tests.
   can check via the `Arena` the agents at that cell and record the encounter in
   a log. The log contains only interaction between two agents.
 
+- D4 Manifest-producing "kind" registration and placement:
+  - Problem: the ticket's acceptance criteria ("Arena + movement run
+    standalone, seeded; encounter statistics... recorded in the test
+    manifest") requires a runnable, registered `kind` going through
+    `wocbots.experiments.harness.run_experiment`, not a hand-written JSON
+    blob.
+  - Decision: `_movement_smoke_runner` (building Arena + RandomInitPolicy +
+    RandomMovementPolicy + RoundEngine internally, using only the `rng` it's
+    given — never constructing its own, per the RNG-discipline guard) and
+    its `register_kind("w3_02_movement_smoke", ...)` call are added directly
+    into `src/wocbots/experiments/kinds.py`, alongside `dummy`. Not a new
+    per-ticket file.
+  - Why not `src/wocbots/arena/`: nothing in the codebase currently has
+    `arena` (a domain package) depend on `experiments` (the orchestration
+    layer that composes domain packages); putting a harness-registered
+    runner inside `arena/` would introduce that dependency backwards, and
+    encroaches on ground W4-01 is chartered to own.
+  - Why directly in `kinds.py`, not a new `kinds_w3_02.py`: `kinds.py` is a
+    single flat file, not a `kinds/` package — if the intended pattern were
+    one file per registered kind, the natural shape would have been a
+    package. Its docstring ("ships exactly one kind... before any real
+    experiment lands") describes `dummy`'s deliberately trivial *content*
+    at W0-04's own point in time, not a permanent constraint that the file
+    stay dependency-free. Once the runner lives in `experiments/` at all,
+    depending on `wocbots.arena`/`wocbots.agents` from there is exactly
+    what the orchestration layer is for. Landing directly in `kinds.py`
+    also means `harness.py`'s existing hardcoded `from wocbots.experiments
+    import kinds as _kinds` already picks it up — `python -m
+    wocbots.experiments.harness configs/w3_02_movement_smoke.yaml` works
+    with no further edits anywhere, no aggregating-import indirection.
+  - Consequence, flagged rather than left implicit: this is `kinds.py`'s
+    first domain dependency (`wocbots.arena`, `wocbots.agents`) — it was
+    dependency-free before this ticket. That's a real, visible change to a
+    file owned by W0-04, not W3-02, made because this ticket needed it, not
+    because W0-04 anticipated this specific dependency. Named here so a
+    reviewer sees it as a deliberate choice in the diff, not a drive-by.
+  - Alternatives rejected: (a) a new `kinds_w3_02.py` with an aggregating
+    `# noqa: F401` import added to `kinds.py` or `harness.py` — rejected on
+    reflection; adds a layer of indirection and an extra file for no benefit
+    once "which package" (the only real constraint) is satisfied by landing
+    in `experiments/` at all; (b) the runner living inside `arena/` —
+    rejected, wrong dependency direction (see above).
+
 ---
 
 ## 4. Verified grounding facts (re-verify before coding)
@@ -343,6 +386,9 @@ class RoundEngine:
     def encounter_log(self) -> dict[int, list[tuple[tuple[Agent, Agent], Cell]]]:
         return self._encounter_log
 
+    @property
+    def rounds_completed(self) -> int:
+        return self._cur_round
 ```
 
 ---
@@ -372,6 +418,7 @@ class RoundEngine:
 1. Update `src/wocbots/arena/__init__.py`
 1. Add `tests/unit/test_round_engine.py`
 1. Add `tests/unit/test_movement_policy.py`
+1. Edit `src/wocbots/experiments/kinds.py`
 
 ---
 
@@ -393,7 +440,7 @@ tests live in `tests/unit/test_round_engine.py`.
 1. Number of rounds is pinned, 5 agents -> 10 rounds; 105 agents -> 10 rounds;
    120 agents -> 12 rounds
 1. Agent processing order is different accross rounds given a fixed seed
-1. Agent processing order over a run is the same given a fixed seed
+1. Agent processing order over a run is the same given a fixed seed 
 1. Over an entire run, every 2-agent encounter is recorded in a log and appear
    exactly once per round.
 1. Round engine eventually finishes
@@ -421,14 +468,14 @@ tests live in `tests/unit/test_round_engine.py`.
 ## 13. Definition of Done (preamble §6, instantiated)
 
 1. [X] W3-01 is OK before implementation starts.
-1. [ ] `RandomMovementPolicy` class exists exactly as specified.
-1. [ ] `RoundEngine` class exists exactly as specified.
-1. [ ] Tests in §10 land in the same change set.
-1. [ ] `ruff check .` passes.
-1. [ ] `ruff format --check .` passes.
-1. [ ] `mypy src tests` passes.
-1. [ ] `pytest` passes.
-1. [ ] Encounter statistics (encounters/agent/round) recorded in the test
+1. [X] `RandomMovementPolicy` class exists exactly as specified.
+1. [X] `RoundEngine` class exists exactly as specified.
+1. [X] Tests in §10 land in the same change set.
+1. [X] `ruff check .` passes.
+1. [X] `ruff format --check .` passes.
+1. [X] `mypy src tests` passes.
+1. [X] `pytest` passes.
+1. [X] Encounter statistics (encounters/agent/round) recorded in the test
    manifest for tuning reference.
 1. [ ] Touched paths are listed in close report.
 1. [ ] Independent review signs off and `tickets/00_INDEX.md` is flipped with

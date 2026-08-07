@@ -44,3 +44,7 @@ class RoundEngine:
     @property
     def encounter_log(self) -> dict[int, list[tuple[tuple[Agent, Agent], Cell]]]:
         return self._encounter_log
+
+    @property
+    def rounds_completed(self) -> int:
+        return self._cur_round
