@@ -477,7 +477,7 @@ tests live in `tests/unit/test_round_engine.py`.
 1. [X] `pytest` passes.
 1. [X] Encounter statistics (encounters/agent/round) recorded in the test
    manifest for tuning reference.
-1. [ ] Touched paths are listed in close report.
+1. [X] Touched paths are listed in close report.
 1. [ ] Independent review signs off and `tickets/00_INDEX.md` is flipped with
     `OK (reviewed: <who/what>, <date>)`.
 1. [ ] `AGENT_HANDOFF.md` is updated with the new CURRENT STATE.

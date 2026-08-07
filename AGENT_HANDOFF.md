@@ -1,8 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-03 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation) ticket/w3-01-plan
-merged on branch develop.
+**Last updated:** 2026-08-07 (Samuel Gauthier, hand-implemented; Claude chat
+session used for plan and code review, not implementation), branch ticket/w3-02
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -22,7 +21,37 @@ merged on branch develop.
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-01, W3-01 reviewed and merged on develop)
+## CURRENT STATE (2026-08-07, W3-02 implemented, pending independent review)
+- **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on
+  branch ticket/w3-02. RandomMovementPolicy + RoundEngine land in
+  src/wocbots/arena/; Arena extended with move_to/cell/agents_at (plan §3 D1).
+  Encounter statistics recorded via a real registered harness kind
+  (w3_02_movement_smoke in src/wocbots/experiments/kinds.py, plan §3 D4) — not a
+  hand-written manifest; committed reference manifest at
+  results/manifests/w3_02_movement_smoke_20260807T224338Z_34cf4f35.json. Check
+  suite green: ruff / ruff-format / mypy-strict / pytest all pass (150 passed, 1
+  skipped — pre-existing, unrelated). Closing report:
+  tickets/W3-02_movement-rounds_CLOSING-REPORT.md.
+
+- **In flight / blocked:** W3-02 awaiting independent review sign-off (preamble
+  §8) before 00_INDEX.md's W3-02 row can be flipped past its current bare ✅ to
+  a dated, attributed one, and before W3-03/W4-01 can treat it as landed rather
+  than merely implemented.
+
+- **Owner-attention:** independent reviewer needed for W3-02 (name TBD). Whoever
+  reviews: update 00_INDEX.md's W3-02 row to ✅ (reviewed: <who>, <date>) and
+  this file's CURRENT STATE before merging the PR — the W3-01 review skipped
+  exactly this step, which is why the prior session had to spend a round
+  reconciling stale docs after the fact (see PRIOR below).
+
+- **Next step:** get W3-02 independently reviewed; once landed, W3-03 and W4-01
+  are unblocked on this ticket specifically (W4-01 still separately needs
+  W3-04).
+
+- **Five-minute test:** git log --oneline -5 origin/develop, pytest -q
+
+
+## PRIOR (2026-08-01, W3-01 reviewed and merged on develop)
 
 - **Done:** @rootwij merged and reviewed W3-01 in #21
 - **In flight / blocked:** W3-02 unblocked, plan and implementation in progress
