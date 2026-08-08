@@ -92,7 +92,10 @@ def test_same_state_three_aggregators() -> None:
     wvm = WVMAggregator().aggregate(agents, rng)
     trust = TrustWeightedAggregator().aggregate(agents, rng)
     assert uwm.class_label == wvm.class_label == trust.class_label == 1
-    assert all(p.tier is None and p.margin is None for p in (uwm, wvm, trust))
+    for prediction in (uwm, wvm, trust):
+        assert prediction.tier is not None
+        assert prediction.margin is not None
+        assert 0.0 < prediction.margin <= 1.0
 
 
 def test_certainty_weighted_degenerate_tie() -> None:
