@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score
@@ -95,7 +95,7 @@ def agent_predictions(
         label = int(item.predict(row)[0])
         if label not in (0, 1):
             raise ValueError(f"agent prediction must be 0 or 1, got {label!r}")
-        preds[id(item.agent)] = label
+        preds[id(item.agent)] = cast(Literal[0, 1], label)
     return preds
 
 
