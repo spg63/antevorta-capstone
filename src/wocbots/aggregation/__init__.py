@@ -1,5 +1,6 @@
 """Aggregation mechanisms (voting §7, swarm §8). CORE stream — W4-03 lands voting; W6 lands swarm."""
 
+from wocbots.aggregation.tiers import tier_from_margin, vote_margin
 from wocbots.aggregation.voting import (
     TrustWeightedAggregator,
     UWMAggregator,
@@ -16,4 +17,6 @@ __all__ = [
     "WVMAggregator",
     "certainty_weighted_vote",
     "tally_majority",
+    "tier_from_margin",
+    "vote_margin",
 ]

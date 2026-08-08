@@ -16,6 +16,8 @@ from pathlib import Path
 import numpy as np
 
 from wocbots.experiments import kinds as _kinds  # noqa: F401  (import side effect: registers "dummy")
+from wocbots.experiments import mechanism_comparison as _mechanism_comparison  # noqa: F401
+from wocbots.experiments import synthetic_anchor as _synthetic_anchor  # noqa: F401
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.manifest import Manifest, MetricSummary, RunResult, write_manifest
 from wocbots.experiments.provenance import capture_provenance
