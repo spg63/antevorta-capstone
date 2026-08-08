@@ -13,6 +13,7 @@ from wocbots.agents import Agent
 from wocbots.agents.classifier import LabeledData
 from wocbots.agents.training import TrainedAgent
 from wocbots.aggregation import TrustWeightedAggregator, UWMAggregator, WVMAggregator
+from wocbots.aggregation.voting import certainty_weighted_vote
 from wocbots.experiments.feedback import FeedbackState, apply_ground_truth, record_degenerate_crowd
 from wocbots.experiments.lifecycle import (
     InteractionPeriodRunner,
@@ -24,7 +25,6 @@ from wocbots.experiments.lifecycle import (
     run_sample,
     select_participants,
 )
-from wocbots.aggregation.voting import certainty_weighted_vote
 from wocbots.protocols import Aggregator
 from wocbots.types import Prediction
 
@@ -219,10 +219,7 @@ def run_mechanism_comparison(
         )
         for key in _MECHANISM_KEYS
     }
-    tier_accuracy = {
-        tier: tier_correct.get(tier, 0) / tier_totals[tier]
-        for tier in tier_totals
-    }
+    tier_accuracy = {tier: tier_correct.get(tier, 0) / tier_totals[tier] for tier in tier_totals}
     tier_coverage = {tier: count / n_samples for tier, count in tier_totals.items()}
 
     return MechanismComparisonSummary(
