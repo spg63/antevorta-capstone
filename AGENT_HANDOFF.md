@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-07 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation), branch ticket/w3-02
+**Last updated:** 2026-08-10 (Rutvij — W2-04 + Wave 2 governance backfill; Claude session,
+uncommitted working tree on `develop` @ `4bb6804`)
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -21,7 +21,55 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-07, W3-02 implemented, pending independent review)
+## CURRENT STATE (2026-08-10, Wave 2 done on real data — W2-03 was broken, W2-04 escalates)
+
+- **Done:** The Hollywood raw data is on disk at `data/raw/{tmdb,movielens}/` and
+  checksum-verified (`tests/unit/data/test_provenance.py` → 10 passed; previously all skipped).
+  **W2-03 real-data closure:** both shipped Hollywood crowd configs named `popularity`, which
+  the W1-03 ETL does not emit (it emits `tmdb_popularity`) — **both the §9.2 and §9.3 reference
+  crowds were unbuildable and had been since they were written.** Thirty green W2-03 unit tests
+  missed it because they build synthetic frames matching whatever the config names. Configs
+  fixed; new `src/wocbots/experiments/hollywood_data.py` (one shared real-split path for W2-03
+  and W2-04), `crowd_build.py` (kind `w2_03_hollywood_crowd`), `configs/w2_03_crowd_{5,26}agent.yaml`,
+  `tests/unit/test_w2_03_hollywood_crowd.py` (9 passed incl. 3 slow real-data builds, plus a
+  planted-defect self-test), addendum in `tickets/W2-03_*_CLOSING-REPORT-ADDENDUM.md`.
+  **W2-02:** its real-data band check no longer skips — the sanity agent scores 97.3% on real data.
+  **W2-04** implemented: `src/wocbots/experiments/agent_table.py` (kind `w2_04_agent_table`,
+  the ten §9.2 rows, the comparison emitter), `configs/w2_04_agent_table.yaml`,
+  `tests/unit/test_w2_04_agent_table.py` (10 passed, 2 xfailed), manifest
+  `results/manifests/w2_04_agent_table_20260810T154449Z_4bb68043.json`, escalation artifact
+  `results/W2-04_agent_table_comparison.md`. Plan + closing report in `tickets/W2-04_*`.
+  Governance backfill: W2-01's plan and W2-02/W2-03's closing reports moved into `tickets/`
+  (they had lived outside the repo since July); `00_INDEX.md` v1.16/v1.17 + W2-01..04 status marks.
+  Check suite green (ruff / ruff-format / mypy-strict / pytest).
+- **In flight / blocked:** **The §9.2 reproduction MISSES and this is the reportable result,
+  not an unfinished one.** The `budget+revenue` canary hits 97.33% ± 1.71 at 50 epochs, so by
+  spec §9.2's own instrument the DATA PIPELINE IS VALIDATED. But 4 of 10 rows fall outside
+  ±3 at 50 epochs — all four built on the combined MovieLens+TMDb vote features — one of the
+  three required orderings breaks, and the whole 5-epoch column is under-trained (three rows
+  sit at exactly 55.97% ± 0.00, the majority-class rate, zero variance over ten seeds).
+  The two slow tests carry `xfail(strict=True)` naming W1-04; they go RED if the data is
+  fixed and the table starts passing. Nothing was tuned to close any gap.
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — three-part ruling in `results/W2-04_agent_table_comparison.md`:
+     is this MovieLens snapshot the intended one (it is checksum-verified but joins 4,227 vs
+     the spec's 4,722, balance 43.93/56.07 vs 47.5/52.5); if so do the revised numbers become
+     the reference or does the ±3 band still bind; and what accounts for the 5-epoch column,
+     since spec §5.2's stated optimizer settings cannot produce 98% for the canary in five epochs.
+  2. **DATA stream** — W1-04's RESULT block and W1-06's are still literally `☐ ____`; W1-02
+     has never run for want of an `antevorta-db` artifact. This is what blocks W2-04 from ✅.
+  3. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 AND
+     W2-04. Rutvij drove all four sessions and cannot sign any of them off. No W2 ticket is ✅.
+  4. **Rutvij** — commit + PR onto `develop`, labelled, linked to Issue #7; then re-run the
+     harness from the committed tree so the manifest cites a clean SHA (it currently reads
+     `4bb68043...+dirty`, honest but not closeable evidence).
+- **Next step:** get the W1-04 ruling. Everything else in Wave 2 is done and waiting on review;
+  that ruling is the only thing that can move W2-04 from `◐ escalated` to `✅`.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py` → 10 passed (if they
+  SKIP, `data/raw/` is missing and this entry is stale — fix that first);
+  `uv run pytest tests/unit/test_w2_04_agent_table.py` → 10 passed, 2 xfailed.
+
+## PRIOR (2026-08-07, W3-02 implemented, pending independent review)
 - **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on
   branch ticket/w3-02. RandomMovementPolicy + RoundEngine land in
   src/wocbots/arena/; Arena extended with move_to/cell/agents_at (plan §3 D1).

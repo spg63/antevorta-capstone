@@ -1,0 +1,164 @@
+{
+  "aggregate": {
+    "eval_accuracy_max": {
+      "mean": 0.7279835390946502,
+      "std": 0.0219654422141276
+    },
+    "eval_accuracy_mean": {
+      "mean": 0.6515194681861348,
+      "std": 0.02017234132415435
+    },
+    "eval_accuracy_min": {
+      "mean": 0.557201646090535,
+      "std": 0.012096245643373726
+    },
+    "kept_agents": {
+      "mean": 26.0,
+      "std": 0.0
+    },
+    "pruned_agents": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "roster_size": {
+      "mean": 26.0,
+      "std": 0.0
+    }
+  },
+  "config": {
+    "kind": "w2_03_hollywood_crowd",
+    "n_runs": 10,
+    "name": "w2_03_crowd_26agent",
+    "params": {
+      "crowd_config": "configs/crowd_hollywood_26agent.yaml",
+      "raw_root": "data/raw"
+    },
+    "seed": 20260810
+  },
+  "provenance": {
+    "created_utc": "2026-08-10T16:01:56.449005+00:00",
+    "git_sha": "4bb68043bb86d4c05eec20d09a77698ca3c7ae41+dirty",
+    "package_versions": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "pydantic": "2.13.4",
+      "python": "3.12.13",
+      "sklearn": "1.9.0",
+      "wocbots": "0.1.0"
+    },
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "runs": [
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7283950617283951,
+        "eval_accuracy_mean": 0.6226654004431782,
+        "eval_accuracy_min": 0.5596707818930041,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 0
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7489711934156379,
+        "eval_accuracy_mean": 0.6666666666666666,
+        "eval_accuracy_min": 0.5596707818930041,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 1
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7613168724279835,
+        "eval_accuracy_mean": 0.6760050648939538,
+        "eval_accuracy_min": 0.5596707818930041,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 2
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7242798353909465,
+        "eval_accuracy_mean": 0.6707818930041152,
+        "eval_accuracy_min": 0.5473251028806584,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 3
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7283950617283951,
+        "eval_accuracy_mean": 0.6304210193099082,
+        "eval_accuracy_min": 0.5596707818930041,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 4
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7160493827160493,
+        "eval_accuracy_mean": 0.6494143716365938,
+        "eval_accuracy_min": 0.5596707818930041,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 5
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7242798353909465,
+        "eval_accuracy_mean": 0.6563786008230453,
+        "eval_accuracy_min": 0.5349794238683128,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 6
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7283950617283951,
+        "eval_accuracy_mean": 0.6403925292814182,
+        "eval_accuracy_min": 0.5679012345679012,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 7
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.6748971193415638,
+        "eval_accuracy_mean": 0.624406457739791,
+        "eval_accuracy_min": 0.5432098765432098,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 8
+    },
+    {
+      "metrics": {
+        "eval_accuracy_max": 0.7448559670781894,
+        "eval_accuracy_mean": 0.6780626780626781,
+        "eval_accuracy_min": 0.5802469135802469,
+        "kept_agents": 26.0,
+        "pruned_agents": 0.0,
+        "roster_size": 26.0
+      },
+      "run_index": 9
+    }
+  ],
+  "schema_version": 1
+}

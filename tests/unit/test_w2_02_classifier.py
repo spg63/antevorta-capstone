@@ -12,6 +12,7 @@ Covers the ticket's five test requirements plus edges:
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -333,7 +334,50 @@ def test_select_unknown_feature_raises() -> None:
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(
+    not Path("data/raw/tmdb/movies.csv").exists(),
+    reason="raw Hollywood data not present locally (expected in CI); see data/DATA_PROVENANCE.md",
+)
 def test_reference_bands_real_data() -> None:
     """Ticket test req 5 (real data): budget+revenue sanity agent ~100%, budget+vote_count
-    in the §9.2 band (75.7 ± 3). Runs once the W1-05 Hollywood eval slice exists."""
-    pytest.skip("W1-05 Hollywood eval slice not available yet; band check lands with the data")
+    in the §9.2 band (75.7 ± 3).
+
+    Unblocked 2026-08-10 (W2-04): the W1-05 eval slice now exists, so this no longer skips
+    unconditionally — it runs whenever `data/raw/` is populated.
+
+    The two halves are asserted separately because they mean different things. The sanity
+    agent is spec §9.2's PIPELINE instrument ("MUST hit ~100% … if it doesn't, your data
+    pipeline is broken") and it passes: the ETL, label, split and scaling are sound. The
+    `budget+vote_count` band is an AGENT-QUALITY claim about published numbers, and on this
+    data snapshot it misses — for the upstream reasons W1-04's gate is escalated over. That
+    half is `xfail(strict=True)` in `test_w2_04_agent_table.py`, where the full ten-row
+    comparison and its escalation live; asserting it a second time here would duplicate the
+    escalation rather than add evidence, so this test pins the instrument, not the claim.
+    """
+    from wocbots.experiments.hollywood_data import load_labeled_hollywood, materialize_split
+
+    split = materialize_split(load_labeled_hollywood(), np.random.default_rng(20260810))
+
+    sanity = build_sanity_agent(
+        train_data=split.train_data,
+        eval_data=split.eval_data,
+        rng=np.random.default_rng(1),
+        spec=ClassifierSpec(epochs=50),
+        confidence_weights=HOLLYWOOD_WEIGHTS,
+    )
+    assert sanity.is_sanity
+    assert sanity.eval_metrics.accuracy >= 0.95, (
+        f"budget+revenue sanity agent scored {sanity.eval_metrics.accuracy:.4f} on real data; "
+        "spec §9.2 requires ~100% — below this the data pipeline is broken, not the agents"
+    )
+
+    # The canary must stay unreachable from the normal crowd path even with real data present.
+    with pytest.raises(ValueError, match="leak the label"):
+        train_agent(
+            features=("budget", "revenue"),
+            train_data=split.train_data,
+            eval_data=split.eval_data,
+            spec=ClassifierSpec(epochs=5),
+            confidence_weights=HOLLYWOOD_WEIGHTS,
+            rng=np.random.default_rng(2),
+        )
