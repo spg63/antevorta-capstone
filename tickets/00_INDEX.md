@@ -1,7 +1,16 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
-> **v1.14 (2026-07-07): fixes bookkeeping not done** W3-01's status was not
-> updated after review, this is now fixed.
+> **v1.15 (2026-08-07): W3-02 ARENA delivery + W3-01 status bookkeeping.** Samuel Gauthier: movement
+> policy, anti-clique rules, lockstep round engine, the `w3_02_movement_smoke` harness kind and its
+> committed manifest, plan + closing report. Also repairs bookkeeping the W3-01 close skipped — W3-01's
+> status was never flipped after its review.
+>
+> **v1.14 (2026-08-08): W4-04 CORE delivery + branching policy.** Manan Patel: W4-04 plan/closing
+> report, vote-margin tiers, mechanism-comparison + synthetic-anchor experiment kinds, participation
+> manifest accounting; W4-01 anchor tests; process doc `docs/BRANCHING.md` (develop integration model,
+> branch-protection checklist for repo admin). W4-01/02/03 partial on `develop` (PR #17); W4-04 on branch
+> `manan/w4-04-tiers-mechanism-comparison` pending review/merge. W4-01 full arena integration still blocked
+> on W3-02, W3-04. W5-02 remains blocked on W4-04 merge.
 >
 > **v1.13 (2026-07-07): the W0-02 PLAN lands** (`W0-02_types-policy-seams_PLAN.md`) — authored by CODEX
 > under the §9 invocation, independently reviewed by CLAUDE (the set's first AI→AI plan review), **✅
@@ -152,8 +161,8 @@ ticket first (the what), then its plan (the how).
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | ✅ (reviewed: @rootwij, date: 08/01/26)|
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | ✅ |
+| W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 — **✅ (reviewed: @rootwij, 2026-08-01)** |
+| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **◐ implemented, pending independent review** |
 | W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 |
 | W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 |
 
@@ -161,17 +170,17 @@ ticket first (the what), then its plan (the how).
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02, W3-02, W3-04 |
+| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02, **W3-02**, **W3-04** (arena stub; scaffold ◐ on develop) |
 | W4-02 | `W4-02_ground-truth-feedback.md` | Ground-truth feedback, priorPerf, degenerate rule | W4-01 |
 | W4-03 | `W4-03_voting-aggregators.md` | UWM, WVM, trust-weighted (mechanism) | W4-01 |
-| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 |
+| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 — **◐ implemented, pending review/merge** |
 
 ## Wave W5 — Baseline + Q1 reproduction (Q1 exit)
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
 | W5-01 | `W5-01_baseline-mlp.md` | The monolithic MLP baseline | W1-05 |
-| W5-02 | `W5-02_matched-comparison.md` | Matched head-to-head + epoch sweep (experiment) | W2-03, W4-04, W5-01 |
+| W5-02 | `W5-02_matched-comparison.md` | Matched head-to-head + epoch sweep (experiment) | W2-03, **W4-04 (merge)**, W5-01 |
 | W5-03 | `W5-03_robustness-contrasts.md` | Feature-removal contrasts (experiment) | W5-02 |
 | W5-04 | `W5-04_crowd-scaling.md` | 26-agent scaling run (experiment) | W5-02 |
 | W5-05 | `W5-05_q1-report-exit.md` | Q1 report + exit audit — **Q1 EXIT** | W2-04, W5-02, W5-03, W5-04 |

@@ -14,6 +14,7 @@ from typing import Literal
 import numpy as np
 
 from wocbots.agents import Agent
+from wocbots.aggregation.tiers import prediction_with_margin
 from wocbots.types import Prediction
 
 
@@ -27,8 +28,12 @@ class VoteOutcome:
     votes_1: int
 
     def to_prediction(self) -> Prediction:
-        """Public output for the Aggregator seam (tier/margin filled by W4-04)."""
-        return Prediction(class_label=self.class_label, tier=None, margin=None)
+        """Public output for the Aggregator seam with vote-margin tier/margin (W4-04)."""
+        return prediction_with_margin(
+            class_label=self.class_label,
+            votes_0=self.votes_0,
+            votes_1=self.votes_1,
+        )
 
 
 def tally_majority(votes_0: int, votes_1: int) -> VoteOutcome:

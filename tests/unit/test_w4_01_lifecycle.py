@@ -109,3 +109,47 @@ def test_label_free_leaves_track_records_untouched() -> None:
     apply_ground_truth([agent], None, FeedbackState())
     assert agent.prior_accuracy == before_acc
     assert agent.prior_performance == before_perf
+
+
+def test_degenerate_one_participant_returns_own_prediction() -> None:
+    agent = make_agent("budget")
+    agent.current_prediction = 1
+    state = LifecycleRunState()
+    rng = np.random.default_rng(0)
+    preds: dict[int, Literal[0, 1]] = {id(agent): 1}
+    result = run_sample(
+        [agent],
+        SampleFeatures(values={"budget": 1.0}),
+        preds,
+        rng=rng,
+        label=1,
+        state=state,
+    )
+    assert result.participant_count == 1
+    assert result.prediction.class_label == 1
+    assert result.used_degenerate_path is True
+
+
+class _RecordingHistory:
+    def __init__(self) -> None:
+        self.calls: list[tuple[int, int, bool]] = []
+
+    def mark_prediction_correctness(
+        self,
+        agent: Agent,
+        *,
+        prediction: Literal[0, 1],
+        was_correct: bool,
+    ) -> None:
+        self.calls.append((id(agent), prediction, was_correct))
+
+
+def test_backfill_hook_receives_correctness_only() -> None:
+    agent = make_agent("budget", acc=0.8)
+    agent.current_prediction = 1
+    state = FeedbackState()
+    history = _RecordingHistory()
+    before_acc = agent.prior_accuracy
+    apply_ground_truth([agent], 0, state, history=history)
+    assert history.calls == [(id(agent), 1, False)]
+    assert agent.prior_accuracy == before_acc
