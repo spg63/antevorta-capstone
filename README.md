@@ -68,7 +68,20 @@ plans first (preamble §9 invocation); implementation follows the plan (§10 inv
 feature; every numeric mechanism gets exact pins. Every experiment is a config + seed + git SHA producing a
 committed results manifest — **a number that can't be regenerated from its manifest does not exist**. No
 ticket closes until someone (or some AI) that didn't implement it reviews the diff and signs off (preamble
-§8). Humans commit via PRs; nothing lands on `main` unreviewed.
+§8). Humans commit via PRs; nothing lands on `main` or `develop` without review.
+
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| **`develop`** | Day-to-day integration — **open PRs here** |
+| **`main`** | Quarter-end promotion from `develop` |
+
+Feature branches: `<name>/<ticket-id>-short-description`, branched from `develop`.
+
+**Never push directly to `main` or `develop`** — see [`docs/BRANCHING.md`](docs/BRANCHING.md) for the full workflow, PR checklist, and branch-protection setup (repo admin).
+
+Pull requests must use [`.github/pull_request_template.md`](.github/pull_request_template.md), be **labeled** with the ticket ID/name, and **link** the GitHub issue. Before merging onto `develop`: write a closing report, update `tickets/00_INDEX.md`, and confirm the ticket Definition of Done + independent review (preamble §8).
 
 ## The clean-room rule
 

@@ -1,10 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-01 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation) — W3-01 implemented
-in the working tree on branch `ticket/w3-01-plan` (off `develop`), uncommitted,
-pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
-`rootwij/w2-03-feature-assignment-crowd`, still pending independent review.
+**Last updated:** 2026-08-08 (Manan Patel, CORE W4-04 — branch
+`manan/w4-04-tiers-mechanism-comparison` @ `2c19b25`, pending manual PR merge)
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -24,7 +21,19 @@ pending independent review. Lineage: W2-03 was implemented 2026-07-20 on
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-07-31, W3-01 implemented on branch, pending review)
+## CURRENT STATE (2026-08-08, W4-04 on branch — pending review + manual merge)
+
+- **Done:** W4-04 on `manan/w4-04-tiers-mechanism-comparison` (Manan Patel): tiers, mechanism-comparison +
+  synthetic-anchor kinds, evaluation loop, tests. Plan + closing report in `tickets/W4-04_*`. Process doc
+  `docs/BRANCHING.md`. W4-01/02/03 on `develop` (PR #17); W4-04 **not** merged yet.
+- **In flight / blocked:** Manual PR merge to `develop`. W4-01 arena integration blocked on W3-02/04. Branch
+  protection on `main`/`develop` not enabled — needs repo admin.
+- **Owner-attention:** **Manan** — PR to `develop`, label W4-04, link Issue #9, independent review. **Admin
+  (spg63)** — enable branch protection per `docs/BRANCHING.md`.
+- **Next step:** Open/refresh PR; merge after CI + review; flip W4-04 status in index with reviewer line.
+- **Five-minute test:** `git log develop -1 --oneline` → no W4-04 tiers; branch tip → `2c19b25` or later.
+
+## PRIOR (2026-07-31, W3-01 implemented on branch, pending review)
 
 - **Done:** W3-01 (grid geometry + random init) implemented on branch
   `ticket/w3-01-plan`. `Arena` (rows/cols per §6.1 v1.2, occupancy ≤ 2 via

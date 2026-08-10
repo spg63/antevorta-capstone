@@ -1,0 +1,10 @@
+# W4-04 — vote-margin tiers + mechanism comparison (spec §9.1).
+# One config, fixed split, all three aggregators on identical per-sample runs.
+name: mechanism_comparison
+kind: mechanism_comparison
+seed: 42
+n_runs: 10
+params:
+  crowd_config: configs/crowd_smoke.yaml
+  n_train: 400
+  n_test: 200

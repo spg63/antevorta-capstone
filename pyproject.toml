@@ -11,6 +11,9 @@ dependencies = [
   "numpy>=1.26",
   "pandas>=2.1",
   "scikit-learn>=1.4",
+  "scipy>=1.11",                              # W1-06: anchor_analysis imports scipy.stats directly.
+                                              # It arrived transitively via scikit-learn; a direct import
+                                              # is a direct dependency (§10.3 — the lockfile is the env).
   "pydantic>=2.6",                            # O3 ruling (team, STEP-0): pydantic v2, extra="forbid"
   "pyyaml>=6.0",
 ]
@@ -22,6 +25,8 @@ dev = [
   "mypy>=1.8",
   "ruff==0.15.22",                             # EXACT pin per wave plan §12-R5 (format drift); STEP-0 capture 2026-07-16
   "types-pyyaml>=6.0",                         # mypy strict needs yaml stubs (mechanical completion, see D2)
+  "pandas-stubs>=2.2",                         # W1: pandas ships no py.typed, so mypy strict needs stubs
+                                               # now that src/wocbots/data/ and tests/unit/data/ import it
 ]
 
 # D1 (mechanical completion, flagged in the PR): the plan's §7-S2 block omits a build
@@ -48,7 +53,12 @@ strict = true
 # W2-02: scikit-learn and threadpoolctl ship no type stubs / py.typed marker upstream
 # (untyped third parties). Ignore their missing imports ONLY; the wocbots classifier
 # wrappers are fully typed at the seam. Named + commented per the relaxation rule above.
-module = ["sklearn.*", "threadpoolctl", "threadpoolctl.*"]
+#
+# W1-06: scipy joins them for the same reason — it ships no py.typed and its stubs live in
+# a separate, independently-versioned `scipy-stubs` distribution. Only `anchor_analysis.py`
+# touches it (one call: `scipy.stats.pointbiserialr`), and that function's own return is
+# unpacked into floats immediately, so nothing untyped escapes into the toolkit.
+module = ["sklearn.*", "threadpoolctl", "threadpoolctl.*", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

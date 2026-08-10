@@ -124,10 +124,11 @@ def run_sample(
     if len(participants) < _DEGENERATE_THRESHOLD:
         record_degenerate_crowd(run_state.feedback)
         outcome = certainty_weighted_vote(participants)
+        prediction = outcome.to_prediction()
         prediction = Prediction(
-            class_label=outcome.class_label,
+            class_label=prediction.class_label,
             tier=_LOW_CONFIDENCE_TIER,
-            margin=None,
+            margin=prediction.margin,
         )
         result = SampleResult(
             participant_count=len(participants),
