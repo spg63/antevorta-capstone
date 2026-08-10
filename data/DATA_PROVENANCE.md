@@ -4,31 +4,41 @@ Raw files live locally at `data/raw/<dataset>/` and are **never committed** (see
 This file, its checksums, and the small fixture excerpts under `tests/fixtures/` are the
 committed record.
 
+**`movie-dataset.zip`:** the stakeholder-provided archive that supplies §1-2's raw files. It
+also contains two datasets this pipeline does not use — `movieDataset/` (Kaggle's "The Movies
+Dataset": `movies_metadata.csv`, `credits (1).csv`, `keywords.csv`, `links.csv`,
+`links_small.csv`, `ratings.csv`, `ratings_small.csv`) and `IMDBMovieData.csv`. Unzip only its
+`tmdb/` and `movielens/` folders into `data/raw/`; the other files can be left alone (or
+deleted) since no W1-03 rule (§4.3) reads them.
+
 ## 1. TMDb 5000 Movie Dataset
 
 - **Source:** Kaggle, "TMDB 5000 Movie Dataset" (`tmdb/5000-movies`).
 - **License / ToS:** Kaggle-hosted; underlying data sourced from TMDb under TMDb's terms of
   use (non-commercial, attribution). Fixture excerpts below are kept minimal per the
   repo-public rule (index v1.9).
-- **Files acquired:** `tmdb_5000_movies.csv`, `tmdb_5000_credits.csv`.
-- **Local path:** `data/raw/tmdb5000/`.
+- **Files acquired:** `tmdb/movies.csv`, `tmdb/credits.csv` (bundled inside
+  `movie-dataset.zip` as `tmdb/movies.csv` / `tmdb/credits.csv`; byte-identical to the
+  standalone Kaggle download's `tmdb_5000_movies.csv` / `tmdb_5000_credits.csv`).
+- **Local path:** `data/raw/tmdb/` (unzip `movie-dataset.zip`'s `tmdb/` folder here).
 - **Download recorded:** 2026-07-25 (files supplied directly by the stakeholder-provided
   archive; original Kaggle file dates 2019-09-19).
 
 | File | Rows (excl. header) | Size (bytes) | SHA-256 |
 |---|---:|---:|---|
-| `tmdb_5000_movies.csv` | 4,803 | 5,698,602 | `1e0584a8dd374120e4ed4f2b81f0d2bd0eb95a554708e4a350d00ed5c46d2825` |
-| `tmdb_5000_credits.csv` | 4,803 | 40,044,293 | `9d0050599ff88d40366c4841204b1489862bca346bfa46c20b05a65d14508435` |
+| `movies.csv` | 4,803 | 5,698,602 | `1e0584a8dd374120e4ed4f2b81f0d2bd0eb95a554708e4a350d00ed5c46d2825` |
+| `credits.csv` | 4,803 | 40,044,293 | `9d0050599ff88d40366c4841204b1489862bca346bfa46c20b05a65d14508435` |
 
 ## 2. MovieLens 20M
 
 - **Source:** Kaggle mirror of GroupLens "MovieLens 20M Dataset" (`grouplens/movielens-20m-dataset`).
 - **License / ToS:** GroupLens research-use license (non-commercial, no redistribution of the
   full dataset). Fixture excerpts below are ~50-row samples only, consistent with that term.
-- **Files acquired (subset needed for W1):** `link.csv`, `movie.csv`, `rating.csv`. (`tag.csv`,
-  `genome_tags.csv`, `genome_scores.csv` were also supplied but are not consumed by the
-  Hollywood pipeline — §4.3 does not name them — and are therefore not fixtured here.)
-- **Local path:** `data/raw/movielens20m/`.
+- **Files acquired (subset needed for W1):** `link.csv`, `movie.csv`, `rating.csv`, all under
+  `movie-dataset.zip`'s `movielens/` folder. (`tag.csv`, `genome_tags.csv`,
+  `genome_scores.csv` were also supplied but are not consumed by the Hollywood pipeline —
+  §4.3 does not name them — and are therefore not fixtured here.)
+- **Local path:** `data/raw/movielens/` (unzip `movie-dataset.zip`'s `movielens/` folder here).
 - **Download recorded:** 2026-07-25 (stakeholder-provided archive; original file dates
   2019-09-20).
 

@@ -31,29 +31,35 @@ class FileProvenance:
 # pandas.read_csv(...).shape[0] for the TMDb/links/movie files (they contain embedded
 # commas/newlines inside quoted JSON fields, so a naive line count under-/over-counts);
 # rating.csv is pure numeric CSV, so `wc -l` minus the header is exact.
+#
+# Paths below match the layout of the `movie-dataset.zip` bundle (unzip it straight into
+# `data/raw/`, giving `data/raw/tmdb/...` and `data/raw/movielens/...`). The files are
+# byte-identical to the original standalone Kaggle downloads (`tmdb_5000_movies.csv` /
+# `tmdb_5000_credits.csv` / movielens `link.csv` / `movie.csv` / `rating.csv`) — only the
+# folder names and on-disk filenames changed, so the checksums/row counts are unchanged.
 RAW_FILES: tuple[FileProvenance, ...] = (
     FileProvenance(
-        "tmdb5000/tmdb_5000_movies.csv",
+        "tmdb/movies.csv",
         "1e0584a8dd374120e4ed4f2b81f0d2bd0eb95a554708e4a350d00ed5c46d2825",
         4803,
     ),
     FileProvenance(
-        "tmdb5000/tmdb_5000_credits.csv",
+        "tmdb/credits.csv",
         "9d0050599ff88d40366c4841204b1489862bca346bfa46c20b05a65d14508435",
         4803,
     ),
     FileProvenance(
-        "movielens20m/link.csv",
+        "movielens/link.csv",
         "80b677ee7c159b0e8716ed6c5f86932b0ffa029b421ebc05ded338bc69c7a7e2",
         27278,
     ),
     FileProvenance(
-        "movielens20m/movie.csv",
+        "movielens/movie.csv",
         "45763d3eaf1235bca9e5e5b93d41d1ba03823c485c9d3fead23ea0c5eafa6b3a",
         27278,
     ),
     FileProvenance(
-        "movielens20m/rating.csv",
+        "movielens/rating.csv",
         "9ec53ccb3e51c78fd31a451499f1c856c5c778766a7e7979683741ffb696adca",
         20000263,
     ),
