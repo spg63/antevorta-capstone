@@ -284,6 +284,6 @@ tests live in `tests/unit/test_init_policy.py`.
 1. [X] `pytest` passes.
 1. [X] No results manifest is claimed or expected for this pure interface ticket.
 1. [X] Touched paths are listed in close report.
-1. [ ] Independent review signs off and `tickets/00_INDEX.md` is flipped with
+1. [X] Independent review signs off and `tickets/00_INDEX.md` is flipped with
     `OK (reviewed: <who/what>, <date>)`.
 1. [X] `AGENT_HANDOFF.md` is updated with the new CURRENT STATE.

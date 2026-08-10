@@ -1,0 +1,7 @@
+name: w3_02_movement_smoke
+kind: w3_02_movement_smoke
+seed: 42
+n_runs: 5
+params:
+  n_agents: 20
+  teleport_rate: 0.05
