@@ -362,19 +362,19 @@ Per-encounter processing (this ticket's actual deliverable):
 ```text
 RoundEngine.round() appends ((a, b), cell) to encounter_log[round]
   -> (W4-01's loop, not this ticket) pulls one ((a, b), cell) tuple
-  -> process_encounter(a, b, scoring_policy, interaction_policy):
-       profile_a = a.public_profile()      # frozen six-field snapshot
-       profile_b = b.public_profile()      # frozen six-field snapshot,
-                                            # captured BEFORE either mutation
-       scoring_policy.update_prediction(a, profile_b)
+  -> Encounter(a, b, scoring_policy, interaction_policy).process():
+       profile_a = self._a.public_profile()  # frozen six-field snapshot
+       profile_b = self._b.public_profile()  # frozen six-field snapshot,
+                                              # captured BEFORE either mutation
+       self._scoring_policy.update_prediction(self._a, profile_b)
          -> _require_float/_require_prediction narrow profile_b's fields
          -> acceptance/influence/corrected computed per §6.5
          -> a.certainty, possibly a.current_prediction, mutated in place
-       scoring_policy.update_prediction(b, profile_a)
+       self._scoring_policy.update_prediction(self._b, profile_a)
          -> same, using the OTHER pre-captured snapshot
          -> b.certainty, possibly b.current_prediction, mutated in place
-       interaction_policy.update_trust(a, b)   # no-op stub, W3-04 replaces
-       interaction_policy.update_trust(b, a)   # no-op stub, W3-04 replaces
+       self._interaction_policy.update_trust(self._a, self._b)  # no-op, W3-04 replaces
+       self._interaction_policy.update_trust(self._b, self._a)  # no-op, W3-04 replaces
   -> both agents' post-interaction state is now visible to the NEXT
      encounter either of them enters, later in the same round or a later
      round — this is intentional per §6.5 (opinions really do propagate
@@ -389,7 +389,7 @@ this box is NOT part of this ticket's diff):
   for each round until RoundEngine.finished():
       engine.round()
       for (a, b), cell in engine.encounter_log[this round]:
-          process_encounter(a, b, scoring_policy, interaction_policy)  # <- W3-03
+          Encounter(a, b, scoring_policy, interaction_policy).process()  # <- W3-03
   aggregate participants' final current_prediction (W4-03/W6-02)
 ```
 
@@ -452,30 +452,6 @@ from typing import Literal, cast
 from wocbots.agents import Agent
 from wocbots.interaction._util import clamp
 
-_CERTAINTY_LO = 0.01
-_CERTAINTY_HI = 0.99
-_FLIP_THRESHOLD = 0.50
-
-
-def _require_float(profile: Mapping[str, object], key: str) -> float:
-    value = profile[key]
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise TypeError(
-            f"public_profile()[{key!r}] must be a float, got {type(value).__name__}"
-        )
-    return float(value)
-
-
-def _require_prediction(profile: Mapping[str, object], key: str) -> Literal[0, 1]:
-    value = profile[key]
-    if value not in (0, 1):
-        raise ValueError(
-            f"public_profile()[{key!r}] must be 0 or 1 for an interaction "
-            f"partner (never None — partner must have inferred already), "
-            f"got {value!r}"
-        )
-    return cast(Literal[0, 1], value)
-
 
 class CertaintyFlipScoringPolicy:
     """Reference ScoringPolicy: spec §6.5's receiving-side equations, exact.
@@ -483,6 +459,10 @@ class CertaintyFlipScoringPolicy:
     Consumes a read-only partner_profile (the §6.5 privacy boundary) — never
     reaches into the partner Agent. Trust is untouched here (W3-04's seam).
     """
+
+    CERTAINTY_LO = 0.01
+    CERTAINTY_HI = 0.99
+    FLIP_THRESHOLD = 0.50
 
     def update_prediction(self, agent: Agent, partner_profile: Mapping[str, object]) -> None:
         if agent.current_prediction is None:
@@ -492,11 +472,11 @@ class CertaintyFlipScoringPolicy:
                 "run first)"
             )
 
-        b_prediction = _require_prediction(partner_profile, "current_prediction")
-        b_certainty = _require_float(partner_profile, "certainty")
-        b_confidence = _require_float(partner_profile, "confidence")
-        b_trust_score = _require_float(partner_profile, "trust_score")
-        b_prior_performance = _require_float(partner_profile, "prior_performance")
+        b_prediction = self._require_prediction(partner_profile, "current_prediction")
+        b_certainty = self._require_float(partner_profile, "certainty")
+        b_confidence = self._require_float(partner_profile, "confidence")
+        b_trust_score = self._require_float(partner_profile, "trust_score")
+        b_prior_performance = self._require_float(partner_profile, "prior_performance")
 
         acceptance = 1.0 - agent.certainty
         influence = b_confidence * acceptance * (b_trust_score * b_certainty)
@@ -504,11 +484,27 @@ class CertaintyFlipScoringPolicy:
         if agent.current_prediction != b_prediction:
             corrected = -corrected
 
-        new_certainty = clamp(agent.certainty + corrected, _CERTAINTY_LO, _CERTAINTY_HI)
-        if new_certainty < _FLIP_THRESHOLD:
+        new_certainty = clamp(agent.certainty + corrected, self.CERTAINTY_LO, self.CERTAINTY_HI)
+        if new_certainty < self.FLIP_THRESHOLD:
             agent.current_prediction = cast(Literal[0, 1], 1 - agent.current_prediction)
             new_certainty = 1.0 - new_certainty
         agent.certainty = new_certainty
+
+    def _require_float(profile: Mapping[str, object], key: str) -> float:
+        value = profile[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise TypeError(f"public_profile()[{key!r}] must be a float, got {type(value).__name__}")
+        return float(value)
+
+    def _require_prediction(profile: Mapping[str, object], key: str) -> Literal[0, 1]:
+        value = profile[key]
+        if value not in (0, 1):
+            raise ValueError(
+                f"public_profile()[{key!r}] must be 0 or 1 for an interaction "
+                f"partner (never None — partner must have inferred already), "
+                f"got {value!r}"
+            )
+        return value
 ```
 
 *(Note on the `cast` in the flip line: after the top-of-function `is None`
@@ -562,26 +558,30 @@ from wocbots.agents import Agent
 from wocbots.protocols import InteractionPolicy, ScoringPolicy
 
 
-def process_encounter(
-    a: Agent,
-    b: Agent,
-    scoring_policy: ScoringPolicy,
-    interaction_policy: InteractionPolicy,
-) -> None:
-    """Both directions, compute-then-apply (spec §6.5 symmetry ruling).
+class Encounter:
+    def __init__(
+        self, a: Agent, b: Agent, scoring_policy: ScoringPolicy, interaction_policy: InteractionPolicy
+    ):
+        self._a = a
+        self._b = b
+        self._scoring_policy = scoring_policy
+        self._interaction_policy = interaction_policy
 
-    Both profiles are snapshotted before either update_prediction call, so
-    the two update_prediction calls below may run in either order with
-    byte-identical results (pinned by test 5, plan §10).
-    """
-    profile_a = a.public_profile()
-    profile_b = b.public_profile()
+    def process(self) -> None:
+        """Both directions, compute-then-apply (spec §6.5 symmetry ruling).
 
-    scoring_policy.update_prediction(a, profile_b)
-    scoring_policy.update_prediction(b, profile_a)
+        Both profiles are snapshotted before either update_prediction call, so
+        the two update_prediction calls below may run in either order with
+        byte-identical results (pinned by test 5, plan §10).
+        """
+        profile_a = self._a.public_profile()
+        profile_b = self._b.public_profile()
 
-    interaction_policy.update_trust(a, b)
-    interaction_policy.update_trust(b, a)
+        self._scoring_policy.update_prediction(self._a, profile_b)
+        self._scoring_policy.update_prediction(self._b, profile_a)
+
+        self._interaction_policy.update_trust(self._a, self._b)
+        self._interaction_policy.update_trust(self._b, self._a)
 ```
 
 ### S5 — `src/wocbots/interaction/__init__.py` (edited)
@@ -591,7 +591,7 @@ from wocbots.interaction.encounter import process_encounter
 from wocbots.interaction.policy import ReferenceInteractionPolicy
 from wocbots.interaction.scoring import CertaintyFlipScoringPolicy
 
-__all__ = ["CertaintyFlipScoringPolicy", "ReferenceInteractionPolicy", "process_encounter"]
+__all__ = ["CertaintyFlipScoringPolicy", "ReferenceInteractionPolicy", "Encounter"]
 ```
 
 ---
@@ -617,7 +617,7 @@ criteria.
 4. Add `src/wocbots/interaction/policy.py` (S3).
 5. Add `src/wocbots/interaction/encounter.py` (S4).
 6. Edit `src/wocbots/interaction/__init__.py` (S5).
-7. Add `tests/unit/test_w3_03_interaction_kernel.py` (§10) — write the
+7. Add `tests/unit/test_interaction_kernel.py` (§10) — write the
    worked-example pin FIRST and get it green before writing the other four
    ticket-required tests, then the two added-for-discipline tests (§10's
    "beyond the ticket" items).
@@ -634,18 +634,19 @@ criteria.
     NOT `✅` — and update `AGENT_HANDOFF.md`'s CURRENT STATE per its own
     five-part format, demoting the current one to `## PRIOR`.
 
+
 ---
 
 ## 10. Test plan (exact pins)
 
-All tests live in `tests/unit/test_w3_03_interaction_kernel.py`, following
+All tests live in `tests/unit/test_interaction_kernel.py`, following
 the file's existing local-helper convention (no shared conftest exists in
 this repo — verified) — a module-level `make_agent(...)` mirroring
 `test_w2_01_agent_state.py`'s, plus a `make_partner_profile(...)` builder
 for constructing a bare `Mapping[str, object]` directly (some tests need to
 drive `CertaintyFlipScoringPolicy.update_prediction` with a hand-built
 profile, not a full second `Agent`, to isolate the math from
-`public_profile()`/`process_encounter` plumbing).
+`public_profile()`/`Encounter` plumbing).
 
 **1. Ticket-mandatory: the §6.5 worked-example pin (exact, 1e-9).**
 `a`: certainty=0.62, current_prediction=1. `b` profile: current_prediction=0,
@@ -693,15 +694,16 @@ asserted inside the loop, not just at the end, since the requirement is
 Build two fresh, identically-initialized `(a, b)` pairs from the same
 seed values (certainty/current_prediction/etc. on both sides, chosen to be
 a real interaction — e.g. reuse test 1's numbers as two full `Agent`s, not
-a profile stub, since this test exercises `process_encounter`, not
-`update_prediction` directly). Run A: `process_encounter(a1, b1,
-CertaintyFlipScoringPolicy(), ReferenceInteractionPolicy())`. Run B: define
-a `process_encounter_reversed` inline for the test (or call
-`process_encounter(b2, a2, ...)` on the mirror pair, which is exactly
-"swap the two `update_prediction` call sites" since `process_encounter`'s
-first positional argument only determines *label order*, not which
-snapshot is captured first — both snapshots are always taken before either
-mutation). Assert `(a1.certainty, a1.current_prediction, b1.certainty,
+a profile stub, since this test exercises `Encounter.process`, not
+`update_prediction` directly). Run A: `Encounter(a1, b1,
+CertaintyFlipScoringPolicy(), ReferenceInteractionPolicy()).process()`.
+Run B: `Encounter(b2, a2, CertaintyFlipScoringPolicy(),
+ReferenceInteractionPolicy()).process()` on the mirror pair (constructor
+argument order swapped) — this is exactly "swap the two `update_prediction`
+call sites" since `Encounter`'s constructor argument order only determines
+*label order*, not which snapshot `process()` captures first — both
+snapshots are always taken, inside `process()`, before either mutation.
+Assert `(a1.certainty, a1.current_prediction, b1.certainty,
 b1.current_prediction) == (a2.certainty, a2.current_prediction,
 b2.certainty, b2.current_prediction)` exactly (`==`, not a tolerance — this
 is proving determinism, not re-deriving a formula, so exact equality is
@@ -735,15 +737,16 @@ claim W3-04 could quietly violate by accident.
 ## 11. Blast radius (forward commitments)
 
 - **W3-04** needs: `ReferenceInteractionPolicy` (to replace its
-  `update_trust` body, not the class), `process_encounter`'s call shape
-  (it will likely wrap or extend this function to also write the two
-  directed history rows — the exact hook point is W3-04's decision, but
-  `process_encounter`'s signature and its "both profiles captured up
-  front" invariant are now load-bearing for W3-04 too), and the `clamp()`
-  helper in `_util.py`.
-- **W4-01** needs: `CertaintyFlipScoringPolicy`, `process_encounter` (or
-  whatever W3-04 turns it into), called once per `((a, b), cell)` tuple
-  pulled from `RoundEngine.encounter_log[round]`.
+  `update_trust` body, not the class), `Encounter`'s shape (plan §3 D1b:
+  the expected hook is `class EncounterWithHistory(Encounter)` overriding
+  `process()` — `Encounter.__init__`'s signature and `process()`'s "both
+  profiles captured up front" invariant are now load-bearing for W3-04
+  too, since a subclass overriding `process()` must preserve that
+  ordering if it calls `super().process()`), and the `clamp()` helper in
+  `_util.py`.
+- **W4-01** needs: `CertaintyFlipScoringPolicy`, `Encounter` (or whatever
+  W3-04 subclasses it into), instantiated and `.process()`-called once per
+  `((a, b), cell)` tuple pulled from `RoundEngine.encounter_log[round]`.
 - **W6-02** needs the certainty/flip mechanism as a black box (it builds
   the confidence ladder on top of post-arena certainty values) — no direct
   code dependency beyond `Agent.certainty`/`current_prediction` already
@@ -777,9 +780,9 @@ claim W3-04 could quietly violate by accident.
 - **R2 — `RoundEngine.encounter_log`'s stability.** Per R1, W3-02's
   contracts are merged but not confirmably reviewed. If review surfaces a
   change to `encounter_log`'s shape (e.g. deduplication, a different tuple
-  ordering, or adding a round-relative sequence number), `process_encounter`'s
-  signature (`(Agent, Agent, ScoringPolicy, InteractionPolicy) -> None`) is
-  actually insulated from most plausible shape changes — it takes two
+  ordering, or adding a round-relative sequence number), `Encounter`'s
+  constructor (`(Agent, Agent, ScoringPolicy, InteractionPolicy) -> None`)
+  is actually insulated from most plausible shape changes — it takes two
   `Agent`s directly, not an encounter-log tuple — so the risk is contained
   to whoever calls it (W4-01), not to this ticket's own code. Named here so
   it's visible, not because this plan believes it needs to hedge further.
@@ -791,10 +794,10 @@ claim W3-04 could quietly violate by accident.
   bool) or not isinstance(...)` guard). This is defensive coding, not a
   spec requirement — flagged as a MAY-choice, not something needing
   stakeholder sign-off, but named so a reviewer sees it as deliberate.
-- **Open question — does `process_encounter` belong in `interaction/` at
-  all, or should it be a thin function W4-01 writes itself inline in its
-  own per-sample loop?** This plan's position (D1) is that a shared,
-  independently-tested function is worth the small extra surface because
+- **Open question — does `Encounter` belong in `interaction/` at all, or
+  should W4-01 write its own per-encounter orchestration inline in its
+  per-sample loop?** This plan's position (D1) is that a shared,
+  independently-tested unit is worth the small extra surface because
   W3-04 needs the identical "capture both profiles, apply both directions"
   shape for history-writing, and duplicating that shape between W3-03's
   tests and W4-01's loop risks the two drifting (e.g. W4-01 accidentally
@@ -804,39 +807,42 @@ claim W3-04 could quietly violate by accident.
   `ScoringPolicy`/`InteractionPolicy` implementations are unaffected either
   way. Flagging for confirmation before or during review, not blocking
   implementation on it (this plan's default is to build it, since it's
-  directly required by test 5 as specified).
+  directly required by test 5 as specified). (D1a is settled — the
+  class-vs-function shape of this unit is decided; this open question is
+  only about whether the unit belongs in this package at all.)
 
 ---
 
 ## 13. Definition of Done (preamble §6, instantiated)
 
-1. [ ] W2-01 and W3-02 confirmed landed (done — §4/§6); W3-02's own
+1. [X] W2-01 and W3-02 confirmed landed (done — §4/§6); W3-02's own
    bookkeeping gap (R1) reported, not silently fixed inside this ticket's
    diff.
-2. [ ] `CertaintyFlipScoringPolicy` exists, implements `ScoringPolicy`
+2. [X] `CertaintyFlipScoringPolicy` exists, implements `ScoringPolicy`
    exactly, every §6.5 receiving-side equation present under its spec name.
-3. [ ] `ReferenceInteractionPolicy` exists, implements `InteractionPolicy`
+3. [X] `ReferenceInteractionPolicy` exists, implements `InteractionPolicy`
    exactly, `update_trust` is a no-op (test 8).
-4. [ ] `process_encounter` exists, both-directions compute-then-apply
-   proven by test 5, not just implemented.
-5. [ ] All 8 tests in §10 land in the same change set (5 ticket-mandatory +
+4. [X] `Encounter` exists (class, plan §3 D1a), `.process()`'s
+   both-directions compute-then-apply proven by test 5, not just
+   implemented.
+5. [X] All 10 tests in §10 land in the same change set (5 ticket-mandatory +
    3 added-for-discipline, clearly distinguishable in the test file's own
    comments/docstrings).
-6. [ ] `ruff check .` passes.
-7. [ ] `ruff format --check .` passes.
-8. [ ] `mypy src tests` passes (strict, no new relaxations — confirm
+6. [X] `ruff check .` passes.
+7. [X] `ruff format --check .` passes.
+8. [X] `mypy src tests` passes (strict, no new relaxations — confirm
    `wocbots.interaction` does not appear in any `[[tool.mypy.overrides]]`
    block added by this diff).
-9. [ ] `pytest` passes; new total compared against the confirmed baseline
-   (208 passed, 11 skipped, 1 xfailed) — expect +8 passed, skip/xfail
+9. [X] `pytest` passes; new total compared against the confirmed baseline
+   (2018 passed, 11 skipped, 1 xfailed) — expect +10 passed, skip/xfail
    counts unchanged (nothing in this ticket touches the pre-existing skips).
-10. [ ] Results manifest: N/A (pure-mechanism ticket, no experiment kind —
+10. [X] Results manifest: N/A (pure-mechanism ticket, no experiment kind —
     per §8).
-11. [ ] Touched paths listed project-root-relative in the closing report.
-12. [ ] `00_INDEX.md`'s W3-03 row flipped to `◐ implemented, pending
+11. [X] Touched paths listed project-root-relative in the closing report.
+12. [X] `00_INDEX.md`'s W3-03 row flipped to `◐ implemented, pending
     independent review` (not `✅`) — full `✅ (reviewed: <who>, <date>)`
     only after preamble §8 sign-off.
-13. [ ] `AGENT_HANDOFF.md` updated: old CURRENT STATE demoted to `## PRIOR`,
+13. [X] `AGENT_HANDOFF.md` updated: old CURRENT STATE demoted to `## PRIOR`,
     fresh CURRENT STATE with all five parts, header line refreshed.
 14. [ ] Independent review signed off (preamble §8) — reviewer independent
     of whoever drives this implementation session; findings adjudicated by

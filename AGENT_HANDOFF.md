@@ -69,6 +69,26 @@ resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data
   (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
   labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
 
+## PRIOR (2026-08-15, W3-03 implemented, pending independent review)
+
+- **Done:** W3-03 (interaction kernel: certainty update and prediction flip)
+  implemented on branch `ticket/w3-03`. `CertaintyFlipScoringPolicy`,
+  `ReferenceInteractionPolicy`, and `Encounter` land in
+  `src/wocbots/interaction/`. Check suite green: ruff / ruff-format /
+  mypy-strict / pytest all pass (218 passed, 11 skipped, 1 xfailed — +10 new
+  pinned tests in `tests/unit/test_interaction_kernel.py`). Pure-mechanism
+  ticket (results manifest N/A). Plan and closing report:
+  `tickets/W3-03_certainty-update-flip_PLAN.md` and
+  `tickets/W3-03_certainty-update-flip_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-03 awaiting independent review sign-off
+  (preamble §8); W3-04 (history store + trust updates) unblocked for planning
+  and implementation.
+- **Owner-attention:** Independent reviewer needed for W3-03.
+- **Next step:** Independent review of W3-03 → flip `00_INDEX.md` row to
+  `✅ (reviewed: <who>, <date>)` → proceed to W3-04.
+- **Five-minute test:** `uv run pytest tests/unit/test_interaction_kernel.py -q`
+  → 10 passed; `python -c "from wocbots.interaction import CertaintyFlipScoringPolicy, ReferenceInteractionPolicy, Encounter"`.
+
 ## PRIOR (2026-08-15, W3-02 reviewed and merged on develop)
 
 - **Done:** @rootwij merged and reviewed W3-02 in #21
