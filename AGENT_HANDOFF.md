@@ -69,6 +69,16 @@ resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data
   (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
   labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
 
+## PRIOR (2026-08-15, W3-02 reviewed and merged on develop)
+
+- **Done:** @rootwij merged and reviewed W3-02 in #21
+- **In flight / blocked:** W3-03, W4-01 unblocked, plan and implementation in
+  progress
+- **Owner-attention:** Reviewer didn't update 00_INDEX.md nor pull request
+  checklist nor PLAN's DoD.
+- **Next step:** Finish W3-03's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
 ## PRIOR (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
 
 - **Done:** W1-05 S1/S2/S3 run against the real shipped label from
