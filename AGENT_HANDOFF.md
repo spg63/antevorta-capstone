@@ -21,7 +21,90 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-14, W1-02 S1/S2 implemented, pending independent review)
+## CURRENT STATE (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
+
+- **Done:** W1-05 S1/S2/S3 run against the real shipped label from
+  `data/hollywood_features_labeled_variant_a.csv` (3,032 rows, variant (a) label — see
+  W1-04's RESULT block). `src/wocbots/data/splits.py` gained persistence
+  (`write_split_artifact`/`load_split_artifact`, npz for id arrays + JSON for
+  seed/feature-columns/scaler params, mirroring `wocbots.data.ground_truth`'s writer
+  convention) — it previously only built `SplitArtifact` in memory with no save path.
+  `scripts/build_w1_05_splits.py` (new CLI runner, same shape as
+  `extract_w1_02_reference.py`) ran with the project's standard seed (42, per
+  `configs/*.yaml`) and produced `data/derived/split_v1.json` +
+  `data/derived/split_v1.npz` (gitignored derived artifacts, per `data/README.md` policy).
+  Result: 2,182 train / 243 eval / 607 test, 5 folds, 9 feature columns
+  (`revenue` structurally excluded). Stratification holds within 0.1pt of the overall
+  56.07% positive rate across train/eval/test — well inside the ±1pt requirement (this is
+  stratification quality, unrelated to and not fixing W1-04's published-balance gap).
+  Scaler params (train-only) verified to put scaled train features in [0, 1].
+  `tests/unit/data/test_splits.py` gained a persistence round-trip test. Full repo suite:
+  **215 passed, 13 skipped, 0 failed** (`uv run pytest -q`); RNG-discipline guard
+  (`tests/unit/test_rng_discipline.py`) confirms the new script's `default_rng` call
+  doesn't need allowlisting since it's outside `src/wocbots/`, the guard's only scope.
+
+- **In flight / blocked — carried forward, NOT resolved by this session:**
+  1. **W1-06 (anchor analysis) has not been run against this real split yet.** The code
+     (`wocbots.data.anchor_analysis`) is implemented and unit-tested against synthetic
+     data only. Running it against `data/derived/split_v1`'s real train ids is the
+     literal next step to close W1-06's RESULT block and finish the W1 wave.
+  2. **W1-02's independence gap** (see the 2026-08-14 entry below) is unaffected by this
+     work — still permanent, not pending.
+
+- **Owner-attention:** none new. W1-05 is done per its own acceptance criteria.
+
+- **Next step:** run W1-06's anchor analysis (`wocbots.data.anchor_analysis.rank_features`)
+  against the real train split (`data/derived/split_v1`, loadable via
+  `wocbots.data.splits.load_split_artifact`), verify `budget`/`vote_count` top the ranking
+  as spec §9.2 expects, choose the anchor set, and fill the ticket's RESULT block. That's
+  the last open item in the W1 wave.
+
+- **Five-minute test:** `uv run python scripts/build_w1_05_splits.py` (regenerates
+  `data/derived/split_v1.*` deterministically — same seed, same output); `uv run pytest
+  tests/unit/data/test_splits.py -q` (expect 10 passed).
+
+## PRIOR (2026-08-15, W1-04 label gate ruled and closed — variant (a) shipped)
+
+- **Done:** The owner-attention decision from the 2026-08-14 entry below is resolved: label
+  columns are ruled OUT OF SCOPE for this dataset snapshot (option (a)), and variant (a)
+  (`revenue > 2×budget`, spec §4.3.7) ships as THE label, undefended — ratified by Anurag
+  Ravishankar Simha (project owner), 2026-08-15. `tickets/W1-04_labels-validation-gate.md`'s
+  RESULT block is filled: shipped balance 43.93/56.07 (n=3,032, computed on
+  `data/raw/movies.sqlite`), does NOT match the published 47.5/52.5 (outside ±1pt tolerance) —
+  that mismatch is accepted, not silently fixed. `src/wocbots/data/labels.py` and
+  `src/wocbots/data/ground_truth.py` docstrings updated to state the ruling instead of
+  describing an open block. `tests/unit/data/test_labels.py`'s xfail
+  (`test_class_balance_within_one_point_of_published_split`) replaced with a passing
+  regression pin (`test_shipped_label_balance_matches_ratified_result`) on the ratified
+  numbers — it does not re-impose the published-balance requirement the ruling waived.
+  `data/hollywood_features_labeled_variant_a.csv` regenerated locally (gitignored, per
+  `data/*.csv` policy) from `movies.sqlite`. Check suite: `pytest tests/unit/data -q` → 37
+  passed, 12 skipped, 0 xfailed.
+
+- **In flight / blocked — carried forward, NOT resolved by this ruling:**
+  1. **W1-02's independence gap is still open and now permanent, not just pending.** Because
+     the label gap is ruled out of scope rather than unblocked, `movies.sqlite` will not
+     become an independent reference later unless someone supplies actual `antevorta-db`
+     output — nothing in this session changes that likelihood.
+  2. **W1-05 and W1-06 have not yet been re-run against the real shipped label.** W1-05's
+     splits/scaling code and W1-06's anchor-analysis code are implemented and unit-tested
+     against fixtures/synthetic data, but neither has been executed against
+     `data/hollywood_features_labeled_variant_a.csv` to produce real split artifacts or fill
+     W1-06's RESULT block. That's the next concrete step to actually finish the W1 wave.
+
+- **Owner-attention:** none outstanding for W1-04 — this entry closes it. W1-05/W1-06 need a
+  session to actually run them against the real labeled data, not a ruling.
+
+- **Next step:** run W1-05 (`wocbots.data.splits`) against
+  `data/hollywood_features_labeled_variant_a.csv` to produce the persisted 80/20 splits +
+  scaler artifacts, then run W1-06's anchor analysis on the resulting train split and fill its
+  RESULT block. That closes out the W1 wave per its own acceptance criteria.
+
+- **Five-minute test:** `uv run pytest tests/unit/data -q` (expect 37 passed, 12 skipped, 0
+  xfailed); `cat tickets/W1-04_labels-validation-gate.md` and check the RESULT block is
+  checked, not blank.
+
+## PRIOR (2026-08-14, W1-02 S1/S2 implemented, pending independent review)
 
 - **Done:** W1-02's S1 is resolved by stakeholder ruling (Sean Grimes, email "Re: Antevorta
   SQLite", 2026-08-14): ground truth is built by CSV-porting through the existing W1-03

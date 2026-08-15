@@ -1,14 +1,19 @@
-"""W1-04: the Hollywood label, and the reconciliation gate between its two candidate
-definitions. See spec §4.3 item 7 and this ticket's RESULT block for the ruling.
+"""W1-04: the Hollywood label. See spec §4.3 item 7 and this ticket's RESULT block for the
+ruling.
 
 Variant (a) — `revenue > 2 * budget` — is the spec's stated rule (§4.3.7) and is fully
-computable from W1-03's output alone.
+computable from W1-03's output alone. **This is the shipped label** (ratified 2026-08-15,
+see the ticket's RESULT block): reference-column reconciliation was ruled out of scope
+because no independent `antevorta-db` source or built ground truth was ever available (W1-02's
+own `movies.sqlite` is built by the same W1-03 logic it would need to validate against, so it
+is not independent). Variant (a) ships **undefended** — without row-level validation against
+an independent reference, and its measured class balance (43.9/56.1) does not match the
+published 47.5/52.5 within tolerance. That is a documented scope cut, not a silent one.
 
-Variant (b) — the antevorta-db reference's `made_more_than_2x_budget` column — requires
-W1-02's ground-truth extraction, which is blocked in this session (no antevorta-db source
-or built SQLite was available; see `data/DATA_PROVENANCE.md` §5). `variant_b_from_reference`
-is provided so W1-02, once unblocked, only needs to hand this function a reference
-dataframe — it does not require touching this module again.
+Variant (b) — the antevorta-db reference's `made_more_than_2x_budget` column — was never
+computed and, per the ruling above, is no longer expected to be. `variant_b_from_reference` is
+kept as an unexercised stub in case a genuine independent reference is supplied later; nothing
+downstream depends on it.
 """
 
 from __future__ import annotations

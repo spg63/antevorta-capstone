@@ -25,9 +25,12 @@ validates nothing") -- so this module extracts and versions everything that IS i
 file, and leaves the label columns explicitly absent and flagged, rather than inventing them.
 
 Downstream effect: W1-04's S1-S3 (row-level reference validation, the two-label-variant
-reconciliation gate) cannot run in the form that ticket specifies, because there is no
-independent reference to validate against. That is a fact for W1-04's session to record when it
-runs, not something this module papers over.
+reconciliation gate) could not run in the form that ticket specifies, because there is no
+independent reference to validate against. **Resolved 2026-08-15** (see W1-04's ticket RESULT
+block): reference-column reconciliation was ruled out of scope; variant (a) (`revenue > 2 *
+budget`) ships as THE label, undefended, without matching the published class balance. This
+module's job stops at "no reference exists" — it is not responsible for that ruling, only for
+not papering over the gap it created.
 """
 
 from __future__ import annotations
