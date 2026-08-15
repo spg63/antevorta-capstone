@@ -21,7 +21,50 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-07, W3-02 implemented, pending independent review)
+## CURRENT STATE (2026-08-14, W1-02 S1/S2 implemented, pending independent review)
+
+- **Done:** W1-02's S1 is resolved by stakeholder ruling (Sean Grimes, email "Re: Antevorta
+  SQLite", 2026-08-14): ground truth is built by CSV-porting through the existing W1-03
+  pipeline (`scripts/build_movies_sqlite.py`), not the antevorta-db JVM build, and not a
+  row-level extraction from the antevorta-db instance. S2 (extraction/versioning/counts) is
+  implemented against that file: `src/wocbots/data/ground_truth.py`
+  (`extract_reference`/`write_versioned_reference`/`write_excerpt`),
+  `scripts/extract_w1_02_reference.py` (CLI runner), `tests/unit/data/test_ground_truth.py` (7
+  tests: 5 pass against a local `data/raw/movies.sqlite`, 2 explicit named skips — not silent
+  gaps — for the parts the ruling doesn't cover), committed excerpt
+  `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv`. Full counts + the exact
+  ruling quote recorded in `data/DATA_PROVENANCE.md` §5. Check suite run locally on the
+  touched files: `pytest tests/unit/data -q` → 36 passed, 12 skipped, 1 xfailed (pre-existing
+  skips/xfail unchanged by this work).
+
+- **In flight / blocked — carried forward, NOT resolved by this session:**
+  1. **W1-02's independence gap.** `movies.sqlite` is produced by the same W1-03 logic it would
+     need to validate — it is not an independent reference. This is now explicitly documented
+     (not silently accepted) in `data/DATA_PROVENANCE.md` §5, item 1.
+  2. **Label columns.** No label columns exist anywhere in scope (not in `movies.sqlite`, not
+     supplied separately). The stakeholder's ruling addressed the SQLite *build method*, not
+     the label *formula* (`TMDBMoviesPusher.kt`'s `determinePerformanceClass`). This was NOT
+     fabricated — see `data/DATA_PROVENANCE.md` §5 item 2 for exactly what's needed to unblock
+     it. W1-04's S2/S3 (label variants, the reconciliation gate) cannot run as specified until
+     this is answered.
+
+- **Owner-attention (Dr. Grimes / the team):** one specific decision needed to actually close
+  W1-02/unblock W1-04 fully: for the label columns, either (a) rule that they're out of scope
+  for this dataset snapshot and W1-04 ships spec's stated rule (`revenue > 2×budget`)
+  undefended by reference reconciliation — a documented scope cut, not a silent one — or (b)
+  supply the label formula/column some other way (a value he's willing to pull from
+  antevorta-db directly, or the relevant Kotlin logic). Independent review still needed for
+  this ticket's diff per preamble §8 before `00_INDEX.md` flips past a bare status.
+
+- **Next step:** send Grimes the one-line question above; once answered, either close W1-04's
+  gate with the ruled-in label or wire up the supplied formula, then get W1-02's diff
+  independently reviewed and flip `00_INDEX.md`.
+
+- **Five-minute test:** `PYTHONPATH=src pytest tests/unit/data/test_ground_truth.py -q` (needs
+  `data/raw/movies.sqlite` present locally, else the sqlite-dependent tests skip with a named
+  reason); `cat data/DATA_PROVENANCE.md` section 5 for the ruling + counts.
+
+## PRIOR (2026-08-07, W3-02 implemented, pending independent review)
 - **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on
   branch ticket/w3-02. RandomMovementPolicy + RoundEngine land in
   src/wocbots/arena/; Arena extended with move_to/cell/agents_at (plan §3 D1).
