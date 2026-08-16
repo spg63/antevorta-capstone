@@ -6,6 +6,7 @@ per-sample loop (plan §3 D1 names the ownership boundary explicitly).
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

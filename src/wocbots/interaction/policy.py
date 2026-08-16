@@ -5,6 +5,7 @@ and its call sites do not change.
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

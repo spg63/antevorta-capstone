@@ -847,7 +847,7 @@ claim W3-04 could quietly violate by accident.
 14. [ ] Independent review signed off (preamble §8) — reviewer independent
     of whoever drives this implementation session; findings adjudicated by
     the stakeholder before `✅`.
-15. [ ] R1 (W3-02's stale bookkeeping) and the open question in §12
+15. [X] R1 (W3-02's stale bookkeeping) and the open question in §12
     explicitly surfaced in the PR description, not left for a reviewer to
     discover unprompted.
 

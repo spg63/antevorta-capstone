@@ -8,7 +8,7 @@ in the ticket and re-derived independently in the plan (§4).
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, cast
 
 from wocbots.interaction._util import clamp
 
