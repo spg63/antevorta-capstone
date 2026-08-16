@@ -8,10 +8,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, cast
 
+from wocbots.interaction.history import HistoryRecord
+
 if TYPE_CHECKING:
     from wocbots.agents import Agent
-    from wocbots.protocols import InteractionPolicy, ScoringPolicy
     from wocbots.interaction.history import HistoryStore
+    from wocbots.protocols import InteractionPolicy, ScoringPolicy
 
 
 class Encounter:
