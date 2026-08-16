@@ -192,17 +192,9 @@ ticket first (the what), then its plan (the how).
 | ID | File | Title | Blocked by |
 |---|---|---|---|
 | W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 — **✅ (reviewed: @rootwij, 2026-08-01)** |
-<<<<<<< HEAD
 | W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **✅ (reviewed: @rootwij, 2026-08-10)**  |
 | W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 - **✅ (reviewed: @AnuragRSimha, 2026-08-17)** |
-||||||| parent of f3c54a4 (update stale agent handoff and ticket index)
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **◐ implemented, pending independent review** |
-| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 |
-=======
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **✅ (reviewed: @rootwij, 2026-08-10)**  |
-| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 - **◐ implemented, pending independent review**|
->>>>>>> f3c54a4 (update stale agent handoff and ticket index)
-| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 |
+| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 — **◐ implemented, pending independent review** |
 
 ## Wave W4 — Lifecycle + voting aggregation
 

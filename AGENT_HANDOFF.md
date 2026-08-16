@@ -28,6 +28,27 @@
 - **Next step:** Finish W3-04's plan and implementation
 - **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
 
+## PRIOR (2026-08-16, W3-04 implemented, pending independent review)
+
+- **Done:** W3-04 (Interaction history store and trust updates) implemented on
+  branch `ticket/w3-04`. `HistoryRecord` and `HistoryStore` land in
+  `src/wocbots/interaction/history.py`; `ReferenceInteractionPolicy.update_trust`
+  implements §6.5 trust update formula; `Encounter` records directed history
+  rows (cardinality 1 encounter -> 2 directed rows). Check suite green: ruff /
+  ruff-format / mypy-strict / pytest all pass (226 passed, 11 skipped, 1
+  xfailed — +8 new pinned tests in `tests/unit/test_history_trust.py`).
+  Pure-mechanism ticket (results manifest N/A). Plan and closing report:
+  `tickets/W3-04_history-trust_PLAN.md` and
+  `tickets/W3-04_history-trust_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-04 awaiting independent review sign-off
+  (preamble §8); W4-01 (participant selection loop & arena integration) is
+  unblocked for implementation.
+- **Owner-attention:** Independent reviewer needed for W3-04.
+- **Next step:** Independent review of W3-04 -> flip `00_INDEX.md` row to
+  `✅ (reviewed: <who>, <date>)` -> proceed to W4-01.
+- **Five-minute test:** `uv run pytest tests/unit/test_history_trust.py -q`
+  -> 8 passed; `python -c "from wocbots.interaction import HistoryStore, HistoryRecord, ReferenceInteractionPolicy"`.
+
 ## PRIOR (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
 
 - **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
