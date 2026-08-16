@@ -15,6 +15,7 @@ knows exactly what to fill in.
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pandas as pd
@@ -23,19 +24,110 @@ import pytest
 from wocbots.data.ground_truth import (
     LABEL_COLUMNS,
     REFERENCE_FEATURE_COLUMNS,
+    ReferenceExtractionResult,
     extract_reference,
+    write_excerpt,
 )
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURES_ROOT = Path(__file__).resolve().parents[2] / "fixtures"
-SQLITE_ENV_HINT = "movies.sqlite is the stakeholder-supplied ground-truth file (W1-02 S1); not committed to the repo."
+SQLITE_ENV_HINT = (
+    "movies.sqlite is the stakeholder-supplied ground-truth file (W1-02 S1); not committed to the repo."
+)
 
 
 @pytest.fixture()
 def reference_sqlite_path() -> Path:
-    candidate = Path("data/raw/movies.sqlite")
+    # Anchored at the repo root, not cwd: pytest is not guaranteed to run from there.
+    candidate = REPO_ROOT / "data" / "raw" / "movies.sqlite"
     if not candidate.exists():
         pytest.skip(f"{candidate} not present locally. {SQLITE_ENV_HINT}")
     return candidate
+
+
+def _synthetic_reference(n: int = 60) -> pd.DataFrame:
+    """A stand-in reference table with the same column set as the real one, plus one
+    duplicate-tmdbId pair. Lets the extraction/excerpt logic be exercised in CI, where
+    `movies.sqlite` will never exist."""
+    df = pd.DataFrame(
+        {
+            "tmdbId": list(range(n)),
+            "movieId": list(range(1000, 1000 + n)),
+            "budget": [float(i * 1_000_000) for i in range(n)],
+            "revenue": [float(i * 2_500_000) for i in range(n)],
+            "runtime": [90.0 + i for i in range(n)],
+            "tmdb_popularity": [float(i) for i in range(n)],
+            "tmdb_vote_average": [5.0 + (i % 5) * 0.1 for i in range(n)],
+            "tmdb_vote_count": [10 + i for i in range(n)],
+            "ml_vote_average": [4.0 + (i % 7) * 0.1 for i in range(n)],
+            "ml_vote_count": [float(20 + i) for i in range(n)],
+            "vote_average": [4.5 + (i % 3) * 0.1 for i in range(n)],
+            "vote_count": [float(30 + i) for i in range(n)],
+            "genres": ['["Drama"]'] * n,
+        }
+    )
+    # The duplicate-tmdbId artifact the real file carries, reproduced so the excerpt
+    # selection can be pinned on it.
+    return pd.concat([df, df.iloc[[0]]], ignore_index=True)
+
+
+def _write_sqlite(df: pd.DataFrame, path: Path, table_name: str = "movies") -> Path:
+    con = sqlite3.connect(path)
+    try:
+        df.to_sql(table_name, con, index=False)
+    finally:
+        con.close()
+    return path
+
+
+def test_extract_reference_records_counts_and_duplicates(tmp_path: Path) -> None:
+    df = _synthetic_reference()
+    result = extract_reference(_write_sqlite(df, tmp_path / "movies.sqlite"))
+
+    assert result.row_count == len(df)
+    assert result.duplicate_tmdb_ids == 1
+    assert set(result.null_counts) == set(result.table.columns)
+    assert result.zero_counts["budget"] == 2  # the i == 0 row, plus its duplicate
+    assert result.class_distribution == {}
+
+
+def test_extract_reference_rejects_negative_numeric_values(tmp_path: Path) -> None:
+    """The bound check must survive `python -O`, so it raises rather than asserting."""
+    df = _synthetic_reference()
+    df.loc[3, "revenue"] = -1.0
+    path = _write_sqlite(df, tmp_path / "negative.sqlite")
+
+    with pytest.raises(ValueError, match="revenue has negative values"):
+        extract_reference(path)
+
+
+def test_extract_reference_rejects_non_identifier_table_name(tmp_path: Path) -> None:
+    path = _write_sqlite(_synthetic_reference(), tmp_path / "movies.sqlite")
+    with pytest.raises(ValueError, match="bare SQL identifier"):
+        extract_reference(path, table_name="movies; drop table movies")
+
+
+def test_write_excerpt_keeps_the_duplicate_rows_and_respects_n(tmp_path: Path) -> None:
+    """The duplicate pair is the point of the excerpt's data-quality claim — taking it
+    after a full-size decile sample and truncating to `n` silently dropped all of it.
+    """
+    df = _synthetic_reference()
+    result = ReferenceExtractionResult(
+        table=df,
+        source_path=tmp_path / "movies.sqlite",
+        row_count=len(df),
+        missing_columns=(),
+        null_counts={},
+        zero_counts={},
+        duplicate_tmdb_ids=1,
+        duplicate_movie_ids=1,
+    )
+    out = write_excerpt(result, tmp_path / "excerpt.csv", n=50)
+    excerpt = pd.read_csv(out)
+
+    assert len(excerpt) <= 50
+    assert excerpt["tmdbId"].duplicated().sum() == 1
+    assert excerpt["budget"].max() > excerpt["budget"].median()  # spans the budget range
 
 
 def test_reference_table_loads_feature_columns(reference_sqlite_path: Path) -> None:

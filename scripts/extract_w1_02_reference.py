@@ -23,9 +23,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sqlite", type=Path, required=True)
     parser.add_argument("--derived-dir", type=Path, default=Path("data/derived"))
-    parser.add_argument("--excerpt-path", type=Path, default=Path("tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv"))
+    parser.add_argument(
+        "--excerpt-path",
+        type=Path,
+        default=Path("tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv"),
+    )
     parser.add_argument("--version", type=str, default="v1")
-    parser.add_argument("--counts-out", type=Path, default=None, help="Optional path to write the counts manifest as JSON")
+    parser.add_argument(
+        "--counts-out",
+        type=Path,
+        default=None,
+        help="Optional path to write the counts manifest as JSON",
+    )
     args = parser.parse_args()
 
     result = extract_reference(args.sqlite)

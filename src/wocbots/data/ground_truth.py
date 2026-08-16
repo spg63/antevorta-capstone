@@ -44,8 +44,6 @@ import pandas as pd
 
 from wocbots.data.hollywood import OUTPUT_COLUMNS
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-
 # Columns actually present in the supplied movies.sqlite (S1's deliverable). `title` is in
 # OUTPUT_COLUMNS but was dropped somewhere upstream of the supplied file -- recorded, not
 # silently patched back in.
@@ -63,6 +61,17 @@ REFERENCE_FEATURE_COLUMNS: tuple[str, ...] = (
     "vote_average",
     "vote_count",
     "genres",
+)
+
+# Columns whose domain is [0, inf) where present. Both the zero-count record and the
+# non-negativity gate in `extract_reference` read this one list, so they cannot drift apart.
+NON_NEGATIVE_COLUMNS: tuple[str, ...] = (
+    "budget",
+    "revenue",
+    "runtime",
+    "tmdb_vote_count",
+    "ml_vote_count",
+    "vote_count",
 )
 
 # Per the module docstring: not extractable from the supplied file under this ruling, and not
@@ -113,9 +122,14 @@ class ReferenceExtractionResult:
 
 def load_reference_sqlite(sqlite_path: Path, table_name: str = "movies") -> pd.DataFrame:
     """Load the stakeholder-ratified ground-truth SQLite (S1's deliverable) into a DataFrame."""
+    # `table_name` is interpolated into SQL because SQLite cannot parameterize identifiers.
+    # It is caller-supplied, so it is validated as a bare identifier first rather than
+    # trusted — the callers today pass the default, but nothing in the signature says so.
+    if not table_name.isidentifier():
+        raise ValueError(f"table_name must be a bare SQL identifier, got {table_name!r}")
     con = sqlite3.connect(sqlite_path)
     try:
-        df = pd.read_sql(f"select * from {table_name}", con)  # noqa: S608 - fixed table name
+        df = pd.read_sql(f"select * from {table_name}", con)
     finally:
         con.close()
     return df
@@ -126,21 +140,23 @@ def extract_reference(sqlite_path: Path, table_name: str = "movies") -> Referenc
 
     Sanity checks performed here (numeric bounds), separate from the null/zero counts:
     budget/revenue/runtime are non-negative where present; vote counts are non-negative.
-    Raises AssertionError if violated -- a violation means the supplied file itself is
-    inconsistent, which is worth stopping on rather than silently versioning.
+    Raises ValueError if violated -- a violation means the supplied file itself is
+    inconsistent, which is worth stopping on rather than silently versioning. This is a
+    data-integrity gate on an external file, not an internal invariant, so it must survive
+    `python -O` (which strips `assert`).
     """
     df = load_reference_sqlite(sqlite_path, table_name=table_name)
 
     missing_columns = tuple(c for c in OUTPUT_COLUMNS if c not in df.columns)
 
     null_counts = {c: int(df[c].isna().sum()) for c in df.columns}
-    numeric_cols = [c for c in ("budget", "revenue", "runtime", "tmdb_vote_count", "ml_vote_count", "vote_count") if c in df.columns]
+    numeric_cols = [c for c in NON_NEGATIVE_COLUMNS if c in df.columns]
     zero_counts = {c: int((df[c] == 0).sum()) for c in numeric_cols}
 
-    for col in ("budget", "revenue", "runtime", "tmdb_vote_count", "ml_vote_count", "vote_count"):
-        if col in df.columns:
-            series = df[col].dropna()
-            assert (series >= 0).all(), f"{col} has negative values in {sqlite_path}"
+    for col in numeric_cols:
+        series = df[col].dropna()
+        if not bool((series >= 0).all()):
+            raise ValueError(f"{col} has negative values in {sqlite_path}")
 
     return ReferenceExtractionResult(
         table=df,
@@ -171,27 +187,30 @@ def write_excerpt(result: ReferenceExtractionResult, out_path: Path, n: int = 50
     """Committed ~50-row reference excerpt (test requirement 2). Cannot span "all performance
     classes" as the ticket's test requirement literally asks -- there are no performance
     classes in this file (see module docstring). Instead selects a stratified, deterministic
-    sample spanning: budget deciles, genre diversity, and the one known duplicate-tmdbId pair
-    (a real data-quality artifact worth keeping visible in the fixture, not filtering out)."""
+    sample spanning: budget deciles, genre diversity, and the known duplicate-tmdbId rows
+    (a real data-quality artifact worth keeping visible in the fixture, not filtering out).
+
+    The duplicate rows are taken FIRST and the decile sample fills what is left of `n`.
+    Appending them after a full-size decile sample and then truncating to `n` drops every
+    one of them, which is why the excerpt this function first produced contains none."""
     df = result.table.copy()
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    decile = pd.qcut(df["budget"], 10, labels=False, duplicates="drop")
-    n_deciles = decile.nunique()
-    per_decile = max(1, n // n_deciles)
-
-    parts = []
-    for _, idx in df.groupby(decile).groups.items():
-        group = df.loc[idx]
-        parts.append(group.sample(n=min(per_decile, len(group)), random_state=seed))
-    sampled = pd.concat(parts)
-
+    dup_rows = df.iloc[:0]
     if "tmdbId" in df.columns:
-        dup_mask = df["tmdbId"].duplicated(keep=False)
-        dup_rows = df[dup_mask]
-        sampled = pd.concat([sampled, dup_rows]).drop_duplicates(subset=list(df.columns))
+        dup_rows = df[df["tmdbId"].duplicated(keep=False)].head(n)
 
-    sampled = sampled.head(n).reset_index(drop=True)
+    parts = [dup_rows]
+    remaining = n - len(dup_rows)
+    if remaining > 0:
+        pool = df.drop(index=dup_rows.index)
+        decile = pd.qcut(pool["budget"], 10, labels=False, duplicates="drop")
+        per_decile = max(1, remaining // max(1, int(decile.nunique())))
+        for idx in pool.groupby(decile).groups.values():
+            group = pool.loc[idx]
+            parts.append(group.sample(n=min(per_decile, len(group)), random_state=seed))
+
+    sampled = pd.concat(parts).head(n).reset_index(drop=True)
     sampled.to_csv(out_path, index=False)
     return out_path
 
