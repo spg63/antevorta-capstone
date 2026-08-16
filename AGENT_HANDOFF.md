@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-10 (Rutvij — W2-04 + Wave 2 governance backfill; Claude session,
-uncommitted working tree on `develop` @ `4bb6804`)
+**Last updated:** 2026-08-16 (Rutvij — merged `develop` @ `c15deaa` into PR #30's branch to
+resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data`)
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -21,7 +21,197 @@ uncommitted working tree on `develop` @ `4bb6804`)
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-10, Wave 2 done on real data — W2-03 was broken, W2-04 escalates)
+## CURRENT STATE (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
+
+- **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
+  review fixes) merged into `rootwij/w2-03-04-real-data` to clear PR #30's only conflict. The
+  conflict was this file and nothing else: two sessions each wrote a CURRENT STATE on top of
+  `4bb6804`. Both are preserved verbatim below as PRIOR entries — the 2026-08-15 W1-05 entry
+  and the 2026-08-10 Wave 2 entry — and nothing was dropped. The code sides are disjoint (W2
+  touched `src/wocbots/experiments/`, `configs/`, `tests/unit/test_w2_*`; W1 touched
+  `src/wocbots/data/`, `scripts/`, `tests/unit/data/`) and merged with no conflict.
+
+- **In flight / blocked:**
+  1. **The §9.2 reproduction still MISSES, and that is the reportable result, not an
+     unfinished one.** See the 2026-08-10 PRIOR entry for the numbers; nothing in the W1 merge
+     moves them, and nothing was tuned to close any gap. Checked explicitly: that entry warned
+     the two `xfail(strict=True)` W2-04 slow tests would go RED if W1-04 fixed the data. On the
+     merged tree with `data/raw/` present they **still xfail** — W1-04 shipped variant (a)
+     undefended at the same 43.93/56.07 balance, so the label the agent table trains against is
+     unchanged. CI cannot see this either way: it runs `-m "not slow"` and has no raw data.
+  2. **`data/derived/split_v1.*` must be regenerated before anything consumes its folds.** It
+     predates PR #31's fold-leak fix — see the review amendment in the 2026-08-15 PRIOR entry.
+  3. **W1-06 (anchor analysis) has still not run against the real split.** It is the last open
+     W1 item, and it must run against the regenerated `split_v1`, not the artifact on disk.
+
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — the three-part ruling requested in
+     `results/W2-04_agent_table_comparison.md` is still unanswered (snapshot intent, whether
+     the ±3 band still binds, and the 5-epoch column).
+  2. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 and
+     W2-04 is still owed. Rutvij drove all four sessions and cannot sign any of them off. No
+     W2 ticket is ✅.
+  3. **Anurag** — three items PR #31's review left open: regenerate `data/derived/split_v1.*`;
+     regenerate `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv` (the committed
+     excerpt contains none of the duplicate-tmdbId rows it advertises); and commit
+     `scripts/build_movies_sqlite.py`, which this file, `data/DATA_PROVENANCE.md` §5 and
+     `wocbots.data.ground_truth`'s module docstring all name as W1-02 S1's provenance record
+     but which does not exist in the repo.
+  - **Closed by the merge:** the 2026-08-10 entry's DATA-stream item ("W1-04's RESULT block and
+    W1-06's are still literally `☐ ____`; W1-02 has never run") is superseded — W1-02 and W1-04
+    landed in PR #31, W1-06 remains open and is listed above.
+
+- **Next step:** land PR #30, then run W1-06's anchor analysis
+  (`wocbots.data.anchor_analysis.rank_features`) against a regenerated `split_v1`. That is the
+  last item standing between here and a closed W1 wave.
+
+- **Five-minute test:** `uv run pytest -m "not slow"` → 239 passed, 7 skipped, 11 deselected
+  (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
+  labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
+
+## PRIOR (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
+
+- **Done:** W1-05 S1/S2/S3 run against the real shipped label from
+  `data/hollywood_features_labeled_variant_a.csv` (3,032 rows, variant (a) label — see
+  W1-04's RESULT block). `src/wocbots/data/splits.py` gained persistence
+  (`write_split_artifact`/`load_split_artifact`, npz for id arrays + JSON for
+  seed/feature-columns/scaler params, mirroring `wocbots.data.ground_truth`'s writer
+  convention) — it previously only built `SplitArtifact` in memory with no save path.
+  `scripts/build_w1_05_splits.py` (new CLI runner, same shape as
+  `extract_w1_02_reference.py`) ran with the project's standard seed (42, per
+  `configs/*.yaml`) and produced `data/derived/split_v1.json` +
+  `data/derived/split_v1.npz` (gitignored derived artifacts, per `data/README.md` policy).
+  Result: 2,182 train / 243 eval / 607 test, 5 folds, 9 feature columns
+  (`revenue` structurally excluded). Stratification holds within 0.1pt of the overall
+  56.07% positive rate across train/eval/test — well inside the ±1pt requirement (this is
+  stratification quality, unrelated to and not fixing W1-04's published-balance gap).
+  Scaler params (train-only) verified to put scaled train features in [0, 1].
+  `tests/unit/data/test_splits.py` gained a persistence round-trip test. Full repo suite:
+  **215 passed, 13 skipped, 0 failed** (`uv run pytest -q`); RNG-discipline guard
+  (`tests/unit/test_rng_discipline.py`) confirms the new script's `default_rng` call
+  doesn't need allowlisting since it's outside `src/wocbots/`, the guard's only scope.
+
+- **Review amendment (2026-08-16, independent review of PR #31):** `make_split` was cutting
+  its 5 folds from `train_idx` — the 80% slice taken BEFORE the 90/10 eval rows are carved
+  out — while `train_ids` holds the 72% that remains after. Every fold's training side
+  therefore carried the eval slice, so Q2 cross-validation would have been scored against
+  agent eval metrics computed on rows it had already trained on (spec §10.5). Folds now cut
+  from `real_train_idx`; `test_folds_partition_the_train_ids_and_exclude_the_eval_slice`
+  fails against the original loop. **The `data/derived/split_v1.*` artifact described above
+  predates this fix and must be regenerated** (`uv run python scripts/build_w1_05_splits.py`)
+  before anything consumes its folds — train/eval/test membership is unchanged, fold
+  membership is not.
+
+- **In flight / blocked — carried forward, NOT resolved by this session:**
+  1. **W1-06 (anchor analysis) has not been run against this real split yet.** The code
+     (`wocbots.data.anchor_analysis`) is implemented and unit-tested against synthetic
+     data only. Running it against `data/derived/split_v1`'s real train ids is the
+     literal next step to close W1-06's RESULT block and finish the W1 wave.
+  2. **W1-02's independence gap** (see the 2026-08-14 entry below) is unaffected by this
+     work — still permanent, not pending.
+  3. **`scripts/build_movies_sqlite.py` does not exist in the repo**, but this file (line 111),
+     `data/DATA_PROVENANCE.md` §5, and `src/wocbots/data/ground_truth.py`'s module docstring
+     all name it as the record of how `movies.sqlite` was produced — which is W1-02 S1's
+     actual deliverable ("the FILE plus a record of how it was produced"). Whoever ran that
+     build must commit the script they ran; it was deliberately not reconstructed during
+     review, because a plausible-looking rewrite is not a provenance record.
+
+- **Owner-attention:** none new. W1-05 is done per its own acceptance criteria.
+
+- **Next step:** run W1-06's anchor analysis (`wocbots.data.anchor_analysis.rank_features`)
+  against the real train split (`data/derived/split_v1`, loadable via
+  `wocbots.data.splits.load_split_artifact`), verify `budget`/`vote_count` top the ranking
+  as spec §9.2 expects, choose the anchor set, and fill the ticket's RESULT block. That's
+  the last open item in the W1 wave.
+
+- **Five-minute test:** `uv run python scripts/build_w1_05_splits.py` (regenerates
+  `data/derived/split_v1.*` deterministically — same seed, same output); `uv run pytest
+  tests/unit/data/test_splits.py -q` (expect 10 passed).
+
+## PRIOR (2026-08-15, W1-04 label gate ruled and closed — variant (a) shipped)
+
+- **Done:** The owner-attention decision from the 2026-08-14 entry below is resolved: label
+  columns are ruled OUT OF SCOPE for this dataset snapshot (option (a)), and variant (a)
+  (`revenue > 2×budget`, spec §4.3.7) ships as THE label, undefended — ratified by Anurag
+  Ravishankar Simha (project owner), 2026-08-15. `tickets/W1-04_labels-validation-gate.md`'s
+  RESULT block is filled: shipped balance 43.93/56.07 (n=3,032, computed on
+  `data/raw/movies.sqlite`), does NOT match the published 47.5/52.5 (outside ±1pt tolerance) —
+  that mismatch is accepted, not silently fixed. `src/wocbots/data/labels.py` and
+  `src/wocbots/data/ground_truth.py` docstrings updated to state the ruling instead of
+  describing an open block. `tests/unit/data/test_labels.py`'s xfail
+  (`test_class_balance_within_one_point_of_published_split`) replaced with a passing
+  regression pin (`test_shipped_label_balance_matches_ratified_result`) on the ratified
+  numbers — it does not re-impose the published-balance requirement the ruling waived.
+  `data/hollywood_features_labeled_variant_a.csv` regenerated locally (gitignored, per
+  `data/*.csv` policy) from `movies.sqlite`. Check suite: `pytest tests/unit/data -q` → 37
+  passed, 12 skipped, 0 xfailed.
+
+- **In flight / blocked — carried forward, NOT resolved by this ruling:**
+  1. **W1-02's independence gap is still open and now permanent, not just pending.** Because
+     the label gap is ruled out of scope rather than unblocked, `movies.sqlite` will not
+     become an independent reference later unless someone supplies actual `antevorta-db`
+     output — nothing in this session changes that likelihood.
+  2. **W1-05 and W1-06 have not yet been re-run against the real shipped label.** W1-05's
+     splits/scaling code and W1-06's anchor-analysis code are implemented and unit-tested
+     against fixtures/synthetic data, but neither has been executed against
+     `data/hollywood_features_labeled_variant_a.csv` to produce real split artifacts or fill
+     W1-06's RESULT block. That's the next concrete step to actually finish the W1 wave.
+
+- **Owner-attention:** none outstanding for W1-04 — this entry closes it. W1-05/W1-06 need a
+  session to actually run them against the real labeled data, not a ruling.
+
+- **Next step:** run W1-05 (`wocbots.data.splits`) against
+  `data/hollywood_features_labeled_variant_a.csv` to produce the persisted 80/20 splits +
+  scaler artifacts, then run W1-06's anchor analysis on the resulting train split and fill its
+  RESULT block. That closes out the W1 wave per its own acceptance criteria.
+
+- **Five-minute test:** `uv run pytest tests/unit/data -q` (expect 37 passed, 12 skipped, 0
+  xfailed); `cat tickets/W1-04_labels-validation-gate.md` and check the RESULT block is
+  checked, not blank.
+
+## PRIOR (2026-08-14, W1-02 S1/S2 implemented, pending independent review)
+
+- **Done:** W1-02's S1 is resolved by stakeholder ruling (Sean Grimes, email "Re: Antevorta
+  SQLite", 2026-08-14): ground truth is built by CSV-porting through the existing W1-03
+  pipeline (`scripts/build_movies_sqlite.py`), not the antevorta-db JVM build, and not a
+  row-level extraction from the antevorta-db instance. S2 (extraction/versioning/counts) is
+  implemented against that file: `src/wocbots/data/ground_truth.py`
+  (`extract_reference`/`write_versioned_reference`/`write_excerpt`),
+  `scripts/extract_w1_02_reference.py` (CLI runner), `tests/unit/data/test_ground_truth.py` (7
+  tests: 5 pass against a local `data/raw/movies.sqlite`, 2 explicit named skips — not silent
+  gaps — for the parts the ruling doesn't cover), committed excerpt
+  `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv`. Full counts + the exact
+  ruling quote recorded in `data/DATA_PROVENANCE.md` §5. Check suite run locally on the
+  touched files: `pytest tests/unit/data -q` → 36 passed, 12 skipped, 1 xfailed (pre-existing
+  skips/xfail unchanged by this work).
+
+- **In flight / blocked — carried forward, NOT resolved by this session:**
+  1. **W1-02's independence gap.** `movies.sqlite` is produced by the same W1-03 logic it would
+     need to validate — it is not an independent reference. This is now explicitly documented
+     (not silently accepted) in `data/DATA_PROVENANCE.md` §5, item 1.
+  2. **Label columns.** No label columns exist anywhere in scope (not in `movies.sqlite`, not
+     supplied separately). The stakeholder's ruling addressed the SQLite *build method*, not
+     the label *formula* (`TMDBMoviesPusher.kt`'s `determinePerformanceClass`). This was NOT
+     fabricated — see `data/DATA_PROVENANCE.md` §5 item 2 for exactly what's needed to unblock
+     it. W1-04's S2/S3 (label variants, the reconciliation gate) cannot run as specified until
+     this is answered.
+
+- **Owner-attention (Dr. Grimes / the team):** one specific decision needed to actually close
+  W1-02/unblock W1-04 fully: for the label columns, either (a) rule that they're out of scope
+  for this dataset snapshot and W1-04 ships spec's stated rule (`revenue > 2×budget`)
+  undefended by reference reconciliation — a documented scope cut, not a silent one — or (b)
+  supply the label formula/column some other way (a value he's willing to pull from
+  antevorta-db directly, or the relevant Kotlin logic). Independent review still needed for
+  this ticket's diff per preamble §8 before `00_INDEX.md` flips past a bare status.
+
+- **Next step:** send Grimes the one-line question above; once answered, either close W1-04's
+  gate with the ruled-in label or wire up the supplied formula, then get W1-02's diff
+  independently reviewed and flip `00_INDEX.md`.
+
+- **Five-minute test:** `PYTHONPATH=src pytest tests/unit/data/test_ground_truth.py -q` (needs
+  `data/raw/movies.sqlite` present locally, else the sqlite-dependent tests skip with a named
+  reason); `cat data/DATA_PROVENANCE.md` section 5 for the ruling + counts.
+## PRIOR (2026-08-10, Wave 2 done on real data — W2-03 was broken, W2-04 escalates)
 
 - **Done:** The Hollywood raw data is on disk at `data/raw/{tmdb,movielens}/` and
   checksum-verified (`tests/unit/data/test_provenance.py` → 10 passed; previously all skipped).
@@ -68,6 +258,7 @@ uncommitted working tree on `develop` @ `4bb6804`)
 - **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py` → 10 passed (if they
   SKIP, `data/raw/` is missing and this entry is stale — fix that first);
   `uv run pytest tests/unit/test_w2_04_agent_table.py` → 10 passed, 2 xfailed.
+
 
 ## PRIOR (2026-08-07, W3-02 implemented, pending independent review)
 - **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on

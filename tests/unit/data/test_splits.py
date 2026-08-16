@@ -1,10 +1,23 @@
-"""W1-05 test requirements: split determinism, structural leakage guard, no-revenue guard."""
+"""W1-05 test requirements: split determinism, structural leakage guard, no-revenue guard,
+and persistence round-trip (S1/S2's actual deliverable — the artifact must survive a
+save/load cycle byte-identically, since every downstream experiment reads it back from
+disk rather than re-splitting).
+"""
+
+import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from wocbots.data.splits import apply_scaling, build_feature_matrix, make_split
+from wocbots.data.splits import (
+    apply_scaling,
+    build_feature_matrix,
+    load_split_artifact,
+    make_split,
+    write_split_artifact,
+)
 
 
 @pytest.fixture
@@ -99,3 +112,61 @@ def test_no_revenue_guard_in_feature_matrix_builder(labeled_df: pd.DataFrame) ->
 def test_no_revenue_guard_in_make_split(labeled_df: pd.DataFrame) -> None:
     with pytest.raises(ValueError):
         make_split(labeled_df, "label", rng=np.random.default_rng(1), feature_columns=[*FEATURES, "revenue"])
+
+
+def test_folds_partition_the_train_ids_and_exclude_the_eval_slice(labeled_df: pd.DataFrame) -> None:
+    """Regression guard: the folds must be cut from the post-eval-carve-out train set.
+
+    Fails against the original `skf.split(train_idx, ...)` loop, which cut from the 80%
+    slice taken BEFORE the eval rows were removed — every fold's training side then carried
+    the eval rows, so any Q2 cross-validation would be scored against agent eval metrics
+    computed on rows it had already trained on.
+    """
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(3), feature_columns=FEATURES)
+    train_ids = set(artifact.train_ids)
+    eval_ids = set(artifact.eval_ids)
+
+    for fold_train, fold_val in artifact.fold_ids:
+        assert set(fold_train) | set(fold_val) == train_ids
+        assert set(fold_train) & set(fold_val) == set()
+        assert not (set(fold_train) | set(fold_val)) & eval_ids
+
+
+def test_folds_never_touch_the_test_split(labeled_df: pd.DataFrame) -> None:
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(4), feature_columns=FEATURES)
+    test_ids = set(artifact.test_ids)
+    for fold_train, fold_val in artifact.fold_ids:
+        assert not (set(fold_train) | set(fold_val)) & test_ids
+
+
+def test_write_then_load_split_artifact_round_trips(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(9), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    loaded = load_split_artifact(manifest_path)
+
+    assert list(loaded.train_ids) == list(artifact.train_ids)
+    assert list(loaded.eval_ids) == list(artifact.eval_ids)
+    assert list(loaded.test_ids) == list(artifact.test_ids)
+    assert loaded.feature_columns == artifact.feature_columns
+    assert loaded.scaler_min.equals(artifact.scaler_min)
+    assert loaded.scaler_max.equals(artifact.scaler_max)
+    assert len(loaded.fold_ids) == len(artifact.fold_ids)
+    fold_pairs = zip(artifact.fold_ids, loaded.fold_ids, strict=True)
+    for (orig_train, orig_val), (load_train, load_val) in fold_pairs:
+        assert list(orig_train) == list(load_train)
+        assert list(orig_val) == list(load_val)
+
+
+def test_split_artifact_loads_after_the_pair_is_moved(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    """The manifest's `ids_path` is provenance, not an address — a written-then-relocated
+    artifact pair must still load, since experiments consume these from wherever they sit.
+    """
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(11), feature_columns=FEATURES)
+    written = tmp_path / "written"
+    manifest_path = write_split_artifact(artifact, written, version="test")
+
+    moved = tmp_path / "moved"
+    shutil.move(str(written), str(moved))
+
+    loaded = load_split_artifact(moved / manifest_path.name)
+    assert list(loaded.train_ids) == list(artifact.train_ids)
