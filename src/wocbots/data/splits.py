@@ -10,7 +10,9 @@ which reads it directly from the labeled dataframe, not from this module's featu
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -121,10 +123,16 @@ def make_split(
     real_train_idx = train_idx[train_sub_idx]
     real_eval_idx = train_idx[eval_sub_idx]
 
+    # Folds are cut from `real_train_idx` — the 72% that survives the eval carve-out — NOT
+    # from `train_idx`, the 80% slice taken before it. Cutting from `train_idx` would put the
+    # eval rows on the training side of every fold, so Q2 cross-validation would be scored
+    # against agent eval metrics computed on rows it had already trained on (spec §10.5: the
+    # eval slice is held out). `train_ids` on the artifact below is `real_train_idx`; the
+    # folds must partition the same set.
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=seed_kfold)
     fold_ids: list[tuple[np.ndarray, np.ndarray]] = []
-    for fold_train_pos, fold_val_pos in skf.split(train_idx, train_labels):
-        fold_ids.append((ids[train_idx[fold_train_pos]], ids[train_idx[fold_val_pos]]))
+    for fold_train_pos, fold_val_pos in skf.split(real_train_idx, labels[real_train_idx]):
+        fold_ids.append((ids[real_train_idx[fold_train_pos]], ids[real_train_idx[fold_val_pos]]))
 
     train_features = df.iloc[real_train_idx][feature_columns]
     scaler_min = train_features.min()
@@ -162,3 +170,72 @@ def build_feature_matrix(df: pd.DataFrame, feature_columns: list[str]) -> pd.Dat
     if bad:
         raise ValueError(f"feature matrix must not include excluded columns: {bad}")
     return df[feature_columns].copy()
+
+
+def write_split_artifact(artifact: SplitArtifact, out_dir: Path, version: str) -> Path:
+    """Persist a `SplitArtifact` (S1/S2's deliverable): every experiment and mechanism
+    comparison reuses this exact file rather than re-splitting (spec §9.1, forbidden
+    shortcut register). `out_dir` is expected to be a gitignored derived-data location
+    (e.g. `data/derived/`), same convention as `wocbots.data.ground_truth`'s writers.
+
+    Layout: `<out_dir>/split_<version>.npz` holds the id arrays (train/eval/test + one
+    pair of arrays per fold, since npz can't nest lists of tuples); `<out_dir>/split_<version>.json`
+    holds everything else (seed, feature columns, scaler params, fold count) plus a
+    pointer back to the npz file, so either file alone tells you where its sibling is.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    npz_path = out_dir / f"split_{version}.npz"
+    json_path = out_dir / f"split_{version}.json"
+
+    npz_payload: dict[str, np.ndarray] = {
+        "train_ids": artifact.train_ids,
+        "eval_ids": artifact.eval_ids,
+        "test_ids": artifact.test_ids,
+    }
+    for i, (fold_train_ids, fold_val_ids) in enumerate(artifact.fold_ids):
+        npz_payload[f"fold_{i}_train_ids"] = fold_train_ids
+        npz_payload[f"fold_{i}_val_ids"] = fold_val_ids
+    np.savez(npz_path, **npz_payload)  # type: ignore[arg-type]  # np-stub limitation: **dict[str, ndarray] is fine at runtime
+
+    manifest = {
+        "seed": artifact.seed,
+        "feature_columns": artifact.feature_columns,
+        "n_folds": len(artifact.fold_ids),
+        "n_train": int(len(artifact.train_ids)),
+        "n_eval": int(len(artifact.eval_ids)),
+        "n_test": int(len(artifact.test_ids)),
+        "scaler_min": artifact.scaler_min.to_dict(),
+        "scaler_max": artifact.scaler_max.to_dict(),
+        "ids_path": str(npz_path),
+    }
+    json_path.write_text(json.dumps(manifest, indent=2))
+    return json_path
+
+
+def load_split_artifact(json_path: Path) -> SplitArtifact:
+    """Inverse of `write_split_artifact`. Reads the JSON manifest, then the sibling npz
+    it points to for the id arrays.
+
+    `ids_path` is resolved as a SIBLING of the manifest, using only its filename. The
+    recorded string is provenance (where it was written), not an address: it is relative
+    to whatever cwd the writer ran under, so honouring it verbatim breaks the moment the
+    pair is read from a different directory — which is the normal case, since these
+    artifacts are written once and consumed by every later experiment run.
+    """
+    manifest = json.loads(json_path.read_text())
+    npz = np.load(json_path.parent / Path(manifest["ids_path"]).name)
+
+    n_folds = manifest["n_folds"]
+    fold_ids = [(npz[f"fold_{i}_train_ids"], npz[f"fold_{i}_val_ids"]) for i in range(n_folds)]
+
+    feature_columns = manifest["feature_columns"]
+    return SplitArtifact(
+        seed=manifest["seed"],
+        train_ids=npz["train_ids"],
+        eval_ids=npz["eval_ids"],
+        test_ids=npz["test_ids"],
+        fold_ids=fold_ids,
+        feature_columns=feature_columns,
+        scaler_min=pd.Series(manifest["scaler_min"])[feature_columns],
+        scaler_max=pd.Series(manifest["scaler_max"])[feature_columns],
+    )
