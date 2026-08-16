@@ -43,6 +43,17 @@ session used for plan and code review, not implementation), branch ticket/w3-02
   (`tests/unit/test_rng_discipline.py`) confirms the new script's `default_rng` call
   doesn't need allowlisting since it's outside `src/wocbots/`, the guard's only scope.
 
+- **Review amendment (2026-08-16, independent review of PR #31):** `make_split` was cutting
+  its 5 folds from `train_idx` — the 80% slice taken BEFORE the 90/10 eval rows are carved
+  out — while `train_ids` holds the 72% that remains after. Every fold's training side
+  therefore carried the eval slice, so Q2 cross-validation would have been scored against
+  agent eval metrics computed on rows it had already trained on (spec §10.5). Folds now cut
+  from `real_train_idx`; `test_folds_partition_the_train_ids_and_exclude_the_eval_slice`
+  fails against the original loop. **The `data/derived/split_v1.*` artifact described above
+  predates this fix and must be regenerated** (`uv run python scripts/build_w1_05_splits.py`)
+  before anything consumes its folds — train/eval/test membership is unchanged, fold
+  membership is not.
+
 - **In flight / blocked — carried forward, NOT resolved by this session:**
   1. **W1-06 (anchor analysis) has not been run against this real split yet.** The code
      (`wocbots.data.anchor_analysis`) is implemented and unit-tested against synthetic
@@ -50,6 +61,12 @@ session used for plan and code review, not implementation), branch ticket/w3-02
      literal next step to close W1-06's RESULT block and finish the W1 wave.
   2. **W1-02's independence gap** (see the 2026-08-14 entry below) is unaffected by this
      work — still permanent, not pending.
+  3. **`scripts/build_movies_sqlite.py` does not exist in the repo**, but this file (line 111),
+     `data/DATA_PROVENANCE.md` §5, and `src/wocbots/data/ground_truth.py`'s module docstring
+     all name it as the record of how `movies.sqlite` was produced — which is W1-02 S1's
+     actual deliverable ("the FILE plus a record of how it was produced"). Whoever ran that
+     build must commit the script they ran; it was deliberately not reconstructed during
+     review, because a plausible-looking rewrite is not a provenance record.
 
 - **Owner-attention:** none new. W1-05 is done per its own acceptance criteria.
 
