@@ -6,9 +6,11 @@ per-sample loop (plan §3 D1 names the ownership boundary explicitly).
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from wocbots.agents import Agent
-from wocbots.protocols import InteractionPolicy, ScoringPolicy
+if TYPE_CHECKING:
+    from wocbots.agents import Agent
+    from wocbots.protocols import InteractionPolicy, ScoringPolicy
 
 
 class Encounter:

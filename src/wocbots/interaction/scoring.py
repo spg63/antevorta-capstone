@@ -8,10 +8,12 @@ in the ticket and re-derived independently in the plan (§4).
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, cast
+from typing import Literal, cast, TYPE_CHECKING
 
-from wocbots.agents import Agent
 from wocbots.interaction._util import clamp
+
+if TYPE_CHECKING:
+    from wocbots.agents import Agent
 
 
 class CertaintyFlipScoringPolicy:

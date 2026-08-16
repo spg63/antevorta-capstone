@@ -5,8 +5,10 @@ and its call sites do not change.
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from wocbots.agents import Agent
+if TYPE_CHECKING:
+    from wocbots.agents import Agent
 
 
 class ReferenceInteractionPolicy:
