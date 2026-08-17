@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-07 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation), branch ticket/w3-02
+**Last updated:** 2026-08-16 (Rutvij — merged `develop` @ `c15deaa` into PR #30's branch to
+resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data`)
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -21,7 +21,55 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
+## CURRENT STATE (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
+
+- **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
+  review fixes) merged into `rootwij/w2-03-04-real-data` to clear PR #30's only conflict. The
+  conflict was this file and nothing else: two sessions each wrote a CURRENT STATE on top of
+  `4bb6804`. Both are preserved verbatim below as PRIOR entries — the 2026-08-15 W1-05 entry
+  and the 2026-08-10 Wave 2 entry — and nothing was dropped. The code sides are disjoint (W2
+  touched `src/wocbots/experiments/`, `configs/`, `tests/unit/test_w2_*`; W1 touched
+  `src/wocbots/data/`, `scripts/`, `tests/unit/data/`) and merged with no conflict.
+
+- **In flight / blocked:**
+  1. **The §9.2 reproduction still MISSES, and that is the reportable result, not an
+     unfinished one.** See the 2026-08-10 PRIOR entry for the numbers; nothing in the W1 merge
+     moves them, and nothing was tuned to close any gap. Checked explicitly: that entry warned
+     the two `xfail(strict=True)` W2-04 slow tests would go RED if W1-04 fixed the data. On the
+     merged tree with `data/raw/` present they **still xfail** — W1-04 shipped variant (a)
+     undefended at the same 43.93/56.07 balance, so the label the agent table trains against is
+     unchanged. CI cannot see this either way: it runs `-m "not slow"` and has no raw data.
+  2. **`data/derived/split_v1.*` must be regenerated before anything consumes its folds.** It
+     predates PR #31's fold-leak fix — see the review amendment in the 2026-08-15 PRIOR entry.
+  3. **W1-06 (anchor analysis) has still not run against the real split.** It is the last open
+     W1 item, and it must run against the regenerated `split_v1`, not the artifact on disk.
+
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — the three-part ruling requested in
+     `results/W2-04_agent_table_comparison.md` is still unanswered (snapshot intent, whether
+     the ±3 band still binds, and the 5-epoch column).
+  2. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 and
+     W2-04 is still owed. Rutvij drove all four sessions and cannot sign any of them off. No
+     W2 ticket is ✅.
+  3. **Anurag** — three items PR #31's review left open: regenerate `data/derived/split_v1.*`;
+     regenerate `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv` (the committed
+     excerpt contains none of the duplicate-tmdbId rows it advertises); and commit
+     `scripts/build_movies_sqlite.py`, which this file, `data/DATA_PROVENANCE.md` §5 and
+     `wocbots.data.ground_truth`'s module docstring all name as W1-02 S1's provenance record
+     but which does not exist in the repo.
+  - **Closed by the merge:** the 2026-08-10 entry's DATA-stream item ("W1-04's RESULT block and
+    W1-06's are still literally `☐ ____`; W1-02 has never run") is superseded — W1-02 and W1-04
+    landed in PR #31, W1-06 remains open and is listed above.
+
+- **Next step:** land PR #30, then run W1-06's anchor analysis
+  (`wocbots.data.anchor_analysis.rank_features`) against a regenerated `split_v1`. That is the
+  last item standing between here and a closed W1 wave.
+
+- **Five-minute test:** `uv run pytest -m "not slow"` → 239 passed, 7 skipped, 11 deselected
+  (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
+  labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
+
+## PRIOR (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
 
 - **Done:** W1-05 S1/S2/S3 run against the real shipped label from
   `data/hollywood_features_labeled_variant_a.csv` (3,032 rows, variant (a) label — see
@@ -163,6 +211,54 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 - **Five-minute test:** `PYTHONPATH=src pytest tests/unit/data/test_ground_truth.py -q` (needs
   `data/raw/movies.sqlite` present locally, else the sqlite-dependent tests skip with a named
   reason); `cat data/DATA_PROVENANCE.md` section 5 for the ruling + counts.
+## PRIOR (2026-08-10, Wave 2 done on real data — W2-03 was broken, W2-04 escalates)
+
+- **Done:** The Hollywood raw data is on disk at `data/raw/{tmdb,movielens}/` and
+  checksum-verified (`tests/unit/data/test_provenance.py` → 10 passed; previously all skipped).
+  **W2-03 real-data closure:** both shipped Hollywood crowd configs named `popularity`, which
+  the W1-03 ETL does not emit (it emits `tmdb_popularity`) — **both the §9.2 and §9.3 reference
+  crowds were unbuildable and had been since they were written.** Thirty green W2-03 unit tests
+  missed it because they build synthetic frames matching whatever the config names. Configs
+  fixed; new `src/wocbots/experiments/hollywood_data.py` (one shared real-split path for W2-03
+  and W2-04), `crowd_build.py` (kind `w2_03_hollywood_crowd`), `configs/w2_03_crowd_{5,26}agent.yaml`,
+  `tests/unit/test_w2_03_hollywood_crowd.py` (9 passed incl. 3 slow real-data builds, plus a
+  planted-defect self-test), addendum in `tickets/W2-03_*_CLOSING-REPORT-ADDENDUM.md`.
+  **W2-02:** its real-data band check no longer skips — the sanity agent scores 97.3% on real data.
+  **W2-04** implemented: `src/wocbots/experiments/agent_table.py` (kind `w2_04_agent_table`,
+  the ten §9.2 rows, the comparison emitter), `configs/w2_04_agent_table.yaml`,
+  `tests/unit/test_w2_04_agent_table.py` (10 passed, 2 xfailed), manifest
+  `results/manifests/w2_04_agent_table_20260810T154449Z_4bb68043.json`, escalation artifact
+  `results/W2-04_agent_table_comparison.md`. Plan + closing report in `tickets/W2-04_*`.
+  Governance backfill: W2-01's plan and W2-02/W2-03's closing reports moved into `tickets/`
+  (they had lived outside the repo since July); `00_INDEX.md` v1.16/v1.17 + W2-01..04 status marks.
+  Check suite green (ruff / ruff-format / mypy-strict / pytest).
+- **In flight / blocked:** **The §9.2 reproduction MISSES and this is the reportable result,
+  not an unfinished one.** The `budget+revenue` canary hits 97.33% ± 1.71 at 50 epochs, so by
+  spec §9.2's own instrument the DATA PIPELINE IS VALIDATED. But 4 of 10 rows fall outside
+  ±3 at 50 epochs — all four built on the combined MovieLens+TMDb vote features — one of the
+  three required orderings breaks, and the whole 5-epoch column is under-trained (three rows
+  sit at exactly 55.97% ± 0.00, the majority-class rate, zero variance over ten seeds).
+  The two slow tests carry `xfail(strict=True)` naming W1-04; they go RED if the data is
+  fixed and the table starts passing. Nothing was tuned to close any gap.
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — three-part ruling in `results/W2-04_agent_table_comparison.md`:
+     is this MovieLens snapshot the intended one (it is checksum-verified but joins 4,227 vs
+     the spec's 4,722, balance 43.93/56.07 vs 47.5/52.5); if so do the revised numbers become
+     the reference or does the ±3 band still bind; and what accounts for the 5-epoch column,
+     since spec §5.2's stated optimizer settings cannot produce 98% for the canary in five epochs.
+  2. **DATA stream** — W1-04's RESULT block and W1-06's are still literally `☐ ____`; W1-02
+     has never run for want of an `antevorta-db` artifact. This is what blocks W2-04 from ✅.
+  3. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 AND
+     W2-04. Rutvij drove all four sessions and cannot sign any of them off. No W2 ticket is ✅.
+  4. **Rutvij** — commit + PR onto `develop`, labelled, linked to Issue #7; then re-run the
+     harness from the committed tree so the manifest cites a clean SHA (it currently reads
+     `4bb68043...+dirty`, honest but not closeable evidence).
+- **Next step:** get the W1-04 ruling. Everything else in Wave 2 is done and waiting on review;
+  that ruling is the only thing that can move W2-04 from `◐ escalated` to `✅`.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py` → 10 passed (if they
+  SKIP, `data/raw/` is missing and this entry is stale — fix that first);
+  `uv run pytest tests/unit/test_w2_04_agent_table.py` → 10 passed, 2 xfailed.
+
 
 ## PRIOR (2026-08-07, W3-02 implemented, pending independent review)
 - **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on
