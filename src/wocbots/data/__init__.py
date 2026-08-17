@@ -15,7 +15,13 @@ from wocbots.data.hollywood import (
     join_datasets,
 )
 from wocbots.data.labels import class_balance_pct, variant_a_label, variant_b_from_reference
-from wocbots.data.provenance import RAW_FILES, FileProvenance, sha256_of, verify
+from wocbots.data.provenance import (
+    RAW_FILES,
+    FileProvenance,
+    count_csv_records,
+    sha256_of,
+    verify,
+)
 from wocbots.data.splits import (
     DEFAULT_FEATURE_COLUMNS,
     EXCLUDED_FROM_FEATURES,
@@ -39,6 +45,7 @@ __all__ = [
     "class_balance_pct",
     "clean",
     "combine_vote_features",
+    "count_csv_records",
     "genre_intersection",
     "join_datasets",
     "make_split",
