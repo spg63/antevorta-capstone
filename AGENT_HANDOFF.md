@@ -1,7 +1,6 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-16 (Rutvij — merged `develop` @ `c15deaa` into PR #30's branch to
-resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data`)
+**Last updated:** 2026-08-17 SamuelGauthier: merged PR #32 into develop
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -21,7 +20,15 @@ resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
+## CURRENT STATE (2026-08-17, PR #32)
+
+- **Done:** @AnuragRSimha reviewed W3-03 in #32
+- **In flight / blocked:** W3-04, W6-02 unblocked
+- **Owner-attention:** Nothing.
+- **Next step:** Finish W3-04's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
+## PRIOR (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
 
 - **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
   review fixes) merged into `rootwij/w2-03-04-real-data` to clear PR #30's only conflict. The
