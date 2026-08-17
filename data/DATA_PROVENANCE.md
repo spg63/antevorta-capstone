@@ -4,6 +4,14 @@ Raw files live locally at `data/raw/<dataset>/` and are **never committed** (see
 This file, its checksums, and the small fixture excerpts under `tests/fixtures/` are the
 committed record.
 
+## Authorization record
+
+The GroupLens MovieLens 20M terms state that redistribution requires separate
+permission. On **2026-08-16**, the repository owner attested that they hold the
+required permissions for the intentionally minimal fixture excerpts committed under
+`tests/fixtures/`. This attestation applies only to those W1-01 test excerpts; it does
+not authorize committing raw data, archives, derived datasets, or additional excerpts.
+
 **`movie-dataset.zip`:** the stakeholder-provided archive that supplies §1-2's raw files. It
 also contains two datasets this pipeline does not use — `movieDataset/` (Kaggle's "The Movies
 Dataset": `movies_metadata.csv`, `credits (1).csv`, `keywords.csv`, `links.csv`,
@@ -13,10 +21,14 @@ deleted) since no W1-03 rule (§4.3) reads them.
 
 ## 1. TMDb 5000 Movie Dataset
 
-- **Source:** Kaggle, "TMDB 5000 Movie Dataset" (`tmdb/5000-movies`).
+- **Source:** stakeholder-provided `movie-dataset.zip`, traced to Kaggle's
+  [TMDB 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
+  The Kaggle listing can change independently of this historical artifact; the checksums
+  below, not a future download, identify the exact bytes used here.
 - **License / ToS:** Kaggle-hosted; underlying data sourced from TMDb under TMDb's terms of
-  use (non-commercial, attribution). Fixture excerpts below are kept minimal per the
-  repo-public rule (index v1.9).
+  use (non-commercial, attribution). The repository-owner authorization record above
+  covers the deliberately minimal W1-01 fixture excerpts; the repo-public rule (index
+  v1.9) still prohibits raw-data commits.
 - **Files acquired:** `tmdb/movies.csv`, `tmdb/credits.csv` (bundled inside
   `movie-dataset.zip` as `tmdb/movies.csv` / `tmdb/credits.csv`; byte-identical to the
   standalone Kaggle download's `tmdb_5000_movies.csv` / `tmdb_5000_credits.csv`).
@@ -31,9 +43,12 @@ deleted) since no W1-03 rule (§4.3) reads them.
 
 ## 2. MovieLens 20M
 
-- **Source:** Kaggle mirror of GroupLens "MovieLens 20M Dataset" (`grouplens/movielens-20m-dataset`).
-- **License / ToS:** GroupLens research-use license (non-commercial, no redistribution of the
-  full dataset). Fixture excerpts below are ~50-row samples only, consistent with that term.
+- **Source:** stakeholder-provided `movie-dataset.zip`, traced to Kaggle's
+  [MovieLens 20M Dataset](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset).
+  The checksums below identify the exact supplied snapshot.
+- **License / ToS:** GroupLens research-use license (non-commercial; redistribution requires
+  separate permission). The repository-owner authorization record above covers only these
+  ~50-row W1-01 fixture excerpts.
 - **Files acquired (subset needed for W1):** `link.csv`, `movie.csv`, `rating.csv`, all under
   `movie-dataset.zip`'s `movielens/` folder. (`tag.csv`, `genome_tags.csv`,
   `genome_scores.csv` were also supplied but are not consumed by the Hollywood pipeline —
@@ -57,9 +72,11 @@ published MovieLens 20M row count (20,000,263 ratings).
 ## 3. Checksum verification
 
 `tests/unit/data/test_provenance.py` recomputes SHA-256 for any of the files above that are
-present on disk and compares against this table. Datasets are gitignored, so in CI (no raw
-data present) every case is skipped with a named reason; locally, with `data/raw/` populated,
-the test enforces the table stays truthful.
+present on disk and compares against this table. It counts TMDb-style CSV records with a CSV
+parser (which handles quoted embedded newlines) and uses a streaming byte-line count only for
+the documented one-record-per-line numeric `rating.csv` format. Datasets are gitignored, so in
+CI (no raw data present) every case is skipped with a named reason; locally, with `data/raw/`
+populated, the test enforces the table stays truthful.
 
 ## 4. Fixture excerpts
 
@@ -172,4 +189,3 @@ vs reference 47.5/52.5) all track directly from this shortfall.
 **This is the W1-04 gate firing.** Per that ticket's own rule ("if neither matches
 cleanly... escalate to the stakeholder before closing"), this has been left as an
 escalation, not silently reconciled. See W1-04's RESULT block.
-
