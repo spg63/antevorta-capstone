@@ -1,10 +1,20 @@
-"""W1-05 test requirements: split determinism, structural leakage guard, no-revenue guard."""
+"""W1-05 test requirements: split determinism, structural leakage guard, no-revenue guard,
+and persistence round-trip (S1/S2's actual deliverable — the artifact must survive a
+save/load cycle byte-identically, since every downstream experiment reads it back from
+disk rather than re-splitting).
+"""
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from wocbots.data.splits import apply_scaling, build_feature_matrix, make_split
+from wocbots.data.splits import (
+    apply_scaling,
+    build_feature_matrix,
+    load_split_artifact,
+    make_split,
+    write_split_artifact,
+)
 
 
 @pytest.fixture
@@ -99,3 +109,21 @@ def test_no_revenue_guard_in_feature_matrix_builder(labeled_df: pd.DataFrame) ->
 def test_no_revenue_guard_in_make_split(labeled_df: pd.DataFrame) -> None:
     with pytest.raises(ValueError):
         make_split(labeled_df, "label", rng=np.random.default_rng(1), feature_columns=[*FEATURES, "revenue"])
+
+
+def test_write_then_load_split_artifact_round_trips(labeled_df: pd.DataFrame, tmp_path) -> None:
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(9), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    loaded = load_split_artifact(manifest_path)
+
+    assert list(loaded.train_ids) == list(artifact.train_ids)
+    assert list(loaded.eval_ids) == list(artifact.eval_ids)
+    assert list(loaded.test_ids) == list(artifact.test_ids)
+    assert loaded.feature_columns == artifact.feature_columns
+    assert loaded.scaler_min.equals(artifact.scaler_min)
+    assert loaded.scaler_max.equals(artifact.scaler_max)
+    assert len(loaded.fold_ids) == len(artifact.fold_ids)
+    fold_pairs = zip(artifact.fold_ids, loaded.fold_ids, strict=True)
+    for (orig_train, orig_val), (load_train, load_val) in fold_pairs:
+        assert list(orig_train) == list(load_train)
+        assert list(orig_val) == list(load_val)

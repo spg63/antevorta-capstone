@@ -5,6 +5,15 @@ feature ranking (W1-06).
 """
 
 from wocbots.data.anchor_analysis import rank_features
+from wocbots.data.ground_truth import (
+    LABEL_COLUMNS,
+    REFERENCE_FEATURE_COLUMNS,
+    ReferenceExtractionResult,
+    extract_reference,
+    load_reference_sqlite,
+    write_excerpt,
+    write_versioned_reference,
+)
 from wocbots.data.hollywood import (
     OUTPUT_COLUMNS,
     aggregate_ml_ratings,
@@ -34,9 +43,12 @@ from wocbots.data.splits import (
 __all__ = [
     "DEFAULT_FEATURE_COLUMNS",
     "EXCLUDED_FROM_FEATURES",
+    "LABEL_COLUMNS",
     "OUTPUT_COLUMNS",
     "RAW_FILES",
+    "REFERENCE_FEATURE_COLUMNS",
     "FileProvenance",
+    "ReferenceExtractionResult",
     "SplitArtifact",
     "aggregate_ml_ratings",
     "apply_scaling",
@@ -45,13 +57,17 @@ __all__ = [
     "class_balance_pct",
     "clean",
     "combine_vote_features",
+    "extract_reference",
     "count_csv_records",
     "genre_intersection",
     "join_datasets",
+    "load_reference_sqlite",
     "make_split",
     "rank_features",
     "sha256_of",
     "variant_a_label",
     "variant_b_from_reference",
     "verify",
+    "write_excerpt",
+    "write_versioned_reference",
 ]

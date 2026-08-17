@@ -95,17 +95,65 @@ that loads it):
   aggregate rule, §4.3.4, has more than one rating to aggregate), including a movie with only
   one rating (edge case for the mean/weighted-mean math).
 
-## 5. antevorta-db ground truth (W1-02) — BLOCKED
+## 5. antevorta-db ground truth (W1-02) — SCOPE RULED, PARTIALLY RESOLVED
 
-W1-02 requires either building `antevorta-db` (Kotlin/JVM) locally or receiving its built
-SQLite output from the stakeholder. **Neither the `antevorta-db` source nor a pre-built
-SQLite file was provided in this session's inputs.** Per the clean-room rule and preamble §0.2,
-this is a STOP condition, not something to route around — the AI session cannot source
-`antevorta-db` from anywhere outside this repo's provided materials. This blocks:
+This resolves ticket S1 under its own documented fallback ("the stakeholder can supply the
+built file — either way the deliverable is the FILE plus a record of how it was produced"):
+**no `antevorta-db` JVM build was run, and no row-level extraction from the antevorta-db
+instance was performed.** Instead, `movies.sqlite` was built by porting the raw CSVs through
+the already-tested W1-03 pipeline (`scripts/build_movies_sqlite.py`, calling
+`wocbots.data.hollywood.build_hollywood_features`) and writing the result to SQLite. That file
+is committed-by-reference as W1-02's ground-truth deliverable; this section is the record of
+how it was produced, per S1's requirement.
 
-- W1-02 itself (no ground-truth table can be extracted).
-- The strict, row-level half of W1-04's reconciliation gate (it can only be checked against
-  the reference table, which doesn't exist here yet).
+**What this ruling does NOT resolve — carried forward, still open:**
+
+1. **Independence.** `movies.sqlite` is produced by the same join/clean logic W1-04 exists to
+   validate. It is not an independent check on that pipeline — it can only agree with itself.
+   The row-level half of W1-04's reconciliation gate (S1: matched/dropped counts vs the spec's
+   reference 4,722/1,023/3,699; per-feature agreement) still has nothing independent to
+   validate against.
+2. **Labels.** `movies.sqlite` carries none of the label columns (`made_more_than_2x_budget`,
+   `performance_class`, `failure`, `mild_success`, `success`, `great_success`,
+   `missing_data`). The stakeholder's ruling addressed the build *method*, not the label
+   *formula* — antevorta-db's `made_more_than_2x_budget` is computed in
+   `dbcreator/hollywood/TMDBMoviesPusher.kt`'s `determinePerformanceClass`/`madeBackBudget` as
+   "made back its budget at all," not what the column name implies, and is not derivable from
+   the spec text alone. Fabricating it would be the exact shortcut W1-02's ticket forbids ("a
+   'fixed' ground truth validates nothing"), so it was not attempted. W1-04's S2/S3 (both label
+   variants, the reconciliation gate, the shipped-label ruling) cannot run as specified without
+   either: (a) the stakeholder separately supplying the label formula/column, or (b) a stakeholder
+   ruling that the gate ships spec's stated rule (`revenue > 2×budget`) by default, undefended
+   by reference reconciliation, and documents that explicitly as a scope cut.
+
+**What was extracted (S2, everything the supplied file actually contains):**
+`wocbots.data.ground_truth.extract_reference` + `scripts/extract_w1_02_reference.py`, run
+against `movies.sqlite` (3,032 rows — matches the join-count discussed in section 6 below):
+
+| Check | Result |
+|---|---|
+| Feature columns present | all of §4.2's OUTPUT_COLUMNS except `title` (absent from the supplied file; not re-added) |
+| Row count | 3,032 |
+| Null counts | 0 across every column |
+| Zero counts | `ml_vote_count`: 1 row; all other numeric columns: 0 |
+| Negative-value sanity (budget/revenue/runtime) | none found |
+| Duplicate `tmdbId` | 1 pair (tmdbId 22649 → movieId 976 and 77141 — a MovieLens duplicate-listing artifact, kept visible rather than silently deduplicated) |
+| Duplicate `movieId` | 0 |
+| Label columns | absent (see above) — not fabricated |
+
+Versioned reference table: `data/derived/movies_reference_v1.csv` (gitignored per
+`data/README.md`'s derived-data policy — reproduce with
+`scripts/extract_w1_02_reference.py --sqlite data/raw/movies.sqlite`). Committed ~50-row
+excerpt: `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv`, stratified by
+budget decile plus the one duplicate-tmdbId pair (cannot span "all performance classes" per
+the ticket's literal test wording — there are none in this file; see
+`tests/unit/data/test_ground_truth.py`'s two named skips for exactly what unblocks them).
+
+This blocks:
+- The independent, row-level half of W1-04's reconciliation gate (item 1 above).
+- W1-04's label variant (b) and the S3 gate as literally specified (item 2 above) — pending a
+  further stakeholder ruling on how to proceed (see this file's ask to the stakeholder, and
+  `AGENT_HANDOFF.md`'s current-state entry).
 
 ## 6. Investigation note — the join-count discrepancy (feeds W1-04's escalation)
 
