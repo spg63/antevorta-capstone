@@ -1,6 +1,6 @@
 # W2-04 — §9.2 agent-table reproduction: published vs measured
 
-**Config:** `w2_04_agent_table` · **Seed:** `20260810` · **Runs:** 10 · **Git SHA:** `4bb68043bb86d4c05eec20d09a77698ca3c7ae41+dirty` · **Generated:** 2026-08-10T15:44:49.549817+00:00
+**Config:** `w2_04_agent_table` · **Seed:** `20260810` · **Runs:** 10 · **Git SHA:** `5ba422172f0e89663d2fbc80dd837f433f8e2f0b` · **Generated:** 2026-08-24T19:30:41.510723+00:00
 
 Accuracy on the W1-05 eval slice (train-side 90/10; the test split is untouched — spec §10.5). Every cell is a mean ± population std over 10 seeded runs (spec §9.1). Δ is measured − published, in percentage points.
 
