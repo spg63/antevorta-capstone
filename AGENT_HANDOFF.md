@@ -1,7 +1,6 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-17 SamuelGauthier: merged PR #32 into develop
-
+**Last updated:** 2026-08-24 SamuelGauthier: PR #33 review — found the review-attestation process broken on both #32 and #33
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +19,60 @@
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-17, PR #32)
+## CURRENT STATE (2026-08-24, PR #33 review — attestation process bypassed on both #32 and #33)
+
+- **Done:** Independently re-verified PR #33's diff (`ticket/w3-04`, HEAD `cc067ce`) myself:
+  `ruff check`, `ruff format --check`, `mypy --strict` all clean; `pytest -q` → 264 passed,
+  21 skipped, 2 xfailed; `test_history_trust.py` → 8 passed, matching the closing report's
+  D1–D5 pins. PR #32 (W3-03) is confirmed **merged** — `rootwij` merged commit `e5ec77a` into
+  `develop` (2 checks passed, +1,422/-6 across 10 files). So #33's branch genuinely does build
+  on current `develop`; that part is not stale. The *code* on both tickets is fine. The
+  *review process* on both is not — see below.
+
+- **In flight / blocked:** Both W3-03 (#32, merged) and W3-04 (#33, open) were/are marked
+  `✅ (reviewed: ..., <date>)` in `00_INDEX.md`, but neither ticket actually satisfied
+  preamble §8 before that happened:
+  1. **PR #32 (W3-03) — merged with the reviewer attestation checklist still 100% unchecked.**
+     SamuelGauthier (the implementer) directly asked AnuragRSimha, in-PR, to go through the
+     attestation so the PR could merge — a documented, explicit request. AnuragRSimha never
+     did; he only clicked GitHub's "Approve," which is not the same thing as the §8 checklist
+     (full diff read, forbidden-shortcut register, test-pin verification). The PR was then
+     **merged anyway, ~1 week after that unanswered request, by rootwij** — a third person who
+     is not listed as a reviewer on the PR at all and left no review of his own. So the ticket
+     closed with zero recorded completions of any §8 checklist item, by anyone. The `00_INDEX.md`
+     row (`✅ reviewed: @AnuragRSimha, 2026-08-17`) names a reviewer who never finished the
+     attestation, and doesn't mention rootwij, who's the one who actually merged it.
+  2. **PR #33 (W3-04) — same shape, still open.** Reviewer checklist 100% unchecked;
+     `00_INDEX.md`'s `✅ (reviewed: @sarjit304, 2026-08-17)` row was committed by the
+     implementer (`ff0138d`, SamuelGauthier) before the PR was even marked ready for review
+     (Aug 24) — the review date predates the PR's own ready-for-review event.
+  3. **Both index self-flips follow the identical pattern:** implementer writes their own
+     ✅ row into `00_INDEX.md` as one of their commits, rather than the reviewer recording it
+     at actual sign-off time, per preamble §8's explicit instruction.
+
+- **Owner-attention:** This is now confirmed across two consecutive ticket-closing PRs, not
+  a one-off: an implementer can (a) self-flip the index to ✅, (b) get an "Approve" click that
+  never completes the actual checklist, and (c) have a third, uninvolved person merge it once
+  the real reviewer stalls — and the ticket ends up marked reviewed with nobody having done
+  the review. **A direct, in-PR request to the reviewer to complete the attestation was made
+  and ignored on #32; the merge went through regardless.** This needs to go to the repo admin
+  (spg63) or stakeholder — branch protection that blocks merge until the attestation checklist
+  items are checked (or an equivalent required-review rule) would close this gap outright,
+  since asking people to comply by hand has now failed twice.
+
+- **Next step:** Do not treat W3-03 or W3-04 as having had a real independent review, `00_INDEX.md`
+  notwithstanding. Escalate to spg63/stakeholder for a process fix (branch protection / required
+  checklist) rather than re-requesting attestation from AnuragRSimha or sarjit304 individually —
+  that path is already demonstrated not to work. For #33 specifically: get someone who did not
+  implement it to actually complete the attestation before it merges, so it doesn't repeat #32's
+  pattern a third time.
+
+- **Five-minute test:** `git log --oneline -1 develop` → should show `e5ec77a` or later;
+  `uv run pytest -q` → 264 passed, 21 skipped, 2 xfailed confirms the code side is still fine
+  independent of the process issue. Check PR #32 and #33's "Reviewer attestation" checklists
+  directly on GitHub — if either is fully checked, this entry is stale, update it.
+
+## PRIOR (2026-08-17, PR #32)
 
 - **Done:** @AnuragRSimha reviewed W3-03 in #32
 - **In flight / blocked:** W3-04, W6-02 unblocked
