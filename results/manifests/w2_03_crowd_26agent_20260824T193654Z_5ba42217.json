@@ -36,8 +36,8 @@
     "seed": 20260810
   },
   "provenance": {
-    "created_utc": "2026-08-10T16:01:56.449005+00:00",
-    "git_sha": "4bb68043bb86d4c05eec20d09a77698ca3c7ae41+dirty",
+    "created_utc": "2026-08-24T19:36:54.631385+00:00",
+    "git_sha": "5ba422172f0e89663d2fbc80dd837f433f8e2f0b",
     "package_versions": {
       "numpy": "2.5.1",
       "pandas": "3.0.3",
