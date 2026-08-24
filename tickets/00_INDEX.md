@@ -1,5 +1,10 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.19 (2026-08-17): W3-03 status bookkeeping.
+>
+> **v1.18 (2026-08-15): W3-02 status bookkeeping.** Samuel Gauthier: repairs
+> bookkeeping the W3-02 close skipped
+>
 > **v1.17 (2026-08-10): W2-03 closed against REAL data — and it was broken.** Rutvij: both shipped
 > Hollywood crowd configs named `popularity`, a column the W1-03 ETL does not emit (it emits
 > `tmdb_popularity`), so **both the §9.2 five-agent and §9.3 twenty-six-agent reference crowds were
@@ -187,8 +192,8 @@ ticket first (the what), then its plan (the how).
 | ID | File | Title | Blocked by |
 |---|---|---|---|
 | W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 — **✅ (reviewed: @rootwij, 2026-08-01)** |
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **◐ implemented, pending independent review** |
-| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 |
+| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **✅ (reviewed: @rootwij, 2026-08-10)**  |
+| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 - **✅ (reviewed: @AnuragRSimha, 2026-08-17)** |
 | W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 |
 
 ## Wave W4 — Lifecycle + voting aggregation

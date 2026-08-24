@@ -1,7 +1,6 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-16 (Rutvij — merged `develop` @ `c15deaa` into PR #30's branch to
-resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data`)
+**Last updated:** 2026-08-17 SamuelGauthier: merged PR #32 into develop
 
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
@@ -21,7 +20,15 @@ resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
+## CURRENT STATE (2026-08-17, PR #32)
+
+- **Done:** @AnuragRSimha reviewed W3-03 in #32
+- **In flight / blocked:** W3-04, W6-02 unblocked
+- **Owner-attention:** Nothing.
+- **Next step:** Finish W3-04's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
+## PRIOR (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
 
 - **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
   review fixes) merged into `rootwij/w2-03-04-real-data` to clear PR #30's only conflict. The
@@ -68,6 +75,36 @@ resolve this file's conflict; Claude session, branch `rootwij/w2-03-04-real-data
 - **Five-minute test:** `uv run pytest -m "not slow"` → 239 passed, 7 skipped, 11 deselected
   (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
   labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
+
+## PRIOR (2026-08-15, W3-03 implemented, pending independent review)
+
+- **Done:** W3-03 (interaction kernel: certainty update and prediction flip)
+  implemented on branch `ticket/w3-03`. `CertaintyFlipScoringPolicy`,
+  `ReferenceInteractionPolicy`, and `Encounter` land in
+  `src/wocbots/interaction/`. Check suite green: ruff / ruff-format /
+  mypy-strict / pytest all pass (218 passed, 11 skipped, 1 xfailed — +10 new
+  pinned tests in `tests/unit/test_interaction_kernel.py`). Pure-mechanism
+  ticket (results manifest N/A). Plan and closing report:
+  `tickets/W3-03_certainty-update-flip_PLAN.md` and
+  `tickets/W3-03_certainty-update-flip_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-03 awaiting independent review sign-off
+  (preamble §8); W3-04 (history store + trust updates) unblocked for planning
+  and implementation.
+- **Owner-attention:** Independent reviewer needed for W3-03.
+- **Next step:** Independent review of W3-03 → flip `00_INDEX.md` row to
+  `✅ (reviewed: <who>, <date>)` → proceed to W3-04.
+- **Five-minute test:** `uv run pytest tests/unit/test_interaction_kernel.py -q`
+  → 10 passed; `python -c "from wocbots.interaction import CertaintyFlipScoringPolicy, ReferenceInteractionPolicy, Encounter"`.
+
+## PRIOR (2026-08-15, W3-02 reviewed and merged on develop)
+
+- **Done:** @rootwij merged and reviewed W3-02 in #21
+- **In flight / blocked:** W3-03, W4-01 unblocked, plan and implementation in
+  progress
+- **Owner-attention:** Reviewer didn't update 00_INDEX.md nor pull request
+  checklist nor PLAN's DoD.
+- **Next step:** Finish W3-03's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
 
 ## PRIOR (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
 
