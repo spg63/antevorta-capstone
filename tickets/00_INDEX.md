@@ -196,7 +196,7 @@ ticket first (the what), then its plan (the how).
 | W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 — **✅ (reviewed: @rootwij, 2026-08-01)** |
 | W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **✅ (reviewed: @rootwij, 2026-08-10)**  |
 | W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 - **✅ (reviewed: @AnuragRSimha, 2026-08-17)** |
-| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 - **✅ (reviewed: @sarjit304, 2026-08-17)**  |
+| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 - **✅ (reviewed: @sarjit304, 2026-08-24)**  |
 
 ## Wave W4 — Lifecycle + voting aggregation
 

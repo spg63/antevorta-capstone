@@ -1,6 +1,6 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-24 SamuelGauthier: PR #33 review — found the review-attestation process broken on both #32 and #33
+**Last updated:** 2026-08-24 SamuelGauthier: PR #33 attestation completed by sarjit304, ready to merge
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -19,7 +19,35 @@
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-24, PR #33 review — attestation process bypassed on both #32 and #33)
+## CURRENT STATE (2026-08-24, PR #33 — reviewer attestation now actually completed)
+
+- **Done:** sarjit304 re-approved PR #33 and, this time, **checked all five reviewer-attestation
+  boxes** in the PR body (not-implementer / full diff read / forbidden-shortcut register /
+  test pins verified / index-flip line present) — not just a GitHub "Approve" click. This is
+  the first properly-completed §8 attestation seen across #32 or #33. PR shows "Changes
+  reviewed — 1 approving review by reviewers with write access," 2/2 checks passing, no
+  conflicts with `develop`, mergeable. `00_INDEX.md`'s W3-04 row has been corrected to
+  `✅ (reviewed: @sarjit304, 2026-08-24)`, now matching the date the real attestation actually
+  happened (rather than the stale 2026-08-17 the implementer had pre-written).
+
+- **In flight / blocked:** PR #33 is **approved but not yet merged** — the merge button hasn't
+  been clicked. Nothing is blocking it now on the review side.
+
+- **Owner-attention:** The index row's *content* is now accurate, but the underlying habit that
+  produced #32's near-miss is still present: the implementer wrote the index ✅ line as one of
+  their own commits (`ff0138d`) before the reviewer had actually done anything, and it happened
+  to get corrected to the right date only because it was caught here. Worth a standing note to
+  spg63 that the index flip should be written by/at the point of reviewer sign-off, not
+  pre-written by the implementer and fixed up after the fact — it's what let #32 merge with an
+  empty checklist in the first place, and it's just luck that #33's version didn't ship wrong.
+
+- **Next step:** Merge PR #33 (button is live, all gates satisfied, index now correct). Flag
+  the pre-writing-the-index habit to spg63 as a process item, independent of this ticket.
+
+- **Five-minute test:** `git log --oneline -1 develop` after merging should show W3-04's
+  squash/merge commit; `uv run pytest -q` → 264 passed, 21 skipped, 2 xfailed still holds.
+
+## PRIOR (2026-08-24, PR #33 review — attestation process bypassed on both #32 and #33)
 
 - **Done:** Independently re-verified PR #33's diff (`ticket/w3-04`, HEAD `cc067ce`) myself:
   `ruff check`, `ruff format --check`, `mypy --strict` all clean; `pytest -q` → 264 passed,
