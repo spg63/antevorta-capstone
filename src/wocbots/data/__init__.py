@@ -6,12 +6,16 @@ feature ranking (W1-06).
 
 from wocbots.data.anchor_analysis import rank_features
 from wocbots.data.ground_truth import (
-    LABEL_COLUMNS,
     REFERENCE_FEATURE_COLUMNS,
     ReferenceExtractionResult,
+    SourceTables,
+    SQLiteBuildResult,
+    build_movies_sqlite,
     extract_reference,
     load_reference_sqlite,
+    write_build_manifest,
     write_excerpt,
+    write_reference_manifest,
     write_versioned_reference,
 )
 from wocbots.data.hollywood import (
@@ -43,17 +47,19 @@ from wocbots.data.splits import (
 __all__ = [
     "DEFAULT_FEATURE_COLUMNS",
     "EXCLUDED_FROM_FEATURES",
-    "LABEL_COLUMNS",
     "OUTPUT_COLUMNS",
     "RAW_FILES",
     "REFERENCE_FEATURE_COLUMNS",
     "FileProvenance",
     "ReferenceExtractionResult",
+    "SourceTables",
+    "SQLiteBuildResult",
     "SplitArtifact",
     "aggregate_ml_ratings",
     "apply_scaling",
     "build_feature_matrix",
     "build_hollywood_features",
+    "build_movies_sqlite",
     "class_balance_pct",
     "clean",
     "combine_vote_features",
@@ -69,5 +75,7 @@ __all__ = [
     "variant_b_from_reference",
     "verify",
     "write_excerpt",
+    "write_build_manifest",
+    "write_reference_manifest",
     "write_versioned_reference",
 ]

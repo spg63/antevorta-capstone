@@ -203,6 +203,23 @@ def test_full_pipeline_runs_on_fixtures_and_excludes_labels(
         "missing_data",
     }
     assert not (label_like & set(out.columns)), "W1-03 output must not contain label columns"
+    assert list(out.columns) == [
+        "tmdbId",
+        "movieId",
+        "title",
+        "budget",
+        "revenue",
+        "runtime",
+        "tmdb_popularity",
+        "tmdb_vote_average",
+        "tmdb_vote_count",
+        "ml_vote_average",
+        "ml_vote_count",
+        "vote_average",
+        "vote_count",
+        "genres",
+    ]
+    assert out["title"].notna().all()
     assert "budget" in out.columns and "revenue" in out.columns
     assert (out["budget"] > 0).all()
     assert (out["revenue"] > 0).all()
