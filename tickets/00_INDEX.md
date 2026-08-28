@@ -1,6 +1,10 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
-> **v1.20 (2026-08-24): W3-04 status bookkeeping.
+> **v1.21 (2026-08-28): W4 wave CORE close-out bookkeeping.** Manan Patel: W4-01 arena integration
+> code-complete on `manan/w4-01-arena-integration` (PR pending); W4-02/03/04 merged on `develop`
+> (PR #17, #29). W4-01 §8 independent review still open before ✅ flip.
+>
+> **v1.20 (2026-08-24): W3-04 status bookkeeping.**
 >
 > **v1.19 (2026-08-17): W3-03 status bookkeeping.
 >
@@ -202,10 +206,10 @@ ticket first (the what), then its plan (the how).
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02, **W3-02**, **W3-04** (arena stub; scaffold ◐ on develop) |
-| W4-02 | `W4-02_ground-truth-feedback.md` | Ground-truth feedback, priorPerf, degenerate rule | W4-01 |
-| W4-03 | `W4-03_voting-aggregators.md` | UWM, WVM, trust-weighted (mechanism) | W4-01 |
-| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 — **◐ implemented, pending review/merge** |
+| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02 — **◐ code-complete** (PR pending; §8 review open) |
+| W4-02 | `W4-02_ground-truth-feedback.md` | Ground-truth feedback, priorPerf, degenerate rule | W4-01 — **✅ merged PR #17** |
+| W4-03 | `W4-03_voting-aggregators.md` | UWM, WVM, trust-weighted (mechanism) | W4-01 — **✅ merged PR #17** |
+| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 — **✅ merged PR #29** |
 
 ## Wave W5 — Baseline + Q1 reproduction (Q1 exit)
 
