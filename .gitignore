@@ -29,6 +29,7 @@ htmlcov/
 # Raw datasets are NEVER committed; provenance + checksums are (see W1-01,
 # data/DATA_PROVENANCE.md). Fixture excerpts live in tests/, not here.
 data/raw/
+data/processed/
 data/*.csv
 data/derived/
 data/*.sqlite3

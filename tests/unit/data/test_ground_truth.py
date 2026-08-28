@@ -1,98 +1,212 @@
-"""W1-02 test requirements.
-
-1. Reference table loads with the §4.2 columns; numeric/binary sanity assertions
-   (`performance_class` in {-1,0,1,2,3}); counts recorded.
-2. A committed ~50-row reference excerpt spanning all performance classes.
-
-Both requirements are satisfied here *as amended by the stakeholder's 2026-08-14 build-scope
-ruling* (see `wocbots.data.ground_truth` module docstring): the reference table has no label
-columns to sanity-check or span, because no independent antevorta-db extraction was performed
-under that ruling. Test 1's `performance_class` pin and test 2's "spans all performance
-classes" requirement are therefore encoded here as explicit, named skips (not silently
-dropped) pointing at DATA_PROVENANCE.md section 5, so a future session with real label access
-knows exactly what to fill in.
-"""
+"""W1-02 pins for Python-built SQLite and feature-reference artifacts."""
 
 from __future__ import annotations
 
+import sqlite3
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from wocbots.data.ground_truth import (
-    LABEL_COLUMNS,
+    DATABASE_TABLE_NAMES,
     REFERENCE_FEATURE_COLUMNS,
+    SourceTables,
+    build_movies_sqlite,
     extract_reference,
+    load_reference_sqlite,
+    write_excerpt,
+    write_reference_manifest,
+    write_versioned_reference,
 )
 
 FIXTURES_ROOT = Path(__file__).resolve().parents[2] / "fixtures"
-SQLITE_ENV_HINT = "movies.sqlite is the stakeholder-supplied ground-truth file (W1-02 S1); not committed to the repo."
 
 
 @pytest.fixture()
-def reference_sqlite_path() -> Path:
-    candidate = Path("data/raw/movies.sqlite")
-    if not candidate.exists():
-        pytest.skip(f"{candidate} not present locally. {SQLITE_ENV_HINT}")
-    return candidate
-
-
-def test_reference_table_loads_feature_columns(reference_sqlite_path: Path) -> None:
-    result = extract_reference(reference_sqlite_path)
-    for col in REFERENCE_FEATURE_COLUMNS:
-        assert col in result.table.columns, f"expected feature column {col!r} missing from reference table"
-
-
-def test_reference_table_has_no_negative_numeric_values(reference_sqlite_path: Path) -> None:
-    result = extract_reference(reference_sqlite_path)
-    for col in ("budget", "revenue", "runtime"):
-        assert (result.table[col] >= 0).all()
-
-
-def test_reference_counts_recorded(reference_sqlite_path: Path) -> None:
-    result = extract_reference(reference_sqlite_path)
-    assert result.row_count == len(result.table)
-    assert set(result.null_counts) == set(result.table.columns)
-    assert result.duplicate_tmdb_ids >= 0
-
-
-@pytest.mark.skip(
-    reason=(
-        "BLOCKED per DATA_PROVENANCE.md section 5 / stakeholder ruling 2026-08-14: no "
-        "performance_class column exists in the supplied ground-truth file (labels were not "
-        "extracted -- see ground_truth.py module docstring). Un-skip once a real label source "
-        "is supplied and assert result.table['performance_class'].isin([-1, 0, 1, 2, 3]).all()."
+def feature_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "tmdbId": [10, 11, 11],
+            "movieId": [100, 101, 101],
+            "title": ["One", "Two", "Two duplicate"],
+            "budget": [100.0, 200.0, 300.0],
+            "revenue": [500.0, 0.0, 900.0],
+            "runtime": [90.0, 0.0, 120.0],
+            "tmdb_popularity": [1.0, 2.0, 3.0],
+            "tmdb_vote_average": [7.0, 8.0, 9.0],
+            "tmdb_vote_count": [10.0, 20.0, 30.0],
+            "ml_vote_average": [6.0, 7.0, 8.0],
+            "ml_vote_count": [1.0, 0.0, 3.0],
+            "vote_average": [6.5, 8.0, 8.5],
+            "vote_count": [11.0, 20.0, 33.0],
+            "genres": ['["Drama"]', '["Comedy"]', '["Drama", "Mystery"]'],
+        }
     )
+
+
+@pytest.fixture()
+def source_tables() -> SourceTables:
+    tmdb_movie = {
+        "budget": 100,
+        "genres": '[{"name":"Drama"}]',
+        "homepage": None,
+        "id": 10,
+        "keywords": "[]",
+        "original_language": "en",
+        "original_title": "One",
+        "overview": "Overview",
+        "popularity": 1.0,
+        "production_companies": "[]",
+        "production_countries": "[]",
+        "release_date": "2000-01-01",
+        "revenue": 500,
+        "runtime": 90.0,
+        "spoken_languages": "[]",
+        "status": "Released",
+        "tagline": None,
+        "title": "One",
+        "vote_average": 7.0,
+        "vote_count": 10,
+    }
+    return SourceTables(
+        links=pd.DataFrame({"movieId": [100, 101], "imdbId": [1, 2], "tmdbId": [10, None]}),
+        movies=pd.DataFrame({"movieId": [100], "title": ["One"], "genres": ["Drama"]}),
+        ratings=pd.DataFrame(
+            {"userId": [1], "movieId": [100], "rating": [3.5], "timestamp": ["2005-04-02 23:53:47"]}
+        ),
+        tmdb_movies=pd.DataFrame([tmdb_movie]),
+        tmdb_credits=pd.DataFrame({"movie_id": [10], "title": ["One"], "cast": ["[]"], "crew": ["[]"]}),
+    )
+
+
+def test_build_round_trip_preserves_order_and_values(feature_frame: pd.DataFrame, tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    result = build_movies_sqlite(feature_frame, sqlite_path)
+
+    loaded = load_reference_sqlite(sqlite_path)
+
+    assert result.table_name == "movies"
+    assert result.columns == REFERENCE_FEATURE_COLUMNS
+    assert result.row_count == len(feature_frame)
+    assert len(result.sha256) == 64
+    assert list(loaded.columns) == list(REFERENCE_FEATURE_COLUMNS)
+    assert "index" not in loaded.columns
+    pd.testing.assert_frame_equal(loaded, feature_frame, check_dtype=False)
+
+
+def test_build_retains_five_source_tables_and_required_indexes(
+    feature_frame: pd.DataFrame, source_tables: SourceTables, tmp_path: Path
+) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    build_movies_sqlite(feature_frame, sqlite_path, source_tables=source_tables)
+
+    connection = sqlite3.connect(sqlite_path)
+    try:
+        tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        indexes = {
+            row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'index'")
+        }
+        link_row = connection.execute(
+            "SELECT movie_id, imdb_id, tmdb_id FROM movielens_links WHERE movie_id = 101"
+        ).fetchone()
+        rating_row = connection.execute(
+            "SELECT rated_at FROM movielens_ratings WHERE movie_id = 100"
+        ).fetchone()
+    finally:
+        connection.close()
+
+    assert tables == set(DATABASE_TABLE_NAMES)
+    assert {"idx_movielens_links_tmdb_id", "idx_movielens_ratings_movie_id", "idx_movies_tmdb_id"} <= indexes
+    assert link_row == (101, 2, None)
+    assert rating_row == ("2005-04-02 23:53:47",)
+
+
+@pytest.mark.parametrize(
+    ("transform", "message"),
+    [
+        (lambda frame: frame.drop(columns=["title"]), "feature columns"),
+        (lambda frame: frame.assign(extra=1), "feature columns"),
+        (lambda frame: frame.loc[:, list(reversed(frame.columns))], "feature columns"),
+    ],
 )
-def test_performance_class_domain_pin() -> None:
-    raise AssertionError("should not run while skipped")
+def test_build_rejects_schema_contract_changes_before_replacing_target(
+    feature_frame: pd.DataFrame,
+    tmp_path: Path,
+    transform: Callable[[pd.DataFrame], pd.DataFrame],
+    message: str,
+) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    initial = build_movies_sqlite(feature_frame, sqlite_path)
+
+    with pytest.raises(ValueError, match=message):
+        build_movies_sqlite(transform(feature_frame), sqlite_path)
+
+    assert (
+        build_movies_sqlite(load_reference_sqlite(sqlite_path), tmp_path / "copy.sqlite").sha256
+        == initial.sha256
+    )
 
 
-def test_committed_excerpt_loads_and_has_expected_shape() -> None:
+def test_extract_records_exact_counts_and_duplicate_ids(feature_frame: pd.DataFrame, tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    build_movies_sqlite(feature_frame, sqlite_path)
+
+    result = extract_reference(sqlite_path)
+
+    assert result.row_count == 3
+    assert result.null_counts == {column: 0 for column in REFERENCE_FEATURE_COLUMNS}
+    assert result.zero_counts["revenue"] == 1
+    assert result.zero_counts["runtime"] == 1
+    assert result.zero_counts["ml_vote_count"] == 1
+    assert result.duplicate_tmdb_ids == 1
+    assert result.duplicate_movie_ids == 1
+
+
+def test_invalid_or_noncanonical_table_name_is_rejected(feature_frame: pd.DataFrame, tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    build_movies_sqlite(feature_frame, sqlite_path)
+
+    with pytest.raises(ValueError, match="table_name"):
+        load_reference_sqlite(sqlite_path, "other_table")
+    with pytest.raises(ValueError, match="table_name"):
+        load_reference_sqlite(sqlite_path, "movies; DROP TABLE movies;")
+
+
+def test_reference_csv_and_manifest_are_deterministic(feature_frame: pd.DataFrame, tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    build_movies_sqlite(feature_frame, sqlite_path)
+    result = extract_reference(sqlite_path)
+
+    first_csv = write_versioned_reference(result, tmp_path / "first", "v1")
+    second_csv = write_versioned_reference(result, tmp_path / "second", "v1")
+    manifest = write_reference_manifest(result, tmp_path / "reference.json")
+
+    assert first_csv.read_bytes() == second_csv.read_bytes()
+    assert '"row_count": 3' in manifest.read_text()
+    assert '"source_sha256"' in manifest.read_text()
+
+
+def test_excerpt_is_deterministic_and_preserves_feature_schema(
+    feature_frame: pd.DataFrame, tmp_path: Path
+) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    build_movies_sqlite(feature_frame, sqlite_path)
+    result = extract_reference(sqlite_path)
+
+    first = write_excerpt(result, tmp_path / "first.csv", seed=7)
+    second = write_excerpt(result, tmp_path / "second.csv", seed=7)
+
+    assert first.read_bytes() == second.read_bytes()
+    excerpt = pd.read_csv(first)
+    assert 1 <= len(excerpt) <= 50
+    assert list(excerpt.columns) == list(REFERENCE_FEATURE_COLUMNS)
+
+
+def test_committed_excerpt_loads_with_the_w1_03_feature_schema() -> None:
     excerpt_path = FIXTURES_ROOT / "w1_02_reference" / "movies_reference_excerpt_50.csv"
-    assert excerpt_path.exists(), "committed W1-02 reference excerpt is missing"
-    df = pd.read_csv(excerpt_path)
-    assert 1 <= len(df) <= 50
-    for col in REFERENCE_FEATURE_COLUMNS:
-        assert col in df.columns
+    dataframe = pd.read_csv(excerpt_path)
 
-
-@pytest.mark.skip(
-    reason=(
-        "BLOCKED per DATA_PROVENANCE.md section 5: the ticket's test requirement 2 asks for an "
-        "excerpt 'spanning all performance classes', but no performance_class/label columns "
-        "exist in the supplied file under the 2026-08-14 build-scope ruling. The committed "
-        "excerpt instead spans budget deciles + the one known duplicate-tmdbId pair (see "
-        "write_excerpt's docstring). Un-skip and assert class coverage once labels exist."
-    )
-)
-def test_excerpt_spans_all_performance_classes() -> None:
-    raise AssertionError("should not run while skipped")
-
-
-def test_label_columns_are_explicitly_absent_not_fabricated(reference_sqlite_path: Path) -> None:
-    """Guards against a future session silently inventing label values to make S2 'pass'."""
-    result = extract_reference(reference_sqlite_path)
-    for col in LABEL_COLUMNS:
-        assert col not in result.table.columns
+    assert 1 <= len(dataframe) <= 50
+    assert list(dataframe.columns) == list(REFERENCE_FEATURE_COLUMNS)
