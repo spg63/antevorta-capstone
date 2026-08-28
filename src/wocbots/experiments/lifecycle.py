@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 import numpy as np
 
 from wocbots.agents import Agent
 from wocbots.aggregation.voting import UWMAggregator, certainty_weighted_vote
+from wocbots.experiments.arena_interaction import ArenaRoundInteractionRunner
 from wocbots.experiments.feedback import FeedbackState, apply_ground_truth, record_degenerate_crowd
 from wocbots.protocols import Aggregator
 from wocbots.types import Prediction
@@ -91,6 +92,25 @@ def arena_cell_count(participant_count: int) -> int:
     return 2 * participant_count
 
 
+def prepare_arena_runner(
+    runner: InteractionPeriodRunner,
+    sample_id: int | str,
+) -> None:
+    if isinstance(runner, ArenaRoundInteractionRunner):
+        runner.sample_id = sample_id
+
+
+def backfill_arena_history(
+    runner: InteractionPeriodRunner,
+    sample_id: int | str,
+    label: int | None,
+) -> None:
+    if label is None or label not in (0, 1):
+        return
+    if isinstance(runner, ArenaRoundInteractionRunner):
+        runner.history_store.backfill_correctness(sample_id, cast(Literal[0, 1], label))
+
+
 def infer_participants(participants: Sequence[Agent], predictions: Mapping[int, Literal[0, 1]]) -> None:
     """Phase 2: set fresh predictions and reset certainty (spec §6.6)."""
     for agent in participants:
@@ -120,6 +140,8 @@ def run_sample(
 
     agg = aggregator or UWMAggregator()
     runner = interaction or NoOpInteractionRunner()
+    sample_id = len(run_state.sample_results)
+    prepare_arena_runner(runner, sample_id)
 
     if len(participants) < _DEGENERATE_THRESHOLD:
         record_degenerate_crowd(run_state.feedback)
@@ -137,7 +159,6 @@ def run_sample(
             skipped_agents=skipped,
         )
     else:
-        # W3-01..04 own geometry, movement, scoring inside `runner`.
         _ = arena_cell_count(len(participants))
         _ = interaction_round_count(len(participants))
         runner.run(participants, rng=rng)
@@ -150,5 +171,6 @@ def run_sample(
         )
 
     apply_ground_truth(participants, label, run_state.feedback)
+    backfill_arena_history(runner, sample_id, label)
     run_state.sample_results.append(result)
     return result

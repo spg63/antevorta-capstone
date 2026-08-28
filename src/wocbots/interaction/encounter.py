@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 from wocbots.interaction.history import HistoryRecord
+from wocbots.interaction.policy import ReferenceInteractionPolicy
 
 if TYPE_CHECKING:
     from wocbots.agents import Agent
@@ -50,9 +51,23 @@ class Encounter:
         self._scoring_policy.update_prediction(self._a, profile_b)
         self._scoring_policy.update_prediction(self._b, profile_a)
 
-        # 2. Update trust (using encounter-time predictions)
-        self._interaction_policy.update_trust(self._a, self._b)
-        self._interaction_policy.update_trust(self._b, self._a)
+        # 2. Update trust (using encounter-time predictions, before scoring flips)
+        if isinstance(self._interaction_policy, ReferenceInteractionPolicy):
+            self._interaction_policy.update_trust(
+                self._a,
+                self._b,
+                a_prediction=pred_a_before,
+                b_prediction=pred_b_before,
+            )
+            self._interaction_policy.update_trust(
+                self._b,
+                self._a,
+                a_prediction=pred_b_before,
+                b_prediction=pred_a_before,
+            )
+        else:
+            self._interaction_policy.update_trust(self._a, self._b)
+            self._interaction_policy.update_trust(self._b, self._a)
 
         # 3. Record directed history in HistoryStore if present
         if self._history_store is not None:
