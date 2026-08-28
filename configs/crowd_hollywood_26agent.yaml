@@ -6,16 +6,23 @@
 # Duplicate feature sets across agents are allowed — with a 4-feature pool the ten 2-feature
 # agents necessarily repeat, which is exactly the "neither limited nor encouraged" regime.
 #
-# Feature names follow the §9.2 crowd-level five-feature set (budget, vote_count,
-# vote_average, runtime, popularity). The exact column names + the finalized anchor set are
-# pinned by W1-06's anchor RESULT once the Hollywood ETL (W1) lands; this file is the
-# COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
+# Feature names follow the §9.2 crowd-level five-feature set. COLUMN NAMES ARE NOW THE REAL
+# ONES (W2-04, 2026-08-10): the pool previously said `popularity`, tracking the spec's prose,
+# but the W1-03 ETL emits `tmdb_popularity` — so dealing from this pool raised
+# `KeyError: feature 'popularity' is not in this dataset` against real data. The W2-03 unit
+# tests missed it because they use synthetic frames with their own column names. Verified
+# against the real split by `test_w2_03_hollywood_configs_real_data`.
+#
+# The ANCHOR SET (`budget`) remains provisional: W1-06's RESULT block is still blank, and its
+# measured ranking on this snapshot puts budget LAST (r = 0.0224) against spec §5.1's claim
+# that it is the natural anchor. Not re-anchored here — W1-06 owns that ruling. This file is
+# the COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
 name: crowd_hollywood_26agent
 
 assignment:
   policy: seeded
   anchors: [budget]
-  pool: [vote_count, vote_average, runtime, popularity]
+  pool: [vote_count, vote_average, runtime, tmdb_popularity]
   groups:
     - {count: 1, n_features: 5}    # one 5-feature agent  (budget + all 4 pool features)
     - {count: 5, n_features: 4}    # five 4-feature agents (budget + 3 of 4)

@@ -123,10 +123,16 @@ def make_split(
     real_train_idx = train_idx[train_sub_idx]
     real_eval_idx = train_idx[eval_sub_idx]
 
+    # Folds are cut from `real_train_idx` — the 72% that survives the eval carve-out — NOT
+    # from `train_idx`, the 80% slice taken before it. Cutting from `train_idx` would put the
+    # eval rows on the training side of every fold, so Q2 cross-validation would be scored
+    # against agent eval metrics computed on rows it had already trained on (spec §10.5: the
+    # eval slice is held out). `train_ids` on the artifact below is `real_train_idx`; the
+    # folds must partition the same set.
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=seed_kfold)
     fold_ids: list[tuple[np.ndarray, np.ndarray]] = []
-    for fold_train_pos, fold_val_pos in skf.split(train_idx, train_labels):
-        fold_ids.append((ids[train_idx[fold_train_pos]], ids[train_idx[fold_val_pos]]))
+    for fold_train_pos, fold_val_pos in skf.split(real_train_idx, labels[real_train_idx]):
+        fold_ids.append((ids[real_train_idx[fold_train_pos]], ids[real_train_idx[fold_val_pos]]))
 
     train_features = df.iloc[real_train_idx][feature_columns]
     scaler_min = train_features.min()
@@ -209,9 +215,15 @@ def write_split_artifact(artifact: SplitArtifact, out_dir: Path, version: str) -
 def load_split_artifact(json_path: Path) -> SplitArtifact:
     """Inverse of `write_split_artifact`. Reads the JSON manifest, then the sibling npz
     it points to for the id arrays.
+
+    `ids_path` is resolved as a SIBLING of the manifest, using only its filename. The
+    recorded string is provenance (where it was written), not an address: it is relative
+    to whatever cwd the writer ran under, so honouring it verbatim breaks the moment the
+    pair is read from a different directory — which is the normal case, since these
+    artifacts are written once and consumed by every later experiment run.
     """
     manifest = json.loads(json_path.read_text())
-    npz = np.load(manifest["ids_path"])
+    npz = np.load(json_path.parent / Path(manifest["ids_path"]).name)
 
     n_folds = manifest["n_folds"]
     fold_ids = [(npz[f"fold_{i}_train_ids"], npz[f"fold_{i}_val_ids"]) for i in range(n_folds)]
