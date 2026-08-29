@@ -17,7 +17,7 @@
 
 - `src/wocbots/experiments/lifecycle.py` — arena sample id + history back-fill
 - `src/wocbots/experiments/evaluation.py` — default arena runner + mechanism-comparison back-fill
-- `src/wocbots/interaction/encounter.py` — encounter-time trust kwargs (post-scoring-flip safe)
+- `src/wocbots/interaction/encounter.py` — trust update ordered before scoring, so §6.5 doAgree reads encounter-time predictions (post-scoring-flip safe) without breaking the `InteractionPolicy` seam
 
 **Pre-existing on `develop` (consumed)**
 

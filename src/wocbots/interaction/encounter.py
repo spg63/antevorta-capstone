@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 from wocbots.interaction.history import HistoryRecord
-from wocbots.interaction.policy import ReferenceInteractionPolicy
 
 if TYPE_CHECKING:
     from wocbots.agents import Agent
@@ -47,27 +46,16 @@ class Encounter:
         cert_a_before = cast(float, profile_a["certainty"])
         cert_b_before = cast(float, profile_b["certainty"])
 
-        # 1. Update predictions (compute-then-apply)
+        # 1. Update trust, BEFORE scoring. §6.5's doAgree is an encounter-time fact and
+        #    step 2 may flip a prediction; reading trust off post-flip predictions inverts
+        #    doAgree's sign. Scoring is unaffected by the order because it reads the profile
+        #    snapshots taken above, never live partner state. Do not reorder.
+        self._interaction_policy.update_trust(self._a, self._b)
+        self._interaction_policy.update_trust(self._b, self._a)
+
+        # 2. Update predictions (compute-then-apply)
         self._scoring_policy.update_prediction(self._a, profile_b)
         self._scoring_policy.update_prediction(self._b, profile_a)
-
-        # 2. Update trust (using encounter-time predictions, before scoring flips)
-        if isinstance(self._interaction_policy, ReferenceInteractionPolicy):
-            self._interaction_policy.update_trust(
-                self._a,
-                self._b,
-                a_prediction=pred_a_before,
-                b_prediction=pred_b_before,
-            )
-            self._interaction_policy.update_trust(
-                self._b,
-                self._a,
-                a_prediction=pred_b_before,
-                b_prediction=pred_a_before,
-            )
-        else:
-            self._interaction_policy.update_trust(self._a, self._b)
-            self._interaction_policy.update_trust(self._b, self._a)
 
         # 3. Record directed history in HistoryStore if present
         if self._history_store is not None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 import numpy as np
+import pytest
 
 from wocbots.agents import HOLLYWOOD_WEIGHTS, Agent
 from wocbots.experiments.arena_interaction import ArenaRoundInteractionRunner
@@ -14,6 +15,17 @@ from wocbots.experiments.lifecycle import (
     interaction_round_count,
     run_sample,
 )
+from wocbots.interaction import (
+    CertaintyFlipScoringPolicy,
+    Encounter,
+    HistoryStore,
+    ReferenceInteractionPolicy,
+)
+from wocbots.interaction.history import HistoryRecord
+
+# Training-time certainty is (eval_accuracy + eval_precision) / 2 for these agents, and
+# `infer_participants` resets every participant to it at the top of each sample (§6.6).
+_TRAIN_CERTAINTY = 0.75
 
 
 def make_agent(*features: str) -> Agent:
@@ -40,21 +52,22 @@ def test_arena_runner_completes_expected_rounds() -> None:
         label=1,
     )
     assert runner.last_rounds_completed == interaction_round_count(len(agents))
-    assert runner.last_encounter_count >= 0
+    # A round period that produces no encounters would silently make the whole W3 layer
+    # a no-op, which is exactly the regression this integration exists to prevent.
+    assert runner.last_encounter_count > 0
+    # Every encounter records BOTH directions (spec §6.5 symmetry).
+    assert len(runner.history_store) == 2 * runner.last_encounter_count
 
 
 def test_arena_encounters_update_certainty_and_backfill_history() -> None:
     agents = [make_agent("budget") for _ in range(8)]
-    for index, agent in enumerate(agents):
-        agent.current_prediction = 1 if index % 2 == 0 else 0
+    preds: dict[int, Literal[0, 1]] = {
+        id(agent): (1 if index % 2 == 0 else 0) for index, agent in enumerate(agents)
+    }
 
     runner = ArenaRoundInteractionRunner()
     state = LifecycleRunState()
     rng = np.random.default_rng(42)
-    before = agents[0].certainty
-    preds: dict[int, Literal[0, 1]] = {
-        id(agent): agent.current_prediction for agent in agents  # type: ignore[misc]
-    }
 
     run_sample(
         agents,
@@ -68,10 +81,62 @@ def test_arena_encounters_update_certainty_and_backfill_history() -> None:
 
     assert runner.last_encounter_count > 0
     assert len(runner.history_store) == 2 * runner.last_encounter_count
-    if before != agents[0].certainty:
-        assert agents[0].certainty != before
+    # The kernel ran for real: interaction moved certainty off the training-time reset value.
+    assert any(agent.certainty != _TRAIN_CERTAINTY for agent in agents)
 
     records = runner.history_store.get_interactions(sample_id=0)
     assert records
     assert all(record.ground_truth == 1 for record in records)
-    assert all(record.partner_correct is not None for record in records)
+    assert all(record.partner_correct == (record.partner_prediction == 1) for record in records)
+
+
+def test_trust_update_uses_encounter_time_predictions() -> None:
+    """§6.5 doAgree is an encounter-time fact — scoring's flip must not invert its sign.
+
+    Pins the kernel ordering the arena runner depends on: `a` disagrees with `b` when they
+    meet, then flips to `b`'s label under scoring. Trust must move by -0.05 (disagreement),
+    not +0.05 (the post-flip agreement the wrong ordering would see).
+    """
+    a = make_agent("budget")
+    b = make_agent("budget")
+    a.current_prediction, b.current_prediction = 1, 0
+    a.certainty, b.certainty = 0.02, 0.99
+
+    history = HistoryStore()
+    # One scored prior interaction in the a→b direction only: b_percCorrect = 1.0 for `a`,
+    # and None for `b` (no prior history ⇒ no update at all, spec §6.5).
+    history.record(
+        HistoryRecord(
+            sample_id="prior",
+            round_num=0,
+            agent=a,
+            partner=b,
+            agent_prediction=1,
+            partner_prediction=1,
+            agreement=True,
+            certainty_before=0.5,
+            certainty_after=0.5,
+            certainty_delta=0.0,
+            prediction_flipped=False,
+            partner_correct=True,
+            ground_truth=1,
+        )
+    )
+
+    Encounter(
+        a,
+        b,
+        CertaintyFlipScoringPolicy(),
+        ReferenceInteractionPolicy(history_store=history),
+        history_store=history,
+        sample_id=1,
+        round_num=0,
+    ).process()
+
+    # Scoring did flip `a` onto `b`'s label — without the flip the pin below proves nothing.
+    flipped_prediction: int | None = a.current_prediction
+    assert flipped_prediction == 0
+    # 0.7 + 0.05 * (1.0 * 1.0) * (-1)
+    assert b.trust_score == pytest.approx(0.65)
+    # No prior b→a history ⇒ `a`'s trust is untouched.
+    assert a.trust_score == pytest.approx(0.7)
