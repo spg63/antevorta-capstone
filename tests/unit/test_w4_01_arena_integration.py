@@ -140,3 +140,50 @@ def test_trust_update_uses_encounter_time_predictions() -> None:
     assert b.trust_score == pytest.approx(0.65)
     # No prior b→a history ⇒ `a`'s trust is untouched.
     assert a.trust_score == pytest.approx(0.7)
+
+
+def test_reusing_a_scored_sample_id_is_refused_not_silently_relabelled() -> None:
+    """A runner outliving its `LifecycleRunState` must not rewrite the earlier pass.
+
+    `run_sample` derives `sample_id` from `len(run_state.sample_results)`, which is unique
+    only inside one state. Two stateless calls on one runner would both be sample 0: the
+    second files its rows into the first's bucket and back-fills the whole bucket with the
+    second label, so `b_percCorrect` (§6.5) reads correctness that never happened.
+    """
+    agents = [make_agent("budget") for _ in range(6)]
+    preds: dict[int, Literal[0, 1]] = {id(agent): 1 for agent in agents}
+    sample = SampleFeatures(values={"budget": 1.0})
+    runner = ArenaRoundInteractionRunner()
+    rng = np.random.default_rng(7)
+
+    run_sample(agents, sample, preds, rng=rng, interaction=runner, label=1, state=None)
+    scored = runner.history_store.get_interactions(sample_id=0)
+    assert scored
+    assert all(record.ground_truth == 1 for record in scored)
+    record_count = len(runner.history_store)
+
+    with pytest.raises(ValueError, match="already been scored"):
+        run_sample(agents, sample, preds, rng=rng, interaction=runner, label=0, state=None)
+
+    # Refused before any of the second pass's rows landed, so sample 0 is untouched.
+    assert len(runner.history_store) == record_count
+    assert all(record.ground_truth == 1 for record in scored)
+
+
+def test_one_run_state_gives_each_sample_its_own_history_bucket() -> None:
+    agents = [make_agent("budget") for _ in range(6)]
+    preds: dict[int, Literal[0, 1]] = {id(agent): 1 for agent in agents}
+    sample = SampleFeatures(values={"budget": 1.0})
+    runner = ArenaRoundInteractionRunner()
+    state = LifecycleRunState()
+    rng = np.random.default_rng(7)
+
+    run_sample(agents, sample, preds, rng=rng, interaction=runner, label=1, state=state)
+    run_sample(agents, sample, preds, rng=rng, interaction=runner, label=0, state=state)
+
+    first = runner.history_store.get_interactions(sample_id=0)
+    second = runner.history_store.get_interactions(sample_id=1)
+    assert first and second
+    assert all(record.ground_truth == 1 for record in first)
+    assert all(record.ground_truth == 0 for record in second)
+    assert len(first) + len(second) == len(runner.history_store)

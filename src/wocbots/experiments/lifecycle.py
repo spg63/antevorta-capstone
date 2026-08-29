@@ -97,7 +97,7 @@ def prepare_arena_runner(
     sample_id: int | str,
 ) -> None:
     if isinstance(runner, ArenaRoundInteractionRunner):
-        runner.sample_id = sample_id
+        runner.begin_sample(sample_id)
 
 
 def backfill_arena_history(
@@ -108,7 +108,7 @@ def backfill_arena_history(
     if label is None or label not in (0, 1):
         return
     if isinstance(runner, ArenaRoundInteractionRunner):
-        runner.history_store.backfill_correctness(sample_id, cast(Literal[0, 1], label))
+        runner.backfill(sample_id, cast(Literal[0, 1], label))
 
 
 def infer_participants(participants: Sequence[Agent], predictions: Mapping[int, Literal[0, 1]]) -> None:
