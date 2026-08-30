@@ -46,13 +46,16 @@ class Encounter:
         cert_a_before = cast(float, profile_a["certainty"])
         cert_b_before = cast(float, profile_b["certainty"])
 
-        # 1. Update predictions (compute-then-apply)
-        self._scoring_policy.update_prediction(self._a, profile_b)
-        self._scoring_policy.update_prediction(self._b, profile_a)
-
-        # 2. Update trust (using encounter-time predictions)
+        # 1. Update trust, BEFORE scoring. §6.5's doAgree is an encounter-time fact and
+        #    step 2 may flip a prediction; reading trust off post-flip predictions inverts
+        #    doAgree's sign. Scoring is unaffected by the order because it reads the profile
+        #    snapshots taken above, never live partner state. Do not reorder.
         self._interaction_policy.update_trust(self._a, self._b)
         self._interaction_policy.update_trust(self._b, self._a)
+
+        # 2. Update predictions (compute-then-apply)
+        self._scoring_policy.update_prediction(self._a, profile_b)
+        self._scoring_policy.update_prediction(self._b, profile_a)
 
         # 3. Record directed history in HistoryStore if present
         if self._history_store is not None:
