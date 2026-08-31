@@ -1,5 +1,41 @@
 # WoC-Bots Reimagined — Ticket Set — INDEX
 
+> **v1.21 (2026-08-28): W4 wave CORE close-out bookkeeping.** Manan Patel: W4-01 arena integration
+> code-complete on `manan/w4-01-arena-integration` (PR pending); W4-02/03/04 merged on `develop`
+> (PR #17, #29). W4-01 §8 independent review still open before ✅ flip.
+>
+> **v1.20 (2026-08-24): W3-04 status bookkeeping.**
+>
+> **v1.19 (2026-08-17): W3-03 status bookkeeping.
+>
+> **v1.18 (2026-08-15): W3-02 status bookkeeping.** Samuel Gauthier: repairs
+> bookkeeping the W3-02 close skipped
+>
+> **v1.17 (2026-08-10): W2-03 closed against REAL data — and it was broken.** Rutvij: both shipped
+> Hollywood crowd configs named `popularity`, a column the W1-03 ETL does not emit (it emits
+> `tmdb_popularity`), so **both the §9.2 five-agent and §9.3 twenty-six-agent reference crowds were
+> unbuildable** and had been since they were written. Thirty green W2-03 unit tests missed it because
+> they construct synthetic frames to match whatever the config names. Fixed; new fast CI pin
+> `test_hollywood_configs_name_only_real_etl_columns` (with its own planted-defect self-test) makes
+> the class of bug permanently catchable for every future crowd config. New: shared
+> `experiments/hollywood_data.py` (one real-split path for W2-03 and W2-04), the
+> `w2_03_hollywood_crowd` kind, two experiment configs, 9 tests, and committed manifests for both
+> crowds. W2-02's real-data band check is unskipped and its sanity agent passes at 97.3%. W2-03's own
+> blocker `W1-06` remains unmet and the `budget` anchor stays provisional — not re-anchored here.
+>
+> **v1.16 (2026-08-10): W2 AGENTS wave completed + the §9.2 reproduction ESCALATES.** Rutvij: W2-04
+> plan, the `w2_04_agent_table` experiment kind, config, comparison-table emitter, 8 tests, and the
+> committed manifest. Governance backfill — W2-01's plan and W2-02/W2-03's closing reports land in
+> `tickets/` (they had lived outside the repo since July); W2-01..04 status marks written for the
+> first time. **The reproduction misses its bands and this is reported, not absorbed** (ticket AC:
+> "persistent out-of-band rows → escalated with the manifest"): the shipped MovieLens snapshot is
+> checksum-verified yet yields a 4,227-movie join vs the spec's 4,722 and a 43.93/56.07 class balance
+> vs the published 47.5/52.5, while W1-06's ranking puts `budget` LAST (r = 0.0224) against §9.2's
+> expectation that it anchors every row. **W1-04's gate and W1-06's RESULT block are both still open,
+> and W1-02 has never run for want of an `antevorta-db` artifact.** Stakeholder ruling requested — see
+> `W2-04_agent-table-reproduction_PLAN.md` §12. No W2 ticket is ✅: none has an implementer-independent
+> review (preamble §8), and Rutvij drove all four sessions.
+>
 > **v1.15 (2026-08-07): W3-02 ARENA delivery + W3-01 status bookkeeping.** Samuel Gauthier: movement
 > policy, anti-clique rules, lockstep round engine, the `w3_02_movement_smoke` harness kind and its
 > committed manifest, plan + closing report. Also repairs bookkeeping the W3-01 close skipped — W3-01's
@@ -152,28 +188,28 @@ ticket first (the what), then its plan (the how).
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W2-01 | `W2-01_agent-state-profile.md` | Agent state (§2 table) + public profile | W0-02 |
-| W2-02 | `W2-02_classifier-train-eval-prune.md` | Classifiers, train/eval/prune, sanity agent | W2-01, W0-04 (real ACs: W1-05) |
-| W2-03 | `W2-03_feature-assignment-crowd.md` | Feature assignment + crowd builder | W2-02, W1-06 |
-| W2-04 | `W2-04_agent-table-reproduction.md` | §9.2 agent-table reproduction (experiment) | W2-03 |
+| W2-01 | `W2-01_agent-state-profile.md` | Agent state (§2 table) + public profile | W0-02 — **◐ merged (PR #15 chain), pending independent review** |
+| W2-02 | `W2-02_classifier-train-eval-prune.md` | Classifiers, train/eval/prune, sanity agent | W2-01, W0-04 (real ACs: W1-05 ✅ now met — sanity agent 97.3% on real data) — **◐ merged (PR #15), pending independent review** |
+| W2-03 | `W2-03_feature-assignment-crowd.md` | Feature assignment + crowd builder | W2-02, **W1-06 still unmet** — **◐ merged (PR #16), now verified on real data (see CLOSING-REPORT-ADDENDUM); pending independent review** |
+| W2-04 | `W2-04_agent-table-reproduction.md` | §9.2 agent-table reproduction (experiment) | W2-03 — **◐ implemented, OUT OF BAND — escalated (see manifest + plan §12)** |
 
 ## Wave W3 — Interaction arena (pure logic — parallel with W1/W2)
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
 | W3-01 | `W3-01_grid-geometry-init.md` | Grid geometry + random init | W0-02 — **✅ (reviewed: @rootwij, 2026-08-01)** |
-| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **◐ implemented, pending independent review** |
-| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 |
-| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 |
+| W3-02 | `W3-02_movement-rounds.md` | Movement, anti-clique, lockstep rounds | W3-01 — **✅ (reviewed: @rootwij, 2026-08-10)**  |
+| W3-03 | `W3-03_certainty-update-flip.md` | The interaction kernel (certainty/flip) | W2-01, W3-02 - **✅ (reviewed: @AnuragRSimha, 2026-08-17)** |
+| W3-04 | `W3-04_history-trust.md` | History store + trust updates | W3-03 - **✅ (reviewed: @sarjit304, 2026-08-24)**  |
 
 ## Wave W4 — Lifecycle + voting aggregation
 
 | ID | File | Title | Blocked by |
 |---|---|---|---|
-| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02, **W3-02**, **W3-04** (arena stub; scaffold ◐ on develop) |
-| W4-02 | `W4-02_ground-truth-feedback.md` | Ground-truth feedback, priorPerf, degenerate rule | W4-01 |
-| W4-03 | `W4-03_voting-aggregators.md` | UWM, WVM, trust-weighted (mechanism) | W4-01 |
-| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 — **◐ implemented, pending review/merge** |
+| W4-01 | `W4-01_participant-selection-loop.md` | Participant selection, per-sample loop, resets, synthetic anchor | W2-02 — **◐ code-complete** (PR pending; §8 review open) |
+| W4-02 | `W4-02_ground-truth-feedback.md` | Ground-truth feedback, priorPerf, degenerate rule | W4-01 — **✅ merged PR #17** |
+| W4-03 | `W4-03_voting-aggregators.md` | UWM, WVM, trust-weighted (mechanism) | W4-01 — **✅ merged PR #17** |
+| W4-04 | `W4-04_tiers-mechanism-comparison.md` | Tiers + the 3>2>1 comparison (experiment) | W4-02, W4-03 — **✅ merged PR #29** |
 
 ## Wave W5 — Baseline + Q1 reproduction (Q1 exit)
 

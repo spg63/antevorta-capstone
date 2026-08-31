@@ -14,14 +14,16 @@ from wocbots.agents.classifier import LabeledData
 from wocbots.agents.training import TrainedAgent
 from wocbots.aggregation import TrustWeightedAggregator, UWMAggregator, WVMAggregator
 from wocbots.aggregation.voting import certainty_weighted_vote
+from wocbots.experiments.arena_interaction import ArenaRoundInteractionRunner
 from wocbots.experiments.feedback import FeedbackState, apply_ground_truth, record_degenerate_crowd
 from wocbots.experiments.lifecycle import (
     InteractionPeriodRunner,
     LifecycleRunState,
-    NoOpInteractionRunner,
     SampleFeatures,
     SampleResult,
+    backfill_arena_history,
     infer_participants,
+    prepare_arena_runner,
     run_sample,
     select_participants,
 )
@@ -119,7 +121,7 @@ def run_test_set(
     """Run the W4-01 infer → arena → aggregate loop over every test row."""
     agents = [item.agent for item in trained]
     agg = aggregator or UWMAggregator()
-    runner = interaction or NoOpInteractionRunner()
+    runner = interaction or ArenaRoundInteractionRunner()
     state = LifecycleRunState()
     y_pred: list[int] = []
 
@@ -178,7 +180,7 @@ def run_mechanism_comparison(
 ) -> MechanismComparisonSummary:
     """One labeled pass; all three aggregators on identical participant snapshots (W4-04 S2)."""
     agents = [item.agent for item in trained]
-    runner = interaction or NoOpInteractionRunner()
+    runner = interaction or ArenaRoundInteractionRunner()
     feedback = FeedbackState()
     participant_counts: list[int] = []
 
@@ -192,6 +194,7 @@ def run_mechanism_comparison(
         participants, _skipped = select_participants(agents, sample, pruned=pruned)
         infer_participants(participants, preds)
         participant_counts.append(len(participants))
+        prepare_arena_runner(runner, index)
 
         degenerate = len(participants) < _DEGENERATE_THRESHOLD
         if degenerate:
@@ -202,6 +205,7 @@ def run_mechanism_comparison(
         mechanism_preds = _aggregate_all_mechanisms(participants, rng=rng, degenerate=degenerate)
         label = int(test_data.y[index])
         apply_ground_truth(participants, label, feedback)
+        backfill_arena_history(runner, index, label)
 
         for key, prediction in mechanism_preds.items():
             predictions[key].append(prediction.class_label)

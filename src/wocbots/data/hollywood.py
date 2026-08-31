@@ -173,6 +173,10 @@ def build_hollywood_features(
         ]
 
     joined = join_datasets(tmdb_movies, links, ml_movies)
+    # The join retains both source titles as pandas suffixes. The public W1-03 contract
+    # carries the TMDb title as movie provenance; without this normalization the declared
+    # OUTPUT_COLUMNS schema silently loses its `title` member after the merge.
+    joined["title"] = joined["title_x"]
     joined = joined.rename(
         columns={
             "popularity": "tmdb_popularity",

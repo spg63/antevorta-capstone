@@ -4,6 +4,14 @@ Raw files live locally at `data/raw/<dataset>/` and are **never committed** (see
 This file, its checksums, and the small fixture excerpts under `tests/fixtures/` are the
 committed record.
 
+## Authorization record
+
+The GroupLens MovieLens 20M terms state that redistribution requires separate
+permission. On **2026-08-16**, the repository owner attested that they hold the
+required permissions for the intentionally minimal fixture excerpts committed under
+`tests/fixtures/`. This attestation applies only to those W1-01 test excerpts; it does
+not authorize committing raw data, archives, derived datasets, or additional excerpts.
+
 **`movie-dataset.zip`:** the stakeholder-provided archive that supplies §1-2's raw files. It
 also contains two datasets this pipeline does not use — `movieDataset/` (Kaggle's "The Movies
 Dataset": `movies_metadata.csv`, `credits (1).csv`, `keywords.csv`, `links.csv`,
@@ -13,10 +21,14 @@ deleted) since no W1-03 rule (§4.3) reads them.
 
 ## 1. TMDb 5000 Movie Dataset
 
-- **Source:** Kaggle, "TMDB 5000 Movie Dataset" (`tmdb/5000-movies`).
+- **Source:** stakeholder-provided `movie-dataset.zip`, traced to Kaggle's
+  [TMDB 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
+  The Kaggle listing can change independently of this historical artifact; the checksums
+  below, not a future download, identify the exact bytes used here.
 - **License / ToS:** Kaggle-hosted; underlying data sourced from TMDb under TMDb's terms of
-  use (non-commercial, attribution). Fixture excerpts below are kept minimal per the
-  repo-public rule (index v1.9).
+  use (non-commercial, attribution). The repository-owner authorization record above
+  covers the deliberately minimal W1-01 fixture excerpts; the repo-public rule (index
+  v1.9) still prohibits raw-data commits.
 - **Files acquired:** `tmdb/movies.csv`, `tmdb/credits.csv` (bundled inside
   `movie-dataset.zip` as `tmdb/movies.csv` / `tmdb/credits.csv`; byte-identical to the
   standalone Kaggle download's `tmdb_5000_movies.csv` / `tmdb_5000_credits.csv`).
@@ -31,9 +43,12 @@ deleted) since no W1-03 rule (§4.3) reads them.
 
 ## 2. MovieLens 20M
 
-- **Source:** Kaggle mirror of GroupLens "MovieLens 20M Dataset" (`grouplens/movielens-20m-dataset`).
-- **License / ToS:** GroupLens research-use license (non-commercial, no redistribution of the
-  full dataset). Fixture excerpts below are ~50-row samples only, consistent with that term.
+- **Source:** stakeholder-provided `movie-dataset.zip`, traced to Kaggle's
+  [MovieLens 20M Dataset](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset).
+  The checksums below identify the exact supplied snapshot.
+- **License / ToS:** GroupLens research-use license (non-commercial; redistribution requires
+  separate permission). The repository-owner authorization record above covers only these
+  ~50-row W1-01 fixture excerpts.
 - **Files acquired (subset needed for W1):** `link.csv`, `movie.csv`, `rating.csv`, all under
   `movie-dataset.zip`'s `movielens/` folder. (`tag.csv`, `genome_tags.csv`,
   `genome_scores.csv` were also supplied but are not consumed by the Hollywood pipeline —
@@ -57,9 +72,11 @@ published MovieLens 20M row count (20,000,263 ratings).
 ## 3. Checksum verification
 
 `tests/unit/data/test_provenance.py` recomputes SHA-256 for any of the files above that are
-present on disk and compares against this table. Datasets are gitignored, so in CI (no raw
-data present) every case is skipped with a named reason; locally, with `data/raw/` populated,
-the test enforces the table stays truthful.
+present on disk and compares against this table. It counts TMDb-style CSV records with a CSV
+parser (which handles quoted embedded newlines) and uses a streaming byte-line count only for
+the documented one-record-per-line numeric `rating.csv` format. Datasets are gitignored, so in
+CI (no raw data present) every case is skipped with a named reason; locally, with `data/raw/`
+populated, the test enforces the table stays truthful.
 
 ## 4. Fixture excerpts
 
@@ -78,73 +95,40 @@ that loads it):
   aggregate rule, §4.3.4, has more than one rating to aggregate), including a movie with only
   one rating (edge case for the mean/weighted-mean math).
 
-## 5. antevorta-db ground truth (W1-02) — SCOPE RULED, PARTIALLY RESOLVED
+## 5. Python SQLite reference artifact (W1-02) — STAKEHOLDER-RULED
 
-This resolves ticket S1 under its own documented fallback ("the stakeholder can supply the
-built file — either way the deliverable is the FILE plus a record of how it was produced"):
-**no `antevorta-db` JVM build was run, and no row-level extraction from the antevorta-db
-instance was performed.** Instead, `movies.sqlite` was built by porting the raw CSVs through
-the already-tested W1-03 pipeline (`scripts/build_movies_sqlite.py`, calling
-`wocbots.data.hollywood.build_hollywood_features`) and writing the result to SQLite. That file
-is committed-by-reference as W1-02's ground-truth deliverable; this section is the record of
-how it was produced, per S1's requirement.
+**Stakeholder ruling, 2026-08-17:** `antevorta-db` is not required to create W1-02's SQLite
+file. `scripts/build_movies_sqlite.py` loads the five W1-01 raw files into five source tables
+(`movielens_links`, `movielens_movies`, `movielens_ratings`, `tmdb_movies`, and
+`tmdb_credits`), calls `wocbots.data.hollywood.build_hollywood_features` exactly once, and
+writes its unchanged 14-column output as the sixth `movies` table. The list-valued `genres`
+feature is losslessly encoded as compact JSON at the SQLite boundary because SQLite has no
+list type.
 
-**What this ruling does NOT resolve — carried forward, still open:**
+The resulting database is a reproducible, language-neutral Python-pipeline artifact, **not an
+independent validation oracle** for W1-03. W1-04 owns labels; W1-02 creates no label or
+performance-class columns and does not claim class coverage.
 
-1. **Independence.** `movies.sqlite` is produced by the same join/clean logic W1-04 exists to
-   validate. It is not an independent check on that pipeline — it can only agree with itself.
-   The row-level half of W1-04's reconciliation gate (S1: matched/dropped counts vs the spec's
-   reference 4,722/1,023/3,699; per-feature agreement) still has nothing independent to
-   validate against.
-2. **Labels.** `movies.sqlite` carries none of the label columns (`made_more_than_2x_budget`,
-   `performance_class`, `failure`, `mild_success`, `success`, `great_success`,
-   `missing_data`). The stakeholder's ruling addressed the build *method*, not the label
-   *formula* — antevorta-db's `made_more_than_2x_budget` is computed in
-   `dbcreator/hollywood/TMDBMoviesPusher.kt`'s `determinePerformanceClass`/`madeBackBudget` as
-   "made back its budget at all," not what the column name implies, and is not derivable from
-   the spec text alone. Fabricating it would be the exact shortcut W1-02's ticket forbids ("a
-   'fixed' ground truth validates nothing"), so it was not attempted. W1-04's S2/S3 (both label
-   variants, the reconciliation gate, the shipped-label ruling) cannot run as specified without
-   either: (a) the stakeholder separately supplying the label formula/column, or (b) a stakeholder
-   ruling that the gate ships spec's stated rule (`revenue > 2×budget`) by default, undefended
-   by reference reconciliation, and documents that explicitly as a scope cut.
-
-**What was extracted (S2, everything the supplied file actually contains):**
-`wocbots.data.ground_truth.extract_reference` + `scripts/extract_w1_02_reference.py`, run
-against `movies.sqlite` (3,032 rows — matches the join-count discussed in section 6 below):
+**Build record (2026-08-17):**
 
 | Check | Result |
 |---|---|
-| Feature columns present | all of §4.2's OUTPUT_COLUMNS except `title` (absent from the supplied file; not re-added) |
+| SQLite path | `data/processed/movies.sqlite` (ignored) |
+| Table/schema | five source tables plus `movies`; ordered W1-03 `OUTPUT_COLUMNS`, including `title` |
 | Row count | 3,032 |
+| SQLite SHA-256 | `cf9004de0dda723f8d80f89017cfef43cc1723fd786bb10a059ce7ccbca768ef` |
+| pandas / Python / SQLite | 3.0.3 / 3.12.12 / 3.50.4 |
 | Null counts | 0 across every column |
-| Zero counts | `ml_vote_count`: 1 row; all other numeric columns: 0 |
-| Negative-value sanity (budget/revenue/runtime) | none found |
-| Duplicate `tmdbId` | 1 pair (tmdbId 22649 → movieId 976 and 77141 — a MovieLens duplicate-listing artifact, kept visible rather than silently deduplicated) |
-| Duplicate `movieId` | 0 |
-| Label columns | absent (see above) — not fabricated |
+| Zero counts | `ml_vote_average`: 1; `ml_vote_count`: 1; all other numeric columns: 0 |
+| Duplicate `tmdbId` / `movieId` | 1 / 0 |
 
-Versioned reference table: `data/derived/movies_reference_v1.csv` (gitignored per
-`data/README.md`'s derived-data policy — reproduce with
-`scripts/extract_w1_02_reference.py --sqlite data/raw/movies.sqlite`). Committed ~50-row
-excerpt: `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv`, stratified by
-budget decile plus the one duplicate-tmdbId pair (cannot span "all performance classes" per
-the ticket's literal test wording — there are none in this file; see
-`tests/unit/data/test_ground_truth.py`'s two named skips for exactly what unblocks them).
-
-**Review amendment (2026-08-16):** the committed excerpt as first written contains **zero**
-duplicate-tmdbId rows, not the pair claimed above — `write_excerpt` appended them after a
-full-size decile sample and then truncated to `n`, dropping every one. The selection order is
-fixed and pinned by `test_write_excerpt_keeps_the_duplicate_rows_and_respects_n`, but the
-committed CSV still predates the fix and must be regenerated by someone who has
-`data/raw/movies.sqlite` (`uv run python scripts/extract_w1_02_reference.py --sqlite
-data/raw/movies.sqlite`) before this paragraph is true of the file on disk.
-
-This blocks:
-- The independent, row-level half of W1-04's reconciliation gate (item 1 above).
-- W1-04's label variant (b) and the S3 gate as literally specified (item 2 above) — pending a
-  further stakeholder ruling on how to proceed (see this file's ask to the stakeholder, and
-  `AGENT_HANDOFF.md`'s current-state entry).
+Ignored full export: `data/derived/movies_reference_v1.csv`. Committed aggregate manifests:
+`data/reference_manifests/movies_sqlite_v1.json` and
+`data/reference_manifests/movies_reference_v1.json`. Committed 50-row feature excerpt:
+`tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv`, selected deterministically
+across budget deciles. The existing repository-owner authorization must be confirmed to cover
+this joined-table excerpt before ticket closure; it does not follow automatically from the
+W1-01 raw-fixture attestation.
 
 ## 6. Investigation note — the join-count discrepancy (feeds W1-04's escalation)
 
@@ -172,4 +156,3 @@ vs reference 47.5/52.5) all track directly from this shortfall.
 **This is the W1-04 gate firing.** Per that ticket's own rule ("if neither matches
 cleanly... escalate to the stakeholder before closing"), this has been left as an
 escalation, not silently reconciled. See W1-04's RESULT block.
-

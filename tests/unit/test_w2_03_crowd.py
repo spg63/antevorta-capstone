@@ -159,9 +159,11 @@ def test_26_agent_mix_constructs_exactly() -> None:
     roster = build_assignment_policy(config.assignment).assign(np.random.default_rng(0))
     assert len(roster) == 26
     assert dict(sorted(Counter(len(agent) for agent in roster).items())) == {2: 10, 3: 10, 4: 5, 5: 1}
-    # every agent budget-anchored, only §9.2 five-feature-set columns dealt (invariants hold here too)
+    # every agent budget-anchored, only §9.2 five-feature-set columns dealt (invariants hold here too).
+    # `tmdb_popularity`, not `popularity`: the W1-03 ETL renames TMDb's column, and this config
+    # named the nonexistent one until W2-04's real-data run caught it (see the W2-03 addendum).
     assert all("budget" in agent for agent in roster)
-    legal = {"budget", "vote_count", "vote_average", "runtime", "popularity"}
+    legal = {"budget", "vote_count", "vote_average", "runtime", "tmdb_popularity"}
     assert all(set(agent) <= legal for agent in roster)
 
 
@@ -170,12 +172,14 @@ def test_explicit_roster_is_exact() -> None:
     — the §9.2 matched 5-agent crowd (four budget-anchored 2-feature agents + one 5-feature)."""
     config = CrowdConfig.from_yaml(CONFIGS_DIR / "crowd_hollywood_5agent.yaml")
     roster = build_assignment_policy(config.assignment).assign(np.random.default_rng(999))
+    # `tmdb_popularity` is the real ETL column name; this config said `popularity` until
+    # W2-04's real-data run caught it. See W2-03_feature-assignment-crowd_CLOSING-REPORT-ADDENDUM.
     assert roster == (
         ("budget", "vote_count"),
         ("budget", "vote_average"),
         ("budget", "runtime"),
-        ("budget", "popularity"),
-        ("budget", "vote_count", "vote_average", "runtime", "popularity"),
+        ("budget", "tmdb_popularity"),
+        ("budget", "vote_count", "vote_average", "runtime", "tmdb_popularity"),
     )
 
 

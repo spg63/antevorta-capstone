@@ -6,6 +6,7 @@ in sync: if a checksum or row count changes here, it changed there too, and vice
 
 from __future__ import annotations
 
+import csv
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
@@ -68,11 +69,32 @@ RAW_FILES: tuple[FileProvenance, ...] = (
 
 def sha256_of(path: Path, chunk_size: int = 1 << 20) -> str:
     """Stream a file's SHA-256 (safe for the ~690MB rating.csv)."""
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+
     digest = hashlib.sha256()
     with path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(chunk_size), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def count_csv_records(path: Path, *, single_line_records: bool = False) -> int:
+    """Count CSV data records without loading the file into memory.
+
+    TMDb's JSON-like CSV columns may contain quoted newlines, so their records must be
+    counted by ``csv.reader`` rather than physical lines.  The MovieLens ratings
+    snapshot is a documented numeric, one-record-per-line format; that one file may
+    use the much cheaper byte-line count.
+    """
+    if single_line_records:
+        with path.open("rb") as fh:
+            return max(sum(1 for _ in fh) - 1, 0)
+
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.reader(fh)
+        next(reader, None)  # Header is not a data record.
+        return sum(1 for _ in reader)
 
 
 def verify(file_provenance: FileProvenance) -> tuple[bool, str]:

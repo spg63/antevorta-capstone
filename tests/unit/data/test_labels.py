@@ -11,7 +11,7 @@
    escalated, and was resolved by ruling variant (a) shipped **undefended** — i.e. the
    ticket explicitly does not require this match. What remains testable is that the
    shipped label is reproducible: `test_shipped_label_balance_matches_ratified_result`
-   pins the actual measured balance (43.93/56.07 on `data/raw/movies.sqlite`, n=3,032) so a
+   pins the actual measured balance (43.93/56.07 on `data/processed/movies.sqlite`, n=3,032) so a
    silent change to the label definition or the underlying data would be caught, without
    re-imposing the published-balance requirement the ruling deliberately waived. It reads a
    gitignored derived CSV (`data/*.csv`, see `.gitignore`), so it is a skip-if-absent local

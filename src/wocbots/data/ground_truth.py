@@ -1,221 +1,395 @@
-"""W1-02: ground-truth SQLite ingestion + reference extraction.
+"""W1-02: deterministic Python SQLite build and feature-reference extraction.
 
-**Scope ruling (Sean Grimes, email, 2026-08-14, subject "Re: Antevorta SQLite"):** build the
-ground-truth SQLite ourselves by porting the raw CSVs (the W1-03 join/clean pipeline), rather
-than standing up the `antevorta-db` JVM build or extracting a row-level reference out of the
-"250+TB" antevorta-db instance. Quoting the ruling: "just build that yourself... it's just
-porting the csv files into a SQLite db... Extracting that specific data, like 50KB from a
-250+TB database is going to be a huge pain."
-
-This resolves ticket S1 under its documented fallback ("the stakeholder can supply the built
-file -- either way the deliverable is the FILE plus a record of how it was produced"): the
-FILE is `movies.sqlite` (built by `scripts/build_movies_sqlite.py`, itself calling
-`wocbots.data.hollywood.build_hollywood_features` -- the W1-03 pipeline), and this module is
-the record of how it was produced plus the S2 extraction/versioning work on top of it.
-
-**What this ruling does NOT resolve:** the label columns. `movies.sqlite` was built by the
-same join/clean logic W1-04 needs to validate, so it is not an independent check on that
-logic, and it carries no label columns at all (`made_more_than_2x_budget`, `performance_class`,
-`failure`, `mild_success`, `success`, `great_success`, `missing_data`). The stakeholder's email
-only addresses the build/extraction *method*; it does not supply antevorta-db's label formula
-(`dbcreator/hollywood/TMDBMoviesPusher.kt`'s `determinePerformanceClass`/`madeBackBudget`,
-which spec grounding notes is NOT what its column name implies). Fabricating that formula from
-the spec text alone is exactly the shortcut W1-02's own ticket forbids ("a 'fixed' ground truth
-validates nothing") -- so this module extracts and versions everything that IS in the supplied
-file, and leaves the label columns explicitly absent and flagged, rather than inventing them.
-
-Downstream effect: W1-04's S1-S3 (row-level reference validation, the two-label-variant
-reconciliation gate) could not run in the form that ticket specifies, because there is no
-independent reference to validate against. **Resolved 2026-08-15** (see W1-04's ticket RESULT
-block): reference-column reconciliation was ruled out of scope; variant (a) (`revenue > 2 *
-budget`) ships as THE label, undefended, without matching the published class balance. This
-module's job stops at "no reference exists" — it is not responsible for that ruling, only for
-not papering over the gap it created.
+This module serializes W1-03's already-cleaned Hollywood feature table; it never repeats
+the join/clean transforms or manufactures labels.  The resulting SQLite is a portable,
+canonical pipeline artifact, not an independent oracle for the same Python ETL.
 """
 
 from __future__ import annotations
 
 import json
+import os
+import re
 import sqlite3
-from dataclasses import dataclass, field
+import sys
+import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
 
 from wocbots.data.hollywood import OUTPUT_COLUMNS
+from wocbots.data.provenance import sha256_of
 
-# Columns actually present in the supplied movies.sqlite (S1's deliverable). `title` is in
-# OUTPUT_COLUMNS but was dropped somewhere upstream of the supplied file -- recorded, not
-# silently patched back in.
-REFERENCE_FEATURE_COLUMNS: tuple[str, ...] = (
-    "tmdbId",
-    "movieId",
-    "budget",
-    "revenue",
-    "runtime",
-    "tmdb_popularity",
-    "tmdb_vote_average",
-    "tmdb_vote_count",
-    "ml_vote_average",
-    "ml_vote_count",
-    "vote_average",
-    "vote_count",
-    "genres",
+TABLE_NAME = "movies"
+_SQLITE_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+REFERENCE_FEATURE_COLUMNS: tuple[str, ...] = tuple(OUTPUT_COLUMNS)
+SOURCE_TABLE_NAMES = (
+    "movielens_links",
+    "movielens_movies",
+    "movielens_ratings",
+    "tmdb_movies",
+    "tmdb_credits",
 )
+DATABASE_TABLE_NAMES = (*SOURCE_TABLE_NAMES, TABLE_NAME)
 
-# Columns whose domain is [0, inf) where present. Both the zero-count record and the
-# non-negativity gate in `extract_reference` read this one list, so they cannot drift apart.
-NON_NEGATIVE_COLUMNS: tuple[str, ...] = (
-    "budget",
-    "revenue",
-    "runtime",
-    "tmdb_vote_count",
-    "ml_vote_count",
-    "vote_count",
-)
+_SOURCE_SCHEMAS = {
+    "movielens_links": """CREATE TABLE movielens_links (
+        movie_id INTEGER PRIMARY KEY, imdb_id INTEGER, tmdb_id INTEGER)""",
+    "movielens_movies": """CREATE TABLE movielens_movies (
+        movie_id INTEGER PRIMARY KEY, title TEXT NOT NULL, genres TEXT NOT NULL)""",
+    "movielens_ratings": """CREATE TABLE movielens_ratings (
+        user_id INTEGER NOT NULL, movie_id INTEGER NOT NULL, rating REAL NOT NULL,
+        rated_at TEXT NOT NULL, PRIMARY KEY (user_id, movie_id, rated_at))""",
+    "tmdb_movies": """CREATE TABLE tmdb_movies (
+        tmdb_id INTEGER PRIMARY KEY, budget INTEGER, genres TEXT, homepage TEXT, keywords TEXT,
+        original_language TEXT, original_title TEXT, overview TEXT, popularity REAL,
+        production_companies TEXT, production_countries TEXT, release_date TEXT, revenue INTEGER,
+        runtime REAL, spoken_languages TEXT, status TEXT, tagline TEXT, title TEXT,
+        vote_average REAL, vote_count INTEGER)""",
+    "tmdb_credits": """CREATE TABLE tmdb_credits (
+        tmdb_id INTEGER PRIMARY KEY, title TEXT, cast_json TEXT, crew_json TEXT)""",
+}
 
-# Per the module docstring: not extractable from the supplied file under this ruling, and not
-# fabricated. W1-04 must source these independently (or the stakeholder must rule the gate
-# out of scope) before they can be populated.
-LABEL_COLUMNS: tuple[str, ...] = (
-    "made_more_than_2x_budget",
-    "performance_class",
-    "failure",
-    "mild_success",
-    "success",
-    "great_success",
-    "missing_data",
-)
+
+@dataclass(frozen=True)
+class SourceTables:
+    """The five unmodified W1-01 CSV tables that are retained in the SQLite artifact."""
+
+    links: pd.DataFrame
+    movies: pd.DataFrame
+    ratings: pd.DataFrame
+    tmdb_movies: pd.DataFrame
+    tmdb_credits: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class SQLiteBuildResult:
+    """Fingerprint of a completed W1-02 SQLite build."""
+
+    sqlite_path: Path
+    table_name: str
+    columns: tuple[str, ...]
+    row_count: int
+    sha256: str
+    sqlite_version: str
+    pandas_version: str
+    python_version: str
+    source_table_row_counts: dict[str, int]
+
+    def to_manifest_dict(self) -> dict[str, object]:
+        return {
+            "sqlite_path": str(self.sqlite_path),
+            "table_name": self.table_name,
+            "columns": list(self.columns),
+            "row_count": self.row_count,
+            "sha256": self.sha256,
+            "sqlite_version": self.sqlite_version,
+            "pandas_version": self.pandas_version,
+            "python_version": self.python_version,
+            "source_table_row_counts": self.source_table_row_counts,
+            "database_tables": list(DATABASE_TABLE_NAMES),
+            "artifact_kind": "python_w1_03_feature_sqlite",
+            "independence_note": "This SQLite is generated by W1-03 and is not independent ETL validation.",
+        }
 
 
 @dataclass(frozen=True)
 class ReferenceExtractionResult:
-    """S2's deliverable: the loaded reference table plus the counts the ticket requires
-    recorded ("record row count, class distribution, per-column null/zero counts")."""
+    """The unchanged feature reference table and its auditable aggregate counts."""
 
     table: pd.DataFrame
     source_path: Path
+    source_sha256: str
+    table_name: str
+    columns: tuple[str, ...]
     row_count: int
-    missing_columns: tuple[str, ...]
     null_counts: dict[str, int]
     zero_counts: dict[str, int]
     duplicate_tmdb_ids: int
     duplicate_movie_ids: int
-    class_distribution: dict[str, dict[str, int]] = field(default_factory=dict)
 
     def to_manifest_dict(self) -> dict[str, object]:
         return {
             "source_path": str(self.source_path),
+            "source_sha256": self.source_sha256,
+            "table_name": self.table_name,
+            "columns": list(self.columns),
             "row_count": self.row_count,
-            "missing_columns": list(self.missing_columns),
             "null_counts": self.null_counts,
             "zero_counts": self.zero_counts,
             "duplicate_tmdb_ids": self.duplicate_tmdb_ids,
             "duplicate_movie_ids": self.duplicate_movie_ids,
-            "class_distribution": self.class_distribution,
-            "note": (
-                "Label columns absent from source; not fabricated. See "
-                "wocbots.data.ground_truth module docstring and DATA_PROVENANCE.md section 5."
+            "artifact_kind": "python_w1_03_feature_reference",
+            "independence_note": (
+                "This reference is generated by W1-03 and is not independent ETL validation."
             ),
         }
 
 
-def load_reference_sqlite(sqlite_path: Path, table_name: str = "movies") -> pd.DataFrame:
-    """Load the stakeholder-ratified ground-truth SQLite (S1's deliverable) into a DataFrame."""
-    # `table_name` is interpolated into SQL because SQLite cannot parameterize identifiers.
-    # It is caller-supplied, so it is validated as a bare identifier first rather than
-    # trusted — the callers today pass the default, but nothing in the signature says so.
-    if not table_name.isidentifier():
-        raise ValueError(f"table_name must be a bare SQL identifier, got {table_name!r}")
-    con = sqlite3.connect(sqlite_path)
-    try:
-        df = pd.read_sql(f"select * from {table_name}", con)
-    finally:
-        con.close()
-    return df
+def _validated_table_name(table_name: str) -> str:
+    if table_name != TABLE_NAME:
+        raise ValueError(f"table_name must be {TABLE_NAME!r}, got {table_name!r}")
+    if not _SQLITE_IDENTIFIER.fullmatch(table_name):
+        raise ValueError(f"invalid SQLite table name: {table_name!r}")
+    return table_name
 
 
-def extract_reference(sqlite_path: Path, table_name: str = "movies") -> ReferenceExtractionResult:
-    """S2: extract + version the reference table, recording the counts the ticket requires.
+def _validate_feature_columns(features: pd.DataFrame) -> None:
+    actual = list(features.columns)
+    expected = list(REFERENCE_FEATURE_COLUMNS)
+    if actual != expected:
+        raise ValueError(
+            f"feature columns must exactly equal OUTPUT_COLUMNS; expected {expected}, got {actual}"
+        )
 
-    Sanity checks performed here (numeric bounds), separate from the null/zero counts:
-    budget/revenue/runtime are non-negative where present; vote counts are non-negative.
-    Raises ValueError if violated -- a violation means the supplied file itself is
-    inconsistent, which is worth stopping on rather than silently versioning. This is a
-    data-integrity gate on an external file, not an internal invariant, so it must survive
-    `python -O` (which strips `assert`).
+
+def _sqlite_serializable_features(features: pd.DataFrame) -> pd.DataFrame:
+    """Encode W1-03's list-valued genres as stable JSON for SQLite storage.
+
+    SQLite has no list type. This is a lossless transport encoding at the database
+    boundary, not a feature transformation: strings already produced by a prior extract
+    remain unchanged and W1-03's list order is preserved exactly.
     """
-    df = load_reference_sqlite(sqlite_path, table_name=table_name)
+    serializable = features.copy()
+    serializable["genres"] = serializable["genres"].map(
+        lambda value: json.dumps(value, separators=(",", ":")) if isinstance(value, list) else value
+    )
+    return serializable
 
-    missing_columns = tuple(c for c in OUTPUT_COLUMNS if c not in df.columns)
 
-    null_counts = {c: int(df[c].isna().sum()) for c in df.columns}
-    numeric_cols = [c for c in NON_NEGATIVE_COLUMNS if c in df.columns]
-    zero_counts = {c: int((df[c] == 0).sum()) for c in numeric_cols}
+def _atomic_replace(source_path: Path, target_path: Path) -> None:
+    try:
+        os.replace(source_path, target_path)
+    except OSError:
+        source_path.unlink(missing_ok=True)
+        raise
 
-    for col in numeric_cols:
-        series = df[col].dropna()
-        if not bool((series >= 0).all()):
-            raise ValueError(f"{col} has negative values in {sqlite_path}")
+
+def _source_table_frames(source_tables: SourceTables | None) -> dict[str, pd.DataFrame]:
+    """Map raw CSV headers to the stable source-table schemas without changing values."""
+    if source_tables is None:
+        return {
+            "movielens_links": pd.DataFrame(columns=["movie_id", "imdb_id", "tmdb_id"]),
+            "movielens_movies": pd.DataFrame(columns=["movie_id", "title", "genres"]),
+            "movielens_ratings": pd.DataFrame(columns=["user_id", "movie_id", "rating", "rated_at"]),
+            "tmdb_movies": pd.DataFrame(
+                columns=[
+                    "tmdb_id",
+                    "budget",
+                    "genres",
+                    "homepage",
+                    "keywords",
+                    "original_language",
+                    "original_title",
+                    "overview",
+                    "popularity",
+                    "production_companies",
+                    "production_countries",
+                    "release_date",
+                    "revenue",
+                    "runtime",
+                    "spoken_languages",
+                    "status",
+                    "tagline",
+                    "title",
+                    "vote_average",
+                    "vote_count",
+                ]
+            ),
+            "tmdb_credits": pd.DataFrame(columns=["tmdb_id", "title", "cast_json", "crew_json"]),
+        }
+    mappings = {
+        "movielens_links": (
+            source_tables.links,
+            {"movieId": "movie_id", "imdbId": "imdb_id", "tmdbId": "tmdb_id"},
+        ),
+        "movielens_movies": (source_tables.movies, {"movieId": "movie_id"}),
+        "movielens_ratings": (
+            source_tables.ratings,
+            {"userId": "user_id", "movieId": "movie_id", "timestamp": "rated_at"},
+        ),
+        "tmdb_movies": (source_tables.tmdb_movies, {"id": "tmdb_id"}),
+        "tmdb_credits": (
+            source_tables.tmdb_credits,
+            {"movie_id": "tmdb_id", "cast": "cast_json", "crew": "crew_json"},
+        ),
+    }
+    frames: dict[str, pd.DataFrame] = {}
+    for table_name, (frame, rename) in mappings.items():
+        expected = list(_source_table_frames(None)[table_name].columns)
+        missing = set(rename) - set(frame.columns)
+        if missing:
+            raise ValueError(f"{table_name} source is missing columns: {sorted(missing)}")
+        normalized = frame.rename(columns=rename)
+        missing_normalized = set(expected) - set(normalized.columns)
+        if missing_normalized:
+            raise ValueError(f"{table_name} source is missing columns: {sorted(missing_normalized)}")
+        frames[table_name] = normalized.loc[:, expected]
+    return frames
+
+
+def _create_source_tables(connection: sqlite3.Connection, source_tables: SourceTables | None) -> None:
+    """Load source rows in bounded DB-API batches after creating fixed SQLite schemas."""
+    for statement in _SOURCE_SCHEMAS.values():
+        connection.execute(statement)
+    for table_name, frame in _source_table_frames(source_tables).items():
+        frame.to_sql(table_name, connection, if_exists="append", index=False, chunksize=10_000)
+    connection.execute("CREATE INDEX idx_movielens_links_tmdb_id ON movielens_links (tmdb_id)")
+    connection.execute("CREATE INDEX idx_movielens_ratings_movie_id ON movielens_ratings (movie_id)")
+
+
+def _validate_database_schema(connection: sqlite3.Connection) -> None:
+    actual_tables = tuple(
+        row[0]
+        for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+    )
+    if set(actual_tables) != set(DATABASE_TABLE_NAMES):
+        raise ValueError(f"SQLite tables must exactly equal {DATABASE_TABLE_NAMES}, got {actual_tables}")
+
+
+def build_movies_sqlite(
+    features: pd.DataFrame, sqlite_path: Path, *, source_tables: SourceTables | None = None
+) -> SQLiteBuildResult:
+    """Build the six-table SQLite artifact and atomically replace the requested target.
+
+    Validating the complete ordered schema before touching the target keeps a future ETL
+    change from silently becoming a database-contract change. SQLite bytes can vary by
+    library version, so consumers pin canonical extracted rows as well as this file hash.
+    """
+    _validate_feature_columns(features)
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    table_name = _validated_table_name(TABLE_NAME)
+
+    with tempfile.NamedTemporaryFile(
+        dir=sqlite_path.parent, prefix=f".{sqlite_path.name}.", suffix=".tmp", delete=False
+    ) as temporary_file:
+        temporary_path = Path(temporary_file.name)
+
+    try:
+        connection = sqlite3.connect(temporary_path)
+        try:
+            source_frames = _source_table_frames(source_tables)
+            _create_source_tables(connection, source_tables)
+            _sqlite_serializable_features(features).to_sql(
+                table_name, connection, if_exists="fail", index=False
+            )
+            connection.execute('CREATE INDEX idx_movies_tmdb_id ON movies ("tmdbId")')
+            connection.execute('CREATE INDEX idx_movies_movie_id ON movies ("movieId")')
+            _validate_database_schema(connection)
+        finally:
+            connection.close()
+        _atomic_replace(temporary_path, sqlite_path)
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+    return SQLiteBuildResult(
+        sqlite_path=sqlite_path,
+        table_name=table_name,
+        columns=tuple(features.columns),
+        row_count=len(features),
+        sha256=sha256_of(sqlite_path),
+        sqlite_version=sqlite3.sqlite_version,
+        pandas_version=pd.__version__,
+        python_version=sys.version.split()[0],
+        source_table_row_counts={name: len(frame) for name, frame in source_frames.items()},
+    )
+
+
+def load_reference_sqlite(sqlite_path: Path, table_name: str = TABLE_NAME) -> pd.DataFrame:
+    """Load the one allowed W1-02 table after validating its fixed identifier."""
+    safe_table_name = _validated_table_name(table_name)
+    connection = sqlite3.connect(sqlite_path)
+    try:
+        return pd.read_sql(f'SELECT * FROM "{safe_table_name}"', connection)
+    finally:
+        connection.close()
+
+
+def extract_reference(sqlite_path: Path, table_name: str = TABLE_NAME) -> ReferenceExtractionResult:
+    """Load an unchanged W1-02 table and compute its feature/provenance counts."""
+    dataframe = load_reference_sqlite(sqlite_path, table_name=table_name)
+    _validate_feature_columns(dataframe)
+
+    null_counts = {column: int(dataframe[column].isna().sum()) for column in dataframe.columns}
+    numeric_columns = [
+        column for column in dataframe.columns if pd.api.types.is_numeric_dtype(dataframe[column])
+    ]
+    zero_counts = {column: int((dataframe[column] == 0).sum()) for column in numeric_columns}
 
     return ReferenceExtractionResult(
-        table=df,
+        table=dataframe,
         source_path=sqlite_path,
-        row_count=len(df),
-        missing_columns=missing_columns,
+        source_sha256=sha256_of(sqlite_path),
+        table_name=table_name,
+        columns=tuple(dataframe.columns),
+        row_count=len(dataframe),
         null_counts=null_counts,
         zero_counts=zero_counts,
-        duplicate_tmdb_ids=int(df["tmdbId"].duplicated().sum()) if "tmdbId" in df.columns else 0,
-        duplicate_movie_ids=int(df["movieId"].duplicated().sum()) if "movieId" in df.columns else 0,
-        # No label columns present under this ruling -- explicitly empty, not omitted.
-        class_distribution={},
+        duplicate_tmdb_ids=int(dataframe["tmdbId"].duplicated().sum()),
+        duplicate_movie_ids=int(dataframe["movieId"].duplicated().sum()),
     )
 
 
 def write_versioned_reference(result: ReferenceExtractionResult, out_dir: Path, version: str) -> Path:
-    """Write the versioned reference CSV (S2). `out_dir` is expected to be a gitignored
-    derived-data location (e.g. `data/derived/`) -- per `data/README.md`, derived CSVs are
-    never committed; only DATA_PROVENANCE.md and small fixture excerpts are."""
+    """Write an unchanged, deterministic CSV export to the ignored derived-data directory."""
+    if not version or not re.fullmatch(r"[A-Za-z0-9._-]+", version):
+        raise ValueError("version must contain only letters, digits, '.', '_', or '-'")
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = result.table.copy()
-    out_path = out_dir / f"movies_reference_{version}.csv"
-    out.to_csv(out_path, index=False)
-    return out_path
+    output_path = out_dir / f"movies_reference_{version}.csv"
+    temporary_path = output_path.with_suffix(".csv.tmp")
+    result.table.to_csv(temporary_path, index=False)
+    _atomic_replace(temporary_path, output_path)
+    return output_path
+
+
+def write_reference_manifest(result: ReferenceExtractionResult, output_path: Path) -> Path:
+    """Atomically write compact aggregate metadata without embedding row-level data."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_suffix(f"{output_path.suffix}.tmp")
+    temporary_path.write_text(json.dumps(result.to_manifest_dict(), indent=2, sort_keys=True) + "\n")
+    _atomic_replace(temporary_path, output_path)
+    return output_path
+
+
+def write_build_manifest(result: SQLiteBuildResult, output_path: Path) -> Path:
+    """Atomically write SQLite build metadata without embedding source rows."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_suffix(f"{output_path.suffix}.tmp")
+    temporary_path.write_text(json.dumps(result.to_manifest_dict(), indent=2, sort_keys=True) + "\n")
+    _atomic_replace(temporary_path, output_path)
+    return output_path
 
 
 def write_excerpt(result: ReferenceExtractionResult, out_path: Path, n: int = 50, seed: int = 1) -> Path:
-    """Committed ~50-row reference excerpt (test requirement 2). Cannot span "all performance
-    classes" as the ticket's test requirement literally asks -- there are no performance
-    classes in this file (see module docstring). Instead selects a stratified, deterministic
-    sample spanning: budget deciles, genre diversity, and the known duplicate-tmdbId rows
-    (a real data-quality artifact worth keeping visible in the fixture, not filtering out).
+    """Write a deterministic, feature-stratified excerpt without relying on labels.
 
-    The duplicate rows are taken FIRST and the decile sample fills what is left of `n`.
-    Appending them after a full-size decile sample and then truncating to `n` drops every
-    one of them, which is why the excerpt this function first produced contains none."""
-    df = result.table.copy()
+    Budget deciles preserve a useful range of movie scales while W1-04 owns labels. The
+    selection is deterministic for a supplied seed and does not modify source values.
+    """
+    if n <= 0:
+        raise ValueError("n must be positive")
+    dataframe = result.table.copy()
+    if dataframe.empty:
+        raise ValueError("cannot write an excerpt from an empty reference table")
+
+    deciles = pd.qcut(dataframe["budget"], min(10, len(dataframe)), labels=False, duplicates="drop")
+    sampled_parts: list[pd.DataFrame] = []
+    for _, indices in dataframe.groupby(deciles, observed=True).groups.items():
+        group = dataframe.loc[indices]
+        sampled_parts.append(
+            group.sample(n=min(max(1, n // deciles.nunique()), len(group)), random_state=seed)
+        )
+    sampled = (
+        pd.concat(sampled_parts)
+        .sort_values(["tmdbId", "movieId"], kind="stable")
+        .head(n)
+        .reset_index(drop=True)
+    )
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    dup_rows = df.iloc[:0]
-    if "tmdbId" in df.columns:
-        dup_rows = df[df["tmdbId"].duplicated(keep=False)].head(n)
-
-    parts = [dup_rows]
-    remaining = n - len(dup_rows)
-    if remaining > 0:
-        pool = df.drop(index=dup_rows.index)
-        decile = pd.qcut(pool["budget"], 10, labels=False, duplicates="drop")
-        per_decile = max(1, remaining // max(1, int(decile.nunique())))
-        for idx in pool.groupby(decile).groups.values():
-            group = pool.loc[idx]
-            parts.append(group.sample(n=min(per_decile, len(group)), random_state=seed))
-
-    sampled = pd.concat(parts).head(n).reset_index(drop=True)
-    sampled.to_csv(out_path, index=False)
+    temporary_path = out_path.with_suffix(f"{out_path.suffix}.tmp")
+    sampled.to_csv(temporary_path, index=False)
+    _atomic_replace(temporary_path, out_path)
     return out_path
-
-
-def genres_from_json(raw: str) -> list[str]:
-    """Parse the JSON-list-string `genres` column back into a list (mirrors how the raw TMDb
-    field arrives before W1-03 parses it; used by tests/consumers that need the list form)."""
-    return list(json.loads(raw))
