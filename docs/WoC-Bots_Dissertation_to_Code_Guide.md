@@ -70,6 +70,12 @@ individually.
 
 ## 4. Walking through the method: dissertation section → code
 
+*A note on the "Status" lines below:* the authoritative, up-to-date build status lives in
+`tickets/00_INDEX.md` (per-ticket ✅/◐/☐) and `AGENT_HANDOFF.md` (the live state journal) — this
+guide's job is the dissertation-to-code **mapping**, not a second status tracker. The status notes
+below are a snapshot to orient a newcomer; if one looks stale, the index and handoff are correct
+and this guide is wrong.
+
 ### 4.1 The data (dissertation §3.2)
 
 **Dissertation:** Two Kaggle datasets — TMDb 5000 Movies and MovieLens 20M — are joined on movie
@@ -83,10 +89,11 @@ That threshold splits the data roughly 47.5% success / 52.5% failure.
 normalization). The spec restates all of this as normative rules in
 `docs/WoC-Bots_Implementation_Spec.md` §4.
 
-**Status:** Built (tickets W1-01 through W1-05), but flagged as a live problem — see §6 below.
-The team's current real-data join produces **4,227 movies at a 43.93/56.07 class balance**,
-short of the dissertation's 4,722 / 47.5-52.5 numbers, and this has been escalated to the
-stakeholder rather than silently "fixed."
+**Status:** Built (tickets W1-01 through W1-05), but flagged as a live, escalated discrepancy:
+the team's current real-data join produces **4,227 movies at a 43.93/56.07 class balance**,
+short of the dissertation's 4,722 / 47.5-52.5 numbers. This has been escalated to the stakeholder
+rather than silently "fixed" — see `tickets/W1-06_anchor-analysis.md` and
+`results/W2-04_agent_table_comparison.md` for where that conversation lives.
 
 ### 4.2 The agents (dissertation §3.3)
 
@@ -102,7 +109,8 @@ the dissertation's Table 3.2), `agents/classifier.py` (the MLP wrapper and the
 `agents/crowd.py` (feature assignment across a crowd).
 
 **Status:** Built (tickets W2-01 through W2-03), but its results reproduction (W2-04) is
-currently **out of band** — see §6.
+currently **out of band and escalated** — see `results/W2-04_agent_table_comparison.md` and
+`tickets/W2-04_agent-table-reproduction_PLAN.md` §12.
 
 **Worth knowing:** the dissertation's own confidence formula in Ch. 3 (Eq. 3.2) is
 `accuracy×0.25 + precision×0.25 + recall×0.50` ("to avoid false-negative predictions"). The
@@ -128,9 +136,8 @@ whole crowd's opinion at once.
 anti-clique + teleport rules), `arena/round_engine.py` (the synchronous move-then-interact round
 loop).
 
-**Status:** Grid geometry and random init are built and reviewed (W3-01, ✅). Movement is built,
-pending independent review (W3-02, ◐). **Not yet started:** the interaction math itself — see
-next section.
+**Status:** Grid geometry, random init, and movement are all built and reviewed (W3-01 ✅,
+W3-02 ✅). The interaction math itself is covered in the next section.
 
 ### 4.4 Certainty, trust, and the flip rule (dissertation §3.4.2, Eqs. 3.3–3.10)
 
@@ -156,11 +163,11 @@ which information spreads through the crowd.
 **Code:** this lives in `src/wocbots/interaction/`, which is where `InteractionPolicy` and
 `ScoringPolicy` (the certainty/trust math) are meant to go per the spec's toolkit shape (§11).
 
-**Status: not yet built.** As of this writing, `interaction/` is an empty package
-(`__init__.py` only). This is the next major piece of work (tickets W3-03 "the interaction
-kernel" and W3-04 "history + trust updates"), and a lot else is blocked behind it — including the
-full arena integration (W4-01) and, further downstream, the honeybee swarm (W6, which reuses this
-same interaction math inside its swarm rounds).
+**Status:** Built and reviewed (W3-03 "the interaction kernel", ✅; W3-04 "history + trust
+updates", ✅). `interaction/` now holds `policy.py` (`InteractionPolicy`), `scoring.py`
+(`ScoringPolicy`), `encounter.py`, and `history.py`. This unblocks the pieces that were waiting on
+it — full arena integration (W4-01) and, further downstream, the honeybee swarm (W6, which reuses
+this same interaction math inside its swarm rounds).
 
 ### 4.5 Aggregation, mechanism 1 — voting (dissertation §3.5)
 
@@ -180,11 +187,10 @@ On the Hollywood data, mechanism 3 is expected to beat mechanisms 1 and 2.
 `aggregation/tiers.py` (a cheap vote-margin-based confidence bucket — a simpler cousin of the
 swarm's confidence ladder in §4.6 below).
 
-**Status:** Built (W4-03 implemented, pending merge/review); the tie-breaking rule (ties go to
-class 1), vote-margin tiers, and the three-mechanism comparison experiment (W4-04) are also in
-place. This piece currently sits downstream of the missing interaction math (§4.4) for full
-end-to-end runs, since voting consumes the `trust_score`/`prior_accuracy` values that interaction
-updates.
+**Status:** Built and merged (W4-03 ✅, W4-04 ✅) — the tie-breaking rule (ties go to class 1),
+vote-margin tiers, and the three-mechanism comparison experiment are all in place. Voting
+consumes the `trust_score`/`prior_accuracy` values that interaction (§4.4) produces; now that
+§4.4 is built, full end-to-end runs are unblocked pending W4-01's arena-integration review.
 
 ### 4.6 Aggregation, mechanism 2 — the honeybee swarm (dissertation Ch. 4)
 
@@ -210,9 +216,9 @@ just a label here; it's a genuinely useful filter.
 **Code:** intended for `src/wocbots/aggregation/` alongside `voting.py` and `tiers.py`, per the
 project's toolkit shape.
 
-**Status: not yet built** (tickets W6-01 through W6-03). This is a Quarter 2 deliverable and
-depends on the interaction math (§4.4) being finished first, since swarm rounds run the same
-certainty/trust interaction logic among watchers.
+**Status: not yet built** (tickets W6-01 through W6-03) — check `tickets/00_INDEX.md` for current
+progress. This is a Quarter 2 deliverable; swarm rounds reuse the same certainty/trust
+interaction logic among watchers, and now that §4.4 is built, W6 is clear to start.
 
 ### 4.7 A second dataset, baselines, and the fuller comparison (dissertation Ch. 7)
 
@@ -251,65 +257,7 @@ project explicitly reserved for producing a new, publishable contribution beyond
 
 ---
 
-## 5. How the team's process works (so the tickets make sense)
-
-The repo is organized as **42 tickets across 9 "waves" (W0–W8)**, each wave being a dependency
-stage, with **5 students each owning a "stream"** (a subsystem) across all waves:
-
-| Stream | Owns | Roughly corresponds to |
-|---|---|---|
-| **DATA** | `data/` | §4.1 above |
-| **AGENTS** | `agents/` | §4.2 above |
-| **ARENA** | `arena/`, `interaction/` | §4.3–4.4 above |
-| **CORE** | `experiments/`, `aggregation/`, `protocols.py` | §4.5–4.6 above |
-| **EVAL** | `evaluation/`, baselines, the report | §4.7 above |
-
-Precedence when documents disagree: **the implementation spec > a ticket's plan > the ticket
-itself** — and if the spec seems to contradict the dissertation, that's treated as something to
-raise with the stakeholder (Dr. Grimes), never something to quietly reconcile. There's also a
-strict **clean-room rule**: the only prior code the team may consult is the `antevorta-db` data
-module; nobody looks for "how the original research code did it" beyond the spec and the
-publications.
-
-Every ticket needs a written mini-plan, a green check suite, a committed **results manifest**
-(config + seed + git commit hash, so any reported number can be regenerated), and sign-off from
-someone who did *not* implement it before it's marked done (✅).
-
----
-
-## 6. Current status snapshot (as of the last handoff, mid-August 2026)
-
-For a newcomer, the most useful thing to know is: **Quarter 1 (replicating dissertation Chapter
-3 on the Hollywood dataset) is roughly two-thirds built, and its central reproduction check is
-currently failing in a documented, escalated way — not silently.**
-
-- **Solid ground:** data ETL, splits, and the agent layer (train/eval/prune) are implemented;
-  grid geometry, random initialization, and movement are implemented; all three voting
-  mechanisms and the vote-margin confidence tiers are implemented.
-- **Not yet built:** the interaction/certainty/trust math (§4.4) — everything downstream of it
-  (full arena integration, the honeybee swarm) is blocked waiting on it; the baseline MLP and the
-  Quarter-1 exit report; anything from Quarter 2 or 3 (swarm, second dataset, baselines beyond
-  the monolithic MLP, incremental features, distribution).
-- **A flagged, unresolved discrepancy:** reproducing the dissertation's §9.2 reference numbers
-  (the reference spec's restatement of Table 3.3 / the crowd-level results) currently **misses
-  its target bands**. The real MovieLens/TMDb join yields 4,227 movies at a 43.93/56.07 class
-  balance, versus the dissertation's 4,722 movies at 47.5/52.5 — and a re-run anchor-feature
-  analysis currently ranks `budget` as the *least* correlated feature, rather than the anchor
-  feature every agent is supposed to share. This has been escalated to the stakeholder for a
-  ruling rather than adjusted to fit; if you're picking up data-pipeline work, `tickets/
-  W1-06_anchor-analysis.md` and `results/W2-04_agent_table_comparison.md` are where that
-  conversation lives.
-- **Process note:** several completed-looking pieces of work are marked "implemented, pending
-  independent review" rather than ✅ — the team's rule is that no one can review their own work,
-  so a chunk of what looks done is functionally still awaiting a second set of eyes.
-
-If you want the single most current account of "what's true right now," read `AGENT_HANDOFF.md`
-at the repo root — it's the team's living state journal and is kept more current than any
-document like this one.
-
----
-
-## 7. Reading order for a new team member
+## 5. Reading order for a new team member
 
 1. This document, for orientation.
 2. `README.md` — setup, branch structure, the reproducibility contract.
@@ -320,3 +268,5 @@ document like this one.
 5. `tickets/01_MANDATORY_PREAMBLE.md`, then `tickets/00_INDEX.md` to find your stream's next open
    ticket.
 6. `AGENT_HANDOFF.md` for exactly where things stand today.
+7. `docs/BRANCHING.md` before you open your first PR — the branch model, PR checklist, and
+   branch-protection setup.

@@ -19,6 +19,10 @@ reproducible toolkit — and then runs the experiments the original never could.
 | 3 | `tickets/00_INDEX.md` | The 42-ticket map: waves (WHEN), streams (WHO), status, changelog. |
 | 4 | Your ticket, then its plan if one exists | The what, then the how. W0-01 has the exemplar plan. |
 
+New to the project? `docs/WoC-Bots_Dissertation_to_Code_Guide.md` maps Dr. Grimes's dissertation
+onto this codebase section-by-section — read it before the four documents above for orientation,
+not instead of them.
+
 Working with an AI session? It starts from `docs/agent_prompts/newAgentKickoffPrompt.txt` (paste it, fill in
 ticket + mode), which routes through `AGENT_KICKOFF.md` → `CLAUDE.md` (binding AI instructions; `AGENTS.md`
 points non-Claude tools there) → the preamble → `AGENT_HANDOFF.md` (the live state journal — read it, and
