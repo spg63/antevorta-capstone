@@ -1,6 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-24 SamuelGauthier: PR #33 attestation completed by sarjit304, ready to merge
+**Last updated:** 2026-08-30 (docs session): dissertation-to-code onboarding guide updated to
+address @SamuelGauthier's review comments; PR #33 still separately awaiting merge (see PRIOR below)
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -19,7 +20,43 @@
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-24, PR #33 — reviewer attestation now actually completed)
+## CURRENT STATE (2026-08-30, dissertation-to-code onboarding guide — review comments addressed, not yet merged)
+
+- **Done:** Reworked `docs/WoC-Bots_Dissertation_to_Code_Guide.md` (a new onboarding doc, PR
+  currently open, not yet numbered/merged) to resolve every inline comment @SamuelGauthier left on
+  review. Specifically: (1) fixed a factually wrong §4.4 status line claiming `interaction/` was
+  still an empty package — it in fact holds `policy.py`, `scoring.py`, `encounter.py`, and
+  `history.py`, and tickets W3-03/W3-04 are both `00_INDEX.md`-✅ — and propagated that correction
+  into the §4.3, §4.5, and §4.6 status notes that had been assuming the interaction math still
+  didn't exist; (2) deleted the old §5 ("How the team's process works") and §6 ("Current status
+  snapshot") sections entirely, since `docs/WAVE_GUIDE.md`, `tickets/00_INDEX.md`, and this file
+  already own that content and duplicating it is exactly how the §4.4 line above went stale in the
+  first place — replaced with a one-line pointer at the top of §4 directing readers to the index
+  and this handoff for current status; (3) added `docs/BRANCHING.md` to the guide's reading-order
+  list (old §7, renumbered to §5 after the deletions above); (4) added a pointer to the new guide
+  from `README.md`'s "Read these, in this order" table, per the top-level review comment asking
+  for it to be discoverable from the README.
+
+- **In flight / blocked:** This PR has not been pushed/re-requested for review yet — the fixes
+  above exist as a working copy, not a pushed commit. It also has not yet been updated to use the
+  repo's PR template, which was the first line of @SamuelGauthier's top-level review comment and
+  is still outstanding. Nothing else blocks it.
+
+- **Owner-attention:** Before merging, a human should (a) confirm the PR body actually follows
+  `.github/pull_request_template.md` (unaddressed as of this entry), and (b) re-request review
+  from @SamuelGauthier and confirm each of his inline conversations gets marked resolved rather
+  than just silently fixed — the diff resolves them but nobody has clicked "Resolve conversation"
+  on his six open threads yet.
+
+- **Next step:** Push `docs/WoC-Bots_Dissertation_to_Code_Guide.md` and `README.md` to the PR
+  branch, fill in the PR template, resolve the six review conversations, and re-request review.
+
+- **Five-minute test:** `grep -n "empty package" docs/WoC-Bots_Dissertation_to_Code_Guide.md`
+  should return nothing (confirms the stale §4.4 claim is gone); `grep -c "^## [0-9]" docs/WoC-Bots_Dissertation_to_Code_Guide.md`
+  should return `5` (confirms the old §5/§6 sections were removed rather than just edited, leaving
+  five numbered top-level sections).
+
+## PRIOR (2026-08-24, PR #33 — reviewer attestation now actually completed)
 
 - **Done:** sarjit304 re-approved PR #33 and, this time, **checked all five reviewer-attestation
   boxes** in the PR body (not-implementer / full diff read / forbidden-shortcut register /
