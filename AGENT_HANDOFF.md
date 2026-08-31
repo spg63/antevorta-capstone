@@ -1,8 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-07 (Samuel Gauthier, hand-implemented; Claude chat
-session used for plan and code review, not implementation), branch ticket/w3-02
-
+**Last updated:** 2026-08-30 (docs session): dissertation-to-code onboarding guide updated to
+address @SamuelGauthier's review comments; PR #33 still separately awaiting merge (see PRIOR below)
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -21,7 +20,231 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
+## CURRENT STATE (2026-08-30, dissertation-to-code onboarding guide — review comments addressed, not yet merged)
+
+- **Done:** Reworked `docs/WoC-Bots_Dissertation_to_Code_Guide.md` (a new onboarding doc, PR
+  currently open, not yet numbered/merged) to resolve every inline comment @SamuelGauthier left on
+  review. Specifically: (1) fixed a factually wrong §4.4 status line claiming `interaction/` was
+  still an empty package — it in fact holds `policy.py`, `scoring.py`, `encounter.py`, and
+  `history.py`, and tickets W3-03/W3-04 are both `00_INDEX.md`-✅ — and propagated that correction
+  into the §4.3, §4.5, and §4.6 status notes that had been assuming the interaction math still
+  didn't exist; (2) deleted the old §5 ("How the team's process works") and §6 ("Current status
+  snapshot") sections entirely, since `docs/WAVE_GUIDE.md`, `tickets/00_INDEX.md`, and this file
+  already own that content and duplicating it is exactly how the §4.4 line above went stale in the
+  first place — replaced with a one-line pointer at the top of §4 directing readers to the index
+  and this handoff for current status; (3) added `docs/BRANCHING.md` to the guide's reading-order
+  list (old §7, renumbered to §5 after the deletions above); (4) added a pointer to the new guide
+  from `README.md`'s "Read these, in this order" table, per the top-level review comment asking
+  for it to be discoverable from the README.
+
+- **In flight / blocked:** This PR has not been pushed/re-requested for review yet — the fixes
+  above exist as a working copy, not a pushed commit. It also has not yet been updated to use the
+  repo's PR template, which was the first line of @SamuelGauthier's top-level review comment and
+  is still outstanding. Nothing else blocks it.
+
+- **Owner-attention:** Before merging, a human should (a) confirm the PR body actually follows
+  `.github/pull_request_template.md` (unaddressed as of this entry), and (b) re-request review
+  from @SamuelGauthier and confirm each of his inline conversations gets marked resolved rather
+  than just silently fixed — the diff resolves them but nobody has clicked "Resolve conversation"
+  on his six open threads yet.
+
+- **Next step:** Push `docs/WoC-Bots_Dissertation_to_Code_Guide.md` and `README.md` to the PR
+  branch, fill in the PR template, resolve the six review conversations, and re-request review.
+
+- **Five-minute test:** `grep -n "empty package" docs/WoC-Bots_Dissertation_to_Code_Guide.md`
+  should return nothing (confirms the stale §4.4 claim is gone); `grep -c "^## [0-9]" docs/WoC-Bots_Dissertation_to_Code_Guide.md`
+  should return `5` (confirms the old §5/§6 sections were removed rather than just edited, leaving
+  five numbered top-level sections).
+
+## PRIOR (2026-08-24, PR #33 — reviewer attestation now actually completed)
+
+- **Done:** sarjit304 re-approved PR #33 and, this time, **checked all five reviewer-attestation
+  boxes** in the PR body (not-implementer / full diff read / forbidden-shortcut register /
+  test pins verified / index-flip line present) — not just a GitHub "Approve" click. This is
+  the first properly-completed §8 attestation seen across #32 or #33. PR shows "Changes
+  reviewed — 1 approving review by reviewers with write access," 2/2 checks passing, no
+  conflicts with `develop`, mergeable. `00_INDEX.md`'s W3-04 row has been corrected to
+  `✅ (reviewed: @sarjit304, 2026-08-24)`, now matching the date the real attestation actually
+  happened (rather than the stale 2026-08-17 the implementer had pre-written).
+
+- **In flight / blocked:** PR #33 is **approved but not yet merged** — the merge button hasn't
+  been clicked. Nothing is blocking it now on the review side.
+
+- **Owner-attention:** The index row's *content* is now accurate, but the underlying habit that
+  produced #32's near-miss is still present: the implementer wrote the index ✅ line as one of
+  their own commits (`ff0138d`) before the reviewer had actually done anything, and it happened
+  to get corrected to the right date only because it was caught here. Worth a standing note to
+  spg63 that the index flip should be written by/at the point of reviewer sign-off, not
+  pre-written by the implementer and fixed up after the fact — it's what let #32 merge with an
+  empty checklist in the first place, and it's just luck that #33's version didn't ship wrong.
+
+- **Next step:** Merge PR #33 (button is live, all gates satisfied, index now correct). Flag
+  the pre-writing-the-index habit to spg63 as a process item, independent of this ticket.
+
+- **Five-minute test:** `git log --oneline -1 develop` after merging should show W3-04's
+  squash/merge commit; `uv run pytest -q` → 264 passed, 21 skipped, 2 xfailed still holds.
+
+## PRIOR (2026-08-24, PR #33 review — attestation process bypassed on both #32 and #33)
+
+- **Done:** Independently re-verified PR #33's diff (`ticket/w3-04`, HEAD `cc067ce`) myself:
+  `ruff check`, `ruff format --check`, `mypy --strict` all clean; `pytest -q` → 264 passed,
+  21 skipped, 2 xfailed; `test_history_trust.py` → 8 passed, matching the closing report's
+  D1–D5 pins. PR #32 (W3-03) is confirmed **merged** — `rootwij` merged commit `e5ec77a` into
+  `develop` (2 checks passed, +1,422/-6 across 10 files). So #33's branch genuinely does build
+  on current `develop`; that part is not stale. The *code* on both tickets is fine. The
+  *review process* on both is not — see below.
+
+- **In flight / blocked:** Both W3-03 (#32, merged) and W3-04 (#33, open) were/are marked
+  `✅ (reviewed: ..., <date>)` in `00_INDEX.md`, but neither ticket actually satisfied
+  preamble §8 before that happened:
+  1. **PR #32 (W3-03) — merged with the reviewer attestation checklist still 100% unchecked.**
+     SamuelGauthier (the implementer) directly asked AnuragRSimha, in-PR, to go through the
+     attestation so the PR could merge — a documented, explicit request. AnuragRSimha never
+     did; he only clicked GitHub's "Approve," which is not the same thing as the §8 checklist
+     (full diff read, forbidden-shortcut register, test-pin verification). The PR was then
+     **merged anyway, ~1 week after that unanswered request, by rootwij** — a third person who
+     is not listed as a reviewer on the PR at all and left no review of his own. So the ticket
+     closed with zero recorded completions of any §8 checklist item, by anyone. The `00_INDEX.md`
+     row (`✅ reviewed: @AnuragRSimha, 2026-08-17`) names a reviewer who never finished the
+     attestation, and doesn't mention rootwij, who's the one who actually merged it.
+  2. **PR #33 (W3-04) — same shape, still open.** Reviewer checklist 100% unchecked;
+     `00_INDEX.md`'s `✅ (reviewed: @sarjit304, 2026-08-17)` row was committed by the
+     implementer (`ff0138d`, SamuelGauthier) before the PR was even marked ready for review
+     (Aug 24) — the review date predates the PR's own ready-for-review event.
+  3. **Both index self-flips follow the identical pattern:** implementer writes their own
+     ✅ row into `00_INDEX.md` as one of their commits, rather than the reviewer recording it
+     at actual sign-off time, per preamble §8's explicit instruction.
+
+- **Owner-attention:** This is now confirmed across two consecutive ticket-closing PRs, not
+  a one-off: an implementer can (a) self-flip the index to ✅, (b) get an "Approve" click that
+  never completes the actual checklist, and (c) have a third, uninvolved person merge it once
+  the real reviewer stalls — and the ticket ends up marked reviewed with nobody having done
+  the review. **A direct, in-PR request to the reviewer to complete the attestation was made
+  and ignored on #32; the merge went through regardless.** This needs to go to the repo admin
+  (spg63) or stakeholder — branch protection that blocks merge until the attestation checklist
+  items are checked (or an equivalent required-review rule) would close this gap outright,
+  since asking people to comply by hand has now failed twice.
+
+- **Next step:** Do not treat W3-03 or W3-04 as having had a real independent review, `00_INDEX.md`
+  notwithstanding. Escalate to spg63/stakeholder for a process fix (branch protection / required
+  checklist) rather than re-requesting attestation from AnuragRSimha or sarjit304 individually —
+  that path is already demonstrated not to work. For #33 specifically: get someone who did not
+  implement it to actually complete the attestation before it merges, so it doesn't repeat #32's
+  pattern a third time.
+
+- **Five-minute test:** `git log --oneline -1 develop` → should show `e5ec77a` or later;
+  `uv run pytest -q` → 264 passed, 21 skipped, 2 xfailed confirms the code side is still fine
+  independent of the process issue. Check PR #32 and #33's "Reviewer attestation" checklists
+  directly on GitHub — if either is fully checked, this entry is stale, update it.
+
+## PRIOR (2026-08-17, PR #32)
+
+- **Done:** @AnuragRSimha reviewed W3-03 in #32
+- **In flight / blocked:** W3-04, W6-02 unblocked
+- **Owner-attention:** Nothing.
+- **Next step:** Finish W3-04's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
+## PRIOR (2026-08-16, W3-04 implemented, pending independent review)
+
+- **Done:** W3-04 (Interaction history store and trust updates) implemented on
+  branch `ticket/w3-04`. `HistoryRecord` and `HistoryStore` land in
+  `src/wocbots/interaction/history.py`; `ReferenceInteractionPolicy.update_trust`
+  implements §6.5 trust update formula; `Encounter` records directed history
+  rows (cardinality 1 encounter -> 2 directed rows). Check suite green: ruff /
+  ruff-format / mypy-strict / pytest all pass (226 passed, 11 skipped, 1
+  xfailed — +8 new pinned tests in `tests/unit/test_history_trust.py`).
+  Pure-mechanism ticket (results manifest N/A). Plan and closing report:
+  `tickets/W3-04_history-trust_PLAN.md` and
+  `tickets/W3-04_history-trust_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-04 awaiting independent review sign-off
+  (preamble §8); W4-01 (participant selection loop & arena integration) is
+  unblocked for implementation.
+- **Owner-attention:** Independent reviewer needed for W3-04.
+- **Next step:** Independent review of W3-04 -> flip `00_INDEX.md` row to
+  `✅ (reviewed: <who>, <date>)` -> proceed to W4-01.
+- **Five-minute test:** `uv run pytest tests/unit/test_history_trust.py -q`
+  -> 8 passed; `python -c "from wocbots.interaction import HistoryStore, HistoryRecord, ReferenceInteractionPolicy"`.
+
+## PRIOR (2026-08-16, PR #30's Wave 2 work merged with the landed W1 wave)
+
+- **Done:** `develop` (@ `c15deaa`, which now carries PR #31's W1-02/W1-04/W1-05 work plus its
+  review fixes) merged into `rootwij/w2-03-04-real-data` to clear PR #30's only conflict. The
+  conflict was this file and nothing else: two sessions each wrote a CURRENT STATE on top of
+  `4bb6804`. Both are preserved verbatim below as PRIOR entries — the 2026-08-15 W1-05 entry
+  and the 2026-08-10 Wave 2 entry — and nothing was dropped. The code sides are disjoint (W2
+  touched `src/wocbots/experiments/`, `configs/`, `tests/unit/test_w2_*`; W1 touched
+  `src/wocbots/data/`, `scripts/`, `tests/unit/data/`) and merged with no conflict.
+
+- **In flight / blocked:**
+  1. **The §9.2 reproduction still MISSES, and that is the reportable result, not an
+     unfinished one.** See the 2026-08-10 PRIOR entry for the numbers; nothing in the W1 merge
+     moves them, and nothing was tuned to close any gap. Checked explicitly: that entry warned
+     the two `xfail(strict=True)` W2-04 slow tests would go RED if W1-04 fixed the data. On the
+     merged tree with `data/raw/` present they **still xfail** — W1-04 shipped variant (a)
+     undefended at the same 43.93/56.07 balance, so the label the agent table trains against is
+     unchanged. CI cannot see this either way: it runs `-m "not slow"` and has no raw data.
+  2. **`data/derived/split_v1.*` must be regenerated before anything consumes its folds.** It
+     predates PR #31's fold-leak fix — see the review amendment in the 2026-08-15 PRIOR entry.
+  3. **W1-06 (anchor analysis) has still not run against the real split.** It is the last open
+     W1 item, and it must run against the regenerated `split_v1`, not the artifact on disk.
+
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — the three-part ruling requested in
+     `results/W2-04_agent_table_comparison.md` is still unanswered (snapshot intent, whether
+     the ±3 band still binds, and the 5-epoch column).
+  2. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 and
+     W2-04 is still owed. Rutvij drove all four sessions and cannot sign any of them off. No
+     W2 ticket is ✅.
+  3. **Anurag** — three items PR #31's review left open: regenerate `data/derived/split_v1.*`;
+     regenerate `tests/fixtures/w1_02_reference/movies_reference_excerpt_50.csv` (the committed
+     excerpt contains none of the duplicate-tmdbId rows it advertises); and commit
+     `scripts/build_movies_sqlite.py`, which this file, `data/DATA_PROVENANCE.md` §5 and
+     `wocbots.data.ground_truth`'s module docstring all name as W1-02 S1's provenance record
+     but which does not exist in the repo.
+  - **Closed by the merge:** the 2026-08-10 entry's DATA-stream item ("W1-04's RESULT block and
+    W1-06's are still literally `☐ ____`; W1-02 has never run") is superseded — W1-02 and W1-04
+    landed in PR #31, W1-06 remains open and is listed above.
+
+- **Next step:** land PR #30, then run W1-06's anchor analysis
+  (`wocbots.data.anchor_analysis.rank_features`) against a regenerated `split_v1`. That is the
+  last item standing between here and a closed W1 wave.
+
+- **Five-minute test:** `uv run pytest -m "not slow"` → 239 passed, 7 skipped, 11 deselected
+  (the 7 skips are all local-data-dependent: `data/raw/movies.sqlite` and the gitignored
+  labeled CSV); `git log --oneline -1 origin/develop` → `c15deaa`.
+
+## PRIOR (2026-08-15, W3-03 implemented, pending independent review)
+
+- **Done:** W3-03 (interaction kernel: certainty update and prediction flip)
+  implemented on branch `ticket/w3-03`. `CertaintyFlipScoringPolicy`,
+  `ReferenceInteractionPolicy`, and `Encounter` land in
+  `src/wocbots/interaction/`. Check suite green: ruff / ruff-format /
+  mypy-strict / pytest all pass (218 passed, 11 skipped, 1 xfailed — +10 new
+  pinned tests in `tests/unit/test_interaction_kernel.py`). Pure-mechanism
+  ticket (results manifest N/A). Plan and closing report:
+  `tickets/W3-03_certainty-update-flip_PLAN.md` and
+  `tickets/W3-03_certainty-update-flip_CLOSING-REPORT.md`.
+- **In flight / blocked:** W3-03 awaiting independent review sign-off
+  (preamble §8); W3-04 (history store + trust updates) unblocked for planning
+  and implementation.
+- **Owner-attention:** Independent reviewer needed for W3-03.
+- **Next step:** Independent review of W3-03 → flip `00_INDEX.md` row to
+  `✅ (reviewed: <who>, <date>)` → proceed to W3-04.
+- **Five-minute test:** `uv run pytest tests/unit/test_interaction_kernel.py -q`
+  → 10 passed; `python -c "from wocbots.interaction import CertaintyFlipScoringPolicy, ReferenceInteractionPolicy, Encounter"`.
+
+## PRIOR (2026-08-15, W3-02 reviewed and merged on develop)
+
+- **Done:** @rootwij merged and reviewed W3-02 in #21
+- **In flight / blocked:** W3-03, W4-01 unblocked, plan and implementation in
+  progress
+- **Owner-attention:** Reviewer didn't update 00_INDEX.md nor pull request
+  checklist nor PLAN's DoD.
+- **Next step:** Finish W3-03's plan and implementation
+- **Five-minute test:** `git log --oneline -5 develop`, `pytest -q`
+
+## PRIOR (2026-08-15, W1-05 splits + scaler artifact built on real shipped data)
 
 - **Done:** W1-05 S1/S2/S3 run against the real shipped label from
   `data/hollywood_features_labeled_variant_a.csv` (3,032 rows, variant (a) label — see
@@ -163,6 +386,54 @@ session used for plan and code review, not implementation), branch ticket/w3-02
 - **Five-minute test:** `PYTHONPATH=src pytest tests/unit/data/test_ground_truth.py -q` (needs
   `data/raw/movies.sqlite` present locally, else the sqlite-dependent tests skip with a named
   reason); `cat data/DATA_PROVENANCE.md` section 5 for the ruling + counts.
+## PRIOR (2026-08-10, Wave 2 done on real data — W2-03 was broken, W2-04 escalates)
+
+- **Done:** The Hollywood raw data is on disk at `data/raw/{tmdb,movielens}/` and
+  checksum-verified (`tests/unit/data/test_provenance.py` → 10 passed; previously all skipped).
+  **W2-03 real-data closure:** both shipped Hollywood crowd configs named `popularity`, which
+  the W1-03 ETL does not emit (it emits `tmdb_popularity`) — **both the §9.2 and §9.3 reference
+  crowds were unbuildable and had been since they were written.** Thirty green W2-03 unit tests
+  missed it because they build synthetic frames matching whatever the config names. Configs
+  fixed; new `src/wocbots/experiments/hollywood_data.py` (one shared real-split path for W2-03
+  and W2-04), `crowd_build.py` (kind `w2_03_hollywood_crowd`), `configs/w2_03_crowd_{5,26}agent.yaml`,
+  `tests/unit/test_w2_03_hollywood_crowd.py` (9 passed incl. 3 slow real-data builds, plus a
+  planted-defect self-test), addendum in `tickets/W2-03_*_CLOSING-REPORT-ADDENDUM.md`.
+  **W2-02:** its real-data band check no longer skips — the sanity agent scores 97.3% on real data.
+  **W2-04** implemented: `src/wocbots/experiments/agent_table.py` (kind `w2_04_agent_table`,
+  the ten §9.2 rows, the comparison emitter), `configs/w2_04_agent_table.yaml`,
+  `tests/unit/test_w2_04_agent_table.py` (10 passed, 2 xfailed), manifest
+  `results/manifests/w2_04_agent_table_20260810T154449Z_4bb68043.json`, escalation artifact
+  `results/W2-04_agent_table_comparison.md`. Plan + closing report in `tickets/W2-04_*`.
+  Governance backfill: W2-01's plan and W2-02/W2-03's closing reports moved into `tickets/`
+  (they had lived outside the repo since July); `00_INDEX.md` v1.16/v1.17 + W2-01..04 status marks.
+  Check suite green (ruff / ruff-format / mypy-strict / pytest).
+- **In flight / blocked:** **The §9.2 reproduction MISSES and this is the reportable result,
+  not an unfinished one.** The `budget+revenue` canary hits 97.33% ± 1.71 at 50 epochs, so by
+  spec §9.2's own instrument the DATA PIPELINE IS VALIDATED. But 4 of 10 rows fall outside
+  ±3 at 50 epochs — all four built on the combined MovieLens+TMDb vote features — one of the
+  three required orderings breaks, and the whole 5-epoch column is under-trained (three rows
+  sit at exactly 55.97% ± 0.00, the majority-class rate, zero variance over ten seeds).
+  The two slow tests carry `xfail(strict=True)` naming W1-04; they go RED if the data is
+  fixed and the table starts passing. Nothing was tuned to close any gap.
+- **Owner-attention:**
+  1. **Stakeholder / Dr. Grimes** — three-part ruling in `results/W2-04_agent_table_comparison.md`:
+     is this MovieLens snapshot the intended one (it is checksum-verified but joins 4,227 vs
+     the spec's 4,722, balance 43.93/56.07 vs 47.5/52.5); if so do the revised numbers become
+     the reference or does the ±3 band still bind; and what accounts for the 5-epoch column,
+     since spec §5.2's stated optimizer settings cannot produce 98% for the canary in five epochs.
+  2. **DATA stream** — W1-04's RESULT block and W1-06's are still literally `☐ ____`; W1-02
+     has never run for want of an `antevorta-db` artifact. This is what blocks W2-04 from ✅.
+  3. **CORE / a different AI system** — independent review (§8) of W2-01, W2-02, W2-03 AND
+     W2-04. Rutvij drove all four sessions and cannot sign any of them off. No W2 ticket is ✅.
+  4. **Rutvij** — commit + PR onto `develop`, labelled, linked to Issue #7; then re-run the
+     harness from the committed tree so the manifest cites a clean SHA (it currently reads
+     `4bb68043...+dirty`, honest but not closeable evidence).
+- **Next step:** get the W1-04 ruling. Everything else in Wave 2 is done and waiting on review;
+  that ruling is the only thing that can move W2-04 from `◐ escalated` to `✅`.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py` → 10 passed (if they
+  SKIP, `data/raw/` is missing and this entry is stale — fix that first);
+  `uv run pytest tests/unit/test_w2_04_agent_table.py` → 10 passed, 2 xfailed.
+
 
 ## PRIOR (2026-08-07, W3-02 implemented, pending independent review)
 - **Done:** W3-02 (movement, anti-clique, lockstep round engine) implemented on
