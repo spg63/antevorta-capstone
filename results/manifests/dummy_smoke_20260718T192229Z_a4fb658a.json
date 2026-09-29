@@ -1,0 +1,58 @@
+{
+  "aggregate": {
+    "mean": {
+      "mean": -0.01610210540306409,
+      "std": 0.042240059135088694
+    },
+    "std": {
+      "mean": 1.004473574786623,
+      "std": 0.020219377659555775
+    }
+  },
+  "config": {
+    "kind": "dummy",
+    "n_runs": 3,
+    "name": "dummy_smoke",
+    "params": {
+      "n": 1000
+    },
+    "seed": 42
+  },
+  "provenance": {
+    "created_utc": "2026-07-18T19:22:29.248864+00:00",
+    "git_sha": "a4fb658a3f7f643f9fdd3c3910ffe8cdd7c24654",
+    "package_versions": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.3",
+      "pydantic": "2.13.4",
+      "python": "3.14.4",
+      "sklearn": "1.9.0",
+      "wocbots": "0.1.0"
+    },
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "runs": [
+    {
+      "metrics": {
+        "mean": -0.010752555405140956,
+        "std": 0.9790973624255482
+      },
+      "run_index": 0
+    },
+    {
+      "metrics": {
+        "mean": 0.03274855632313442,
+        "std": 1.0057480604169646
+      },
+      "run_index": 1
+    },
+    {
+      "metrics": {
+        "mean": -0.07030231712718574,
+        "std": 1.0285753015173558
+      },
+      "run_index": 2
+    }
+  ],
+  "schema_version": 1
+}

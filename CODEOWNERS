@@ -1,0 +1,17 @@
+# W0-01 §7-S4 — the index streams table, transcribed (one-writer-per-directory made structural).
+# Handles are filled at the team STEP-0 meeting. Re-dealing streams = editing this file in the
+# same PR as the index change (drift between the two is a defect class, pinned by test_scaffold).
+# Location ruling (plan S4 "root or .github/ — pick one, document"): repo ROOT, so the ownership
+# map sits next to the code it governs and non-GitHub tooling finds it.
+
+/src/wocbots/experiments/   @CORE-TBD
+/src/wocbots/aggregation/   @CORE-TBD
+/src/wocbots/protocols.py   @CORE-TBD
+/src/wocbots/data/          @DATA-TBD
+/src/wocbots/agents/        @AGENTS-TBD
+/src/wocbots/arena/         @ARENA-TBD
+/src/wocbots/interaction/   @ARENA-TBD
+/src/wocbots/evaluation/    @EVAL-TBD
+/configs/                   @CORE-TBD
+/results/                   @EVAL-TBD
+*                           @CORE-TBD

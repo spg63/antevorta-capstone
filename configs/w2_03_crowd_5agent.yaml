@@ -1,0 +1,16 @@
+# W2-03 — the §9.2 matched five-agent crowd, built on the REAL Hollywood split.
+#
+# This is W2-03's missing real-data evidence: its thirty unit tests all use synthetic frames
+# with invented column names, so nothing proved the shipped Hollywood crowd configs actually
+# name columns the W1-03 ETL emits. (They did not — `popularity` vs `tmdb_popularity`.)
+#
+# Reports crowd COMPOSITION and the eval-accuracy spread, not a published-table comparison —
+# the §9.2 crowd-level reproduction (76.3% at 20 epochs vs the monolithic MLP) is W5-02's,
+# and needs the baseline W5-01 owns.
+name: w2_03_crowd_5agent
+kind: w2_03_hollywood_crowd
+seed: 20260810
+n_runs: 10
+params:
+  crowd_config: configs/crowd_hollywood_5agent.yaml
+  raw_root: data/raw

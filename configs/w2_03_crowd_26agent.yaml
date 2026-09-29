@@ -1,0 +1,17 @@
+# W2-03 — the §9.3 twenty-six-agent crowd (seeded assignment), on the REAL Hollywood split.
+#
+# Spec §9.3's reference composition: one 5-feature agent, five 4-feature, ten 3-feature, ten
+# 2-feature, every agent anchored on `budget`. This config exercises the SEEDED assignment
+# policy against real features, where `w2_03_crowd_5agent.yaml` exercises the EXPLICIT one —
+# between them both policy branches of W2-03's seam meet real data.
+#
+# `pruned_agents` is the number to watch here: with a 4-feature pool the ten 2-feature agents
+# necessarily repeat, and any that land below §5.3's 0.50 eval-accuracy cut are dropped and
+# logged. A large pruned count is the config telling you the assignment is bad (spec §5.3).
+name: w2_03_crowd_26agent
+kind: w2_03_hollywood_crowd
+seed: 20260810
+n_runs: 10
+params:
+  crowd_config: configs/crowd_hollywood_26agent.yaml
+  raw_root: data/raw

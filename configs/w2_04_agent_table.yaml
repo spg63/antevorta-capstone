@@ -1,0 +1,16 @@
+# W2-04 — the §9.2 ten-row agent-table reproduction (spec §9.2, §9.1).
+#
+# One config, one manifest, both epoch columns (plan §3-D2). n_runs is the spec §9.1
+# default and is NOT a tunable here: "every reported number is a mean over 10 runs with
+# standard deviation" — a smaller value makes this table not a result.
+#
+# raw_root must hold the checksum-verified W1-01 layout:
+#   data/raw/tmdb/{movies,credits}.csv
+#   data/raw/movielens/{link,movie,rating}.csv
+# Verify with: uv run pytest tests/unit/data/test_provenance.py
+name: w2_04_agent_table
+kind: w2_04_agent_table
+seed: 20260810
+n_runs: 10
+params:
+  raw_root: data/raw

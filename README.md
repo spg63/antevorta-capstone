@@ -1,5 +1,7 @@
 # WoC-Bots Reimagined
 
+[![CI](https://github.com/spg63/antevorta-capstone/actions/workflows/ci.yml/badge.svg)](https://github.com/spg63/antevorta-capstone/actions/workflows/ci.yml)
+
 A clean-room Python reimplementation of **WoC-Bots** — a wisdom-of-crowds, swarm-based binary classifier in
 which many small, feature-diverse agents train independently, exchange opinions through local interactions in
 a simulated arena, and aggregate a collective prediction with an earned confidence label. The method is fully
@@ -17,6 +19,10 @@ reproducible toolkit — and then runs the experiments the original never could.
 | 3 | `tickets/00_INDEX.md` | The 42-ticket map: waves (WHEN), streams (WHO), status, changelog. |
 | 4 | Your ticket, then its plan if one exists | The what, then the how. W0-01 has the exemplar plan. |
 
+New to the project? `docs/WoC-Bots_Dissertation_to_Code_Guide.md` maps Dr. Grimes's dissertation
+onto this codebase section-by-section — read it before the four documents above for orientation,
+not instead of them.
+
 Working with an AI session? It starts from `docs/agent_prompts/newAgentKickoffPrompt.txt` (paste it, fill in
 ticket + mode), which routes through `AGENT_KICKOFF.md` → `CLAUDE.md` (binding AI instructions; `AGENTS.md`
 points non-Claude tools there) → the preamble → `AGENT_HANDOFF.md` (the live state journal — read it, and
@@ -24,6 +30,39 @@ update it when you finish).
 
 Precedence when documents disagree: **spec > plan > ticket** — and a disagreement is a bug to report, never
 something to reconcile silently.
+
+## Setup
+
+One tool: [uv](https://docs.astral.sh/uv/) (O7 ruling — venv + lockfile + installs). From a fresh clone:
+
+```bash
+uv sync          # creates .venv from the committed uv.lock
+```
+
+Any OS. If you're stuck without uv, `pip install -e .` works from the same pyproject — but CI truth is
+uv + the lockfile, so fix your uv install before opening a PR.
+
+## The check suite
+
+All four green before any merge; plain `pytest` (full suite, slow marks included) is the ticket-close gate
+(preamble §5):
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src tests
+uv run pytest
+```
+
+Per-commit CI runs the fast variant (`pytest -m "not slow"`) on Python 3.11 + 3.12; a weekly scheduled job
+runs the full suite on `main`.
+
+## The reproducibility contract
+
+One seeded `numpy.random.Generator` threads from the experiment config into everything stochastic; derived
+streams are spawned, never re-seeded ad hoc. Every experiment is a config + seed + git SHA, written to a
+committed results manifest — a number that can't be regenerated from its manifest does not exist. Reported
+numbers are 10-run means ± std. Same config + same seed ⇒ a byte-identical manifest results block.
 
 ## How we work (the one-paragraph version)
 
@@ -33,7 +72,20 @@ plans first (preamble §9 invocation); implementation follows the plan (§10 inv
 feature; every numeric mechanism gets exact pins. Every experiment is a config + seed + git SHA producing a
 committed results manifest — **a number that can't be regenerated from its manifest does not exist**. No
 ticket closes until someone (or some AI) that didn't implement it reviews the diff and signs off (preamble
-§8). Humans commit via PRs; nothing lands on `main` unreviewed.
+§8). Humans commit via PRs; nothing lands on `main` or `develop` without review.
+
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| **`develop`** | Day-to-day integration — **open PRs here** |
+| **`main`** | Quarter-end promotion from `develop` |
+
+Feature branches: `<name>/<ticket-id>-short-description`, branched from `develop`.
+
+**Never push directly to `main` or `develop`** — see [`docs/BRANCHING.md`](docs/BRANCHING.md) for the full workflow, PR checklist, and branch-protection setup (repo admin).
+
+Pull requests must use [`.github/pull_request_template.md`](.github/pull_request_template.md), be **labeled** with the ticket ID/name, and **link** the GitHub issue. Before merging onto `develop`: write a closing report, update `tickets/00_INDEX.md`, and confirm the ticket Definition of Done + independent review (preamble §8).
 
 ## The clean-room rule
 

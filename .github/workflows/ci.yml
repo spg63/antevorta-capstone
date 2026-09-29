@@ -1,0 +1,26 @@
+# W0-01 §7-S5 — the fast per-commit job. This is the O8 required check ("checks").
+# The lockfile IS the environment: `uv sync --frozen` fails loud on pyproject/lock drift (§10.3).
+# Coverage is PRINTED, never gated (O9 ruling: report-only; revisit at Q1 exit with data).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest # O5 ruling (team, STEP-0): GitHub Actions; ubuntu pins CI truth
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"] # O2 ruling: floor 3.11, matrix 3.11/3.12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5 # O7 ruling: uv + committed lockfile
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv sync --frozen --python ${{ matrix.python-version }}
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src tests
+      - run: uv run pytest -m "not slow" --cov

@@ -1,0 +1,82 @@
+{
+  "aggregate": {
+    "encounters_per_agent_round": {
+      "mean": 0.30100000000000005,
+      "std": 0.035693136595149486
+    },
+    "total_encounters": {
+      "mean": 60.2,
+      "std": 7.138627319029899
+    },
+    "total_rounds": {
+      "mean": 10.0,
+      "std": 0.0
+    }
+  },
+  "config": {
+    "kind": "w3_02_movement_smoke",
+    "n_runs": 5,
+    "name": "w3_02_movement_smoke",
+    "params": {
+      "n_agents": 20,
+      "teleport_rate": 0.05
+    },
+    "seed": 42
+  },
+  "provenance": {
+    "created_utc": "2026-08-07T22:43:38.484870+00:00",
+    "git_sha": "34cf4f3501f570623bc3a5754b4a7b4afcb902b5",
+    "package_versions": {
+      "numpy": "2.4.6",
+      "pandas": "3.0.3",
+      "pydantic": "2.13.4",
+      "python": "3.11.14",
+      "sklearn": "1.9.0",
+      "wocbots": "0.1.0"
+    },
+    "platform": "macOS-15.7.9-x86_64-i386-64bit"
+  },
+  "runs": [
+    {
+      "metrics": {
+        "encounters_per_agent_round": 0.27,
+        "total_encounters": 54.0,
+        "total_rounds": 10.0
+      },
+      "run_index": 0
+    },
+    {
+      "metrics": {
+        "encounters_per_agent_round": 0.32,
+        "total_encounters": 64.0,
+        "total_rounds": 10.0
+      },
+      "run_index": 1
+    },
+    {
+      "metrics": {
+        "encounters_per_agent_round": 0.255,
+        "total_encounters": 51.0,
+        "total_rounds": 10.0
+      },
+      "run_index": 2
+    },
+    {
+      "metrics": {
+        "encounters_per_agent_round": 0.355,
+        "total_encounters": 71.0,
+        "total_rounds": 10.0
+      },
+      "run_index": 3
+    },
+    {
+      "metrics": {
+        "encounters_per_agent_round": 0.305,
+        "total_encounters": 61.0,
+        "total_rounds": 10.0
+      },
+      "run_index": 4
+    }
+  ],
+  "schema_version": 1
+}
