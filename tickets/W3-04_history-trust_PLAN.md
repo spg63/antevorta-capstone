@@ -390,7 +390,7 @@ class HistoryStore:
         records = self._by_sample.get(sample_id, [])
         for record in records:
             record.ground_truth = ground_truth
-            record.partner_correct = (record.partner_prediction == ground_truth)
+            record.partner_correct = record.partner_prediction == ground_truth
         return len(records)
 
     def to_dataframe(self) -> pd.DataFrame:

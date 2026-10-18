@@ -199,12 +199,13 @@ once here and never argued about again.
 `types.py`, exact:
 
 ```python
-Cell = tuple[int, int]          # (row, col); the arena grid coordinate
+Cell = tuple[int, int]  # (row, col); the arena grid coordinate
+
 
 class Prediction(BaseModel, frozen=True, extra="forbid"):
     class_label: Literal[0, 1]
-    tier: str | None = None     # vote-margin tier (spec §7) / swarm band (spec §8.2); None until W4-04
-    margin: float | None = None # winning vote share in [0,1]; None until W4-04
+    tier: str | None = None  # vote-margin tier (spec §7) / swarm band (spec §8.2); None until W4-04
+    margin: float | None = None  # winning vote share in [0,1]; None until W4-04
 ```
 
 `protocols.py`, exact (all `@runtime_checkable`; docstrings cite owning spec sections):
@@ -214,9 +215,11 @@ class Prediction(BaseModel, frozen=True, extra="forbid"):
 class InitPolicy(Protocol):
     def place(self, agent: Agent, arena: Arena, rng: np.random.Generator) -> Cell: ...
 
+
 @runtime_checkable
 class MovementPolicy(Protocol):
     def move(self, agent: Agent, arena: Arena, rng: np.random.Generator) -> Cell: ...
+
 
 @runtime_checkable
 class InteractionPolicy(Protocol):
@@ -224,9 +227,11 @@ class InteractionPolicy(Protocol):
     def truth(self, a: Agent, b: Agent) -> bool: ...
     def update_trust(self, a: Agent, b: Agent) -> None: ...
 
+
 @runtime_checkable
 class ScoringPolicy(Protocol):
     def update_prediction(self, agent: Agent, partner_profile: Mapping[str, object]) -> None: ...
+
 
 @runtime_checkable
 class Aggregator(Protocol):
@@ -248,10 +253,10 @@ boundary exists to close.
 
 ```python
 class ExperimentConfig(BaseModel, frozen=True, extra="forbid"):
-    name: str                     # manifest filename stem
-    kind: str                     # registry key; W0-04 ships "dummy"
-    seed: int                     # the ONE master seed
-    n_runs: int = 10              # spec §9.1 default
+    name: str  # manifest filename stem
+    kind: str  # registry key; W0-04 ships "dummy"
+    seed: int  # the ONE master seed
+    n_runs: int = 10  # spec §9.1 default
     params: dict[str, JsonValue] = Field(default_factory=dict)  # kind-specific; the kind validates
 ```
 
@@ -268,15 +273,18 @@ class RunResult(BaseModel, frozen=True, extra="forbid"):
     run_index: int
     metrics: dict[str, float]
 
+
 class MetricSummary(BaseModel, frozen=True, extra="forbid"):
     mean: float
-    std: float                    # population std over runs; documented, never silently changed
+    std: float  # population std over runs; documented, never silently changed
+
 
 class Provenance(BaseModel, frozen=True, extra="forbid"):
-    created_utc: str              # ISO-8601; the ONE licensed timestamp
-    git_sha: str                  # `git rev-parse HEAD`; "+dirty" suffix iff `git status --porcelain` nonempty
-    package_versions: dict[str, str]   # wocbots, numpy, pandas, sklearn, pydantic, python
+    created_utc: str  # ISO-8601; the ONE licensed timestamp
+    git_sha: str  # `git rev-parse HEAD`; "+dirty" suffix iff `git status --porcelain` nonempty
+    package_versions: dict[str, str]  # wocbots, numpy, pandas, sklearn, pydantic, python
     platform: str
+
 
 class Manifest(BaseModel, frozen=True, extra="forbid"):
     schema_version: int = 1

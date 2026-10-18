@@ -196,6 +196,7 @@ per-sample experiment loop (owned later, W4-01)
 ```python
 from collections import defaultdict
 
+
 class _GridCell:
     # ...
     def remove(self, agent: Agent) -> None:
@@ -205,6 +206,7 @@ class _GridCell:
     def agents(self) -> list[Agent]:
         return self._agents
 
+
 class Arena:
     def __init__(self, n_participants: int) -> None:
         if n_participants < 1:
@@ -213,6 +215,7 @@ class Arena:
         self._cols: int = ceil(2 * n_participants / self._rows)
         self._grid: list[_GridCell] = [_GridCell() for _ in range(self._rows * self._cols)]
         self._agents_cell: dict[Agent, Cell] = {}
+
     # ...
 
     def place(self, agent: Agent, cell: Cell) -> None:
@@ -244,9 +247,10 @@ from wocbots.arena import Arena
 from wocbots.types import Cell
 from wocbots.agents import Agent
 
+
 class RandomMovementPolicy:
     def __init__(self, teleport_rate: float = 0.05) -> None:
-        self._moves: list[tuple[int, int]] = [(1, 0),(-1, 0),(0, 1),(0, -1)]
+        self._moves: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         self._teleport_rate: float = teleport_rate
         self._cur_round = 0
         self._moved_this_round: set[Agent] = set()
@@ -282,7 +286,7 @@ class RandomMovementPolicy:
                     break
             arena.move_to(agent, cell)
             return cell
-            
+
         while True:
             i = int(rng.integers(0, len(self._moves)))
             dir = self._moves[i]
@@ -297,7 +301,6 @@ class RandomMovementPolicy:
         arena.move_to(agent, next_cell)
         return next_cell
 
-
     def _can_move_to(self, agent: Agent, arena: Arena, cell: Cell) -> bool:
         row, col = cell
         if row < 0 or row >= arena.rows or col < 0 or col >= arena.cols:
@@ -309,7 +312,6 @@ class RandomMovementPolicy:
             if self._can_encounter(agent, other_agent):
                 return True
         return False
-        
 
     def _has_moves(self, agent: Agent, arena: Arena) -> bool:
         cur_cell = arena.cell(agent)
@@ -320,22 +322,23 @@ class RandomMovementPolicy:
         return False
 
     def _can_encounter(self, a: Agent, b: Agent) -> bool:
-        key = frozenset((a,b))
+        key = frozenset((a, b))
         if len(self._pair_history[key]) > 0 and self._pair_history[key][-1] == self._cur_round - 1:
             return False
         count = 0
         for round in self._pair_history[key]:
             if round > self._cur_round - 5:
-                count +=1
+                count += 1
         return not count >= 2
 
     def _encounter(self, a: Agent, b: Agent) -> None:
-        key = frozenset((a,b))
+        key = frozenset((a, b))
         self._pair_history[key].append(self._cur_round)
 
-        if ( len(self._pair_history[key]) >= 2 ) and ( self._pair_history[key][-1] - self._pair_history[key][0] >= 5 ):
-                self._pair_history[key].popleft()
-
+        if (len(self._pair_history[key]) >= 2) and (
+            self._pair_history[key][-1] - self._pair_history[key][0] >= 5
+        ):
+            self._pair_history[key].popleft()
 ```
 
 ### S2 - `src/wocbots/arena/round_engine.py`
@@ -348,12 +351,14 @@ from wocbots.types import Cell
 from wocbots.agents import Agent
 from wocbots.protocols import MovementPolicy
 
+
 class RoundEngine:
-    def __init__(self,
-    agents: list[Agent],
-    arena: Arena,
-    movement_policy: MovementPolicy,
-    rng: np.random.Generator,
+    def __init__(
+        self,
+        agents: list[Agent],
+        arena: Arena,
+        movement_policy: MovementPolicy,
+        rng: np.random.Generator,
     ) -> None:
         n: int = len(agents)
         self._agents: list[Agent] = agents
@@ -367,9 +372,7 @@ class RoundEngine:
 
     def round(self) -> None:
         if self._cur_round >= self._max_rounds:
-            raise RuntimeError(
-                f"max number of rounds reached: {self._max_rounds}"
-                )
+            raise RuntimeError(f"max number of rounds reached: {self._max_rounds}")
         self._rng.shuffle(self._agent_indices)
         for i in self._agent_indices:
             cell = self._movement_policy.move(self._agents[i], self._arena, self._rng)

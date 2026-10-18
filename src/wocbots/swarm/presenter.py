@@ -1,55 +1,42 @@
 from wocbots.agents import Agent
 
 
-def validate_fitness_args(prior_performance_normalized : float,
-                          confidence : float,
-                          trust_score : float) -> None:
+def validate_fitness_args(prior_performance_normalized: float, confidence: float, trust_score: float) -> None:
     is_constraint_error = False
     error_string = ""
-    if(prior_performance_normalized < 0.0 or prior_performance_normalized > 1.0):
+    if prior_performance_normalized < 0.0 or prior_performance_normalized > 1.0:
         is_constraint_error = True
         error_string += "prior_performance_normalized"
-    if(confidence < 0.0 or confidence > 1.0):
+    if confidence < 0.0 or confidence > 1.0:
         is_constraint_error = True
-        if (error_string == ""):
+        if error_string == "":
             error_string += "confidence"
         else:
             error_string += ", confidence"
-    if(trust_score < 0.0 or trust_score > 1.0):
+    if trust_score < 0.0 or trust_score > 1.0:
         is_constraint_error = True
-        if (error_string == ""):
+        if error_string == "":
             error_string += "trust_score"
         else:
             error_string += ", trust_score"
-    if(is_constraint_error):
+    if is_constraint_error:
         raise ValueError(f"Constraint error {error_string} not in [0,1]")
 
-def validate_prior_performance_args(prior_performance : float) -> None:
-    if(prior_performance < 0.7 or prior_performance > 1.3):
+
+def validate_prior_performance_args(prior_performance: float) -> None:
+    if prior_performance < 0.7 or prior_performance > 1.3:
         raise ValueError(f"Constraint Error: {prior_performance:f} not in [0.7, 1.3]")
 
-class Presenter(Agent):
-    def __init__(self,
-                 *,
-                 features,
-                 eval_accuracy,
-                 eval_precision,
-                 eval_recall,
-                 confidence_weights):
-        
-        super().__init__(features=features,
-                         eval_accuracy=eval_accuracy,
-                         eval_precision=eval_precision, 
-                         eval_recall=eval_recall, 
-                         confidence_weights=confidence_weights)
+
+class Presenter():
+    def __init__(self, agent : Agent) -> None:
+        self.agent = agent
         self.update_fitness()
-        
-    def calculate_fitness(self,
-                          prior_performance_normalized : float,
-                          confidence : float,
-                          trust_score : float) -> float:
-        """The §
-        """
+
+    def calculate_fitness(
+        self, prior_performance_normalized: float, confidence: float, trust_score: float
+    ) -> float:
+        """The §"""
         validate_fitness_args(prior_performance_normalized, confidence, trust_score)
         return (prior_performance_normalized + confidence + trust_score) / 3.0
 
@@ -59,7 +46,7 @@ class Presenter(Agent):
 
     def update_fitness(self) -> None:
         self.fitness = self.calculate_fitness(
-            self.calculate_normalized_prior_performance(
-                self.prior_performance),
-            self.confidence(),
-            self.trust_score)
+            self.calculate_normalized_prior_performance(self.agent.prior_performance),
+            self.agent.confidence,
+            self.agent.trust_score,
+        )

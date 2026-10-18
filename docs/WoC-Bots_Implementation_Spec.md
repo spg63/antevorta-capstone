@@ -682,18 +682,22 @@ suggestions; the seams are not):
 
 ```python
 class InitPolicy(Protocol):
-    def place(self, agent, arena, rng) -> Cell: ...          # empty cell, in bounds
+    def place(self, agent, arena, rng) -> Cell: ...  # empty cell, in bounds
+
 
 class MovementPolicy(Protocol):
-    def move(self, agent, arena, rng) -> Cell: ...           # legal cell or teleport
+    def move(self, agent, arena, rng) -> Cell: ...  # legal cell or teleport
+
 
 class InteractionPolicy(Protocol):
-    def should_interact(self, a, b) -> bool: ...             # reference: always True
-    def truth(self, a, b) -> bool: ...                       # reference: always True
-    def update_trust(self, a, b) -> None: ...                # §6.5 rule; may be no-op
+    def should_interact(self, a, b) -> bool: ...  # reference: always True
+    def truth(self, a, b) -> bool: ...  # reference: always True
+    def update_trust(self, a, b) -> None: ...  # §6.5 rule; may be no-op
+
 
 class ScoringPolicy(Protocol):
-    def update_prediction(self, agent, partner_profile) -> None: ...   # §6.5 math
+    def update_prediction(self, agent, partner_profile) -> None: ...  # §6.5 math
+
 
 class Aggregator(Protocol):
     def aggregate(self, participants, rng) -> Prediction: ...  # UWM/WVM/Trust/Swarm
