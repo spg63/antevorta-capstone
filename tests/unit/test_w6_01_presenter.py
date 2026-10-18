@@ -1,21 +1,22 @@
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 
-from wocbots.agents import Agent
-from wocbots.agents import HOLLYWOOD_WEIGHTS
+from wocbots.agents import HOLLYWOOD_WEIGHTS, Agent
 from wocbots.swarm.presenter import Presenter
 
 
 @pytest.fixture(scope="function")
 def presenter_under_test() -> Generator[Presenter, None, None]:
-    yield Presenter(agent=Agent(
-        features=("f0",),
-        eval_accuracy=0.5,
-        eval_precision=0.5,
-        eval_recall=0.5,
-        confidence_weights=HOLLYWOOD_WEIGHTS,
-    ))
+    yield Presenter(
+        agent=Agent(
+            features=("f0",),
+            eval_accuracy=0.5,
+            eval_precision=0.5,
+            eval_recall=0.5,
+            confidence_weights=HOLLYWOOD_WEIGHTS,
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -23,11 +24,11 @@ def presenter_under_test() -> Generator[Presenter, None, None]:
     [(0.0, 0.0, 0.0, 0.0), (1.0, 1.0, 1.0, 1.0), (1.0, 0.5, 0.0, 0.5)],
 )
 def test_fitness_calc(
-    presenter_under_test : Presenter,
-    prior_performance_normalized : float,
-    confidence : float,
-    trust_score : float,
-    expected_fitness : float
+    presenter_under_test: Presenter,
+    prior_performance_normalized: float,
+    confidence: float,
+    trust_score: float,
+    expected_fitness: float,
 ) -> None:
     actual_fitness = presenter_under_test.calculate_fitness(
         prior_performance_normalized, confidence, trust_score
@@ -51,7 +52,11 @@ def test_fitness_calc(
     ],
 )
 def test_fitness_constraint_error(
-    presenter_under_test : Presenter, prior_performance_normalized : float, confidence : float, trust_score : float, error_string : str
+    presenter_under_test: Presenter,
+    prior_performance_normalized: float,
+    confidence: float,
+    trust_score: float,
+    error_string: str,
 ) -> None:
     with pytest.raises(ValueError) as exception:
         presenter_under_test.calculate_fitness(
@@ -67,7 +72,7 @@ def test_fitness_constraint_error(
     ["prior_performance", "expected_prior_performance_normalized"], [(0.7, 0.0), (1.3, 1.0), (1.0, 0.5)]
 )
 def test_normalized_prior_performance_calc(
-    presenter_under_test : Presenter, prior_performance : float, expected_prior_performance_normalized : float
+    presenter_under_test: Presenter, prior_performance: float, expected_prior_performance_normalized: float
 ) -> None:
     actual_normalized_prior_performance = presenter_under_test.calculate_normalized_prior_performance(
         prior_performance
@@ -78,7 +83,9 @@ def test_normalized_prior_performance_calc(
 @pytest.mark.parametrize(
     ["prior_performance", "not_used"], [(0.0, -1.0), (0.699, -1.0), (1.301, -1.0), (2.0, -1.0)]
 )
-def test_prior_performance_constraint_error(presenter_under_test : Presenter, prior_performance : float, not_used : float) -> None:
+def test_prior_performance_constraint_error(
+    presenter_under_test: Presenter, prior_performance: float, not_used: float
+) -> None:
     with pytest.raises(ValueError) as exception:
         presenter_under_test.calculate_normalized_prior_performance(prior_performance=prior_performance)
 
