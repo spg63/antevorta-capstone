@@ -29,7 +29,7 @@ def validate_prior_performance_args(prior_performance: float) -> None:
         raise ValueError(f"Constraint Error: {prior_performance:f} not in [0.7, 1.3]")
 
 
-class Presenter(BeeSubject):
+class ScoutBee(BeeSubject):
     def __init__(self, agent: Agent) -> None:
         super().__init__(agent=agent)
         self.update_fitness()

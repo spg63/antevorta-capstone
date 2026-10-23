@@ -3,12 +3,12 @@ from collections.abc import Generator
 import pytest
 
 from wocbots.agents import HOLLYWOOD_WEIGHTS, Agent
-from wocbots.swarm.presenter import Presenter
+from wocbots.swarm.scoutbee import ScoutBee
 
 
 @pytest.fixture(scope="function")
-def presenter_under_test() -> Generator[Presenter, None, None]:
-    yield Presenter(
+def presenter_under_test() -> Generator[ScoutBee, None, None]:
+    yield ScoutBee(
         agent=Agent(
             features=("f0",),
             eval_accuracy=0.5,
@@ -24,7 +24,7 @@ def presenter_under_test() -> Generator[Presenter, None, None]:
     [(0.0, 0.0, 0.0, 0.0), (1.0, 1.0, 1.0, 1.0), (1.0, 0.5, 0.0, 0.5)],
 )
 def test_fitness_calc(
-    presenter_under_test: Presenter,
+    presenter_under_test: ScoutBee,
     prior_performance_normalized: float,
     confidence: float,
     trust_score: float,
@@ -52,7 +52,7 @@ def test_fitness_calc(
     ],
 )
 def test_fitness_constraint_error(
-    presenter_under_test: Presenter,
+    presenter_under_test: ScoutBee,
     prior_performance_normalized: float,
     confidence: float,
     trust_score: float,
@@ -72,7 +72,7 @@ def test_fitness_constraint_error(
     ["prior_performance", "expected_prior_performance_normalized"], [(0.7, 0.0), (1.3, 1.0), (1.0, 0.5)]
 )
 def test_normalized_prior_performance_calc(
-    presenter_under_test: Presenter, prior_performance: float, expected_prior_performance_normalized: float
+    presenter_under_test: ScoutBee, prior_performance: float, expected_prior_performance_normalized: float
 ) -> None:
     actual_normalized_prior_performance = presenter_under_test.calculate_normalized_prior_performance(
         prior_performance
@@ -84,7 +84,7 @@ def test_normalized_prior_performance_calc(
     ["prior_performance", "not_used"], [(0.0, -1.0), (0.699, -1.0), (1.301, -1.0), (2.0, -1.0)]
 )
 def test_prior_performance_constraint_error(
-    presenter_under_test: Presenter, prior_performance: float, not_used: float
+    presenter_under_test: ScoutBee, prior_performance: float, not_used: float
 ) -> None:
     with pytest.raises(ValueError) as exception:
         presenter_under_test.calculate_normalized_prior_performance(prior_performance=prior_performance)
