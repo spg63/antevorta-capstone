@@ -1,4 +1,5 @@
 from wocbots.agents import Agent
+from wocbots.swarm.subject import BeeSubject
 
 
 def validate_fitness_args(prior_performance_normalized: float, confidence: float, trust_score: float) -> None:
@@ -28,15 +29,14 @@ def validate_prior_performance_args(prior_performance: float) -> None:
         raise ValueError(f"Constraint Error: {prior_performance:f} not in [0.7, 1.3]")
 
 
-class Presenter:
+class Presenter(BeeSubject):
     def __init__(self, agent: Agent) -> None:
-        self.agent = agent
+        super().__init__(agent=agent)
         self.update_fitness()
 
     def calculate_fitness(
         self, prior_performance_normalized: float, confidence: float, trust_score: float
     ) -> float:
-        """The §"""
         validate_fitness_args(prior_performance_normalized, confidence, trust_score)
         return (prior_performance_normalized + confidence + trust_score) / 3.0
 
