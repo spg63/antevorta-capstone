@@ -1,23 +1,16 @@
-"""W1-04: the Hollywood label. See spec §4.3 item 7 and this ticket's RESULT block for the
-ruling.
+"""Hollywood labels and reconciliation against the reference-derived threshold.
 
-Variant (a) — `revenue > 2 * budget` — is the spec's stated rule (§4.3.7) and is fully
-computable from W1-03's output alone. **This is the shipped label** (ratified 2026-08-15,
-see the ticket's RESULT block): reference-column reconciliation was ruled out of scope
-because no independent `antevorta-db` source or built ground truth was ever available (W1-02's
-own `movies.sqlite` is built by the same W1-03 logic it would need to validate against, so it
-is not independent). Variant (a) ships **undefended** — without row-level validation against
-an independent reference, and its measured class balance (43.9/56.1) does not match the
-published 47.5/52.5 within tolerance. That is a documented scope cut, not a silent one.
-
-Variant (b) — the antevorta-db reference's `made_more_than_2x_budget` column — was never
-computed and, per the ruling above, is no longer expected to be. `variant_b_from_reference` is
-kept as an unexercised stub in case a genuine independent reference is supplied later; nothing
-downstream depends on it.
+The shipped rule is strict 2×. The comparison threshold is 1.5×, with the reference
+code's exact-5× fall-through corrected as directed; it is not an exact reproduction
+of the reference column and does not independently validate the input dataset.
 """
 
 from __future__ import annotations
 
+import sqlite3
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 
 
@@ -44,3 +37,66 @@ def variant_b_from_reference(
 def class_balance_pct(labels: pd.Series) -> pd.Series:
     """Class balance as percentages, index-sorted (0 then 1) for stable comparison."""
     return (labels.value_counts(normalize=True).sort_index() * 100).round(2)
+
+
+def reference_threshold_label(
+    df: pd.DataFrame, budget_col: str = "budget", revenue_col: str = "revenue"
+) -> pd.Series:
+    """Reference-derived comparison with the exact-5× fall-through corrected."""
+    return (df[revenue_col] > 1.5 * df[budget_col]).astype(int)
+
+
+def label_movies_sqlite(sqlite_path: Path) -> int:
+    """Atomically populate the W1-04 label on the computed movies table.
+
+    Re-running refreshes every row using the same strict threshold. Invalid financial
+    values abort the transaction rather than being silently assigned a label.
+    """
+    if not sqlite_path.is_file():
+        raise FileNotFoundError(sqlite_path)
+    with sqlite3.connect(sqlite_path) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        frame = pd.read_sql_query("SELECT rowid AS _rowid, budget, revenue FROM movies", connection)
+        if frame.empty:
+            raise ValueError("movies table must not be empty")
+        for column in ("budget", "revenue"):
+            values = pd.to_numeric(frame[column], errors="raise")
+            if not np.isfinite(values).all() or (values <= 0).any():
+                raise ValueError(f"{column} must contain finite positive values")
+        columns = {row[1] for row in connection.execute('PRAGMA table_info("movies")')}
+        if "label" not in columns:
+            connection.execute("ALTER TABLE movies ADD COLUMN label INTEGER CHECK (label IN (0, 1))")
+        labels = variant_a_label(frame)
+        connection.executemany(
+            "UPDATE movies SET label = ? WHERE rowid = ?",
+            [(int(label), int(row_id)) for label, row_id in zip(labels, frame["_rowid"], strict=True)],
+        )
+        return len(frame)
+
+
+def reconcile_labels(df: pd.DataFrame) -> dict[str, object]:
+    """Compare both definitions on the same valid W1-03 rows without rounding."""
+    if df.empty:
+        raise ValueError("reconciliation requires at least one row")
+    for column in ("budget", "revenue"):
+        values = pd.to_numeric(df[column], errors="raise")
+        if not np.isfinite(values).all() or (values <= 0).any():
+            raise ValueError(f"{column} must contain finite positive values")
+    labels_a = variant_a_label(df)
+    labels_b = reference_threshold_label(df)
+
+    def balance(labels: pd.Series) -> dict[str, object]:
+        positives = int(labels.sum())
+        counts = [len(labels) - positives, positives]
+        percentages = [100.0 * count / len(labels) for count in counts]
+        matches = all(
+            abs(actual - target) <= 1.0 for actual, target in zip(percentages, (47.5, 52.5), strict=True)
+        )
+        return {"counts": counts, "percentages": percentages, "matches_published": matches}
+
+    return {
+        "row_count": len(df),
+        "variant_a": balance(labels_a),
+        "reference_threshold_corrected": balance(labels_b),
+        "disagreement_rows": int((labels_a != labels_b).sum()),
+    }

@@ -44,8 +44,17 @@ ground-truth column named `made_more_than_2x_budget` is actually computed as "ma
 
 ## RESULT — label reconciliation (fill before closing)
 
-- Variant (a) `revenue > 2×budget` balance: ☐ ____ / ____
-- Variant (b) reference-computation balance: ☐ ____ / ____
-- Matches published 47.5/52.5: ☐ (a) ☐ (b) ☐ neither → escalated
-- Disagreement rows: ☐ ____
-- Shipped label: ☐ ____ — ratified by: ☐ ____ (date)
+- Variant (a) `revenue > 2×budget` balance (0 / 1): 43.9314% / 56.0686%.
+- Reference-derived comparison, `revenue > 1.5×budget`: 34.6306% / 65.3694%.
+  This corrects the reference's exact-5× fall-through as directed by the session driver;
+  it is not an exact reproduction of the reference column.
+- Matches published 47.5/52.5: neither. The session driver explicitly waived the
+  published-balance requirement on 2026-10-25; stakeholder acceptance of that waiver
+  must be confirmed before ticket close.
+- Disagreement rows: 282 of 3,032, against the corrected comparison.
+- Proposed shipped label: `revenue > 2×budget`, otherwise 0 — directed by the session
+  driver; stakeholder acceptance and independent review remain open.
+- The computed SQLite `movies` table gains the `label` column through
+  `scripts/label_w1_04_movies.py`; rerun that step after rebuilding the database.
+- Evidence: `results/manifests/w1_04_label_reconciliation.json`; the input is the
+  Python-built W1-03 SQLite, not an independent reference database.
