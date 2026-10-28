@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-08-30 (docs session): dissertation-to-code onboarding guide updated to
-address @SamuelGauthier's review comments; PR #33 still separately awaiting merge (see PRIOR below)
+**Last updated:** 2026-10-25 (GitHub Copilot HANDOFF): W1-01 review and handoff sync on
+`sarjit/w1-03-hollywood-etl-transforms` at `01705e7`; only the unrelated untracked W5-01 plan remains
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +20,57 @@ address @SamuelGauthier's review comments; PR #33 still separately awaiting merg
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-08-30, dissertation-to-code onboarding guide — review comments addressed, not yet merged)
+## CURRENT STATE (2026-10-25, W1-01 review and handoff sync)
+
+- **Done:** W1-01 provenance and fixture implementation is committed (`4e0d84d`, `7522d73`,
+  `01705e7`). Review of the current tree found no technical findings. Focused provenance/fixture
+  tests passed (34); the full suite passed (295 passed, 1 named skip, 2 expected failures).
+  `ruff check .`, `ruff format --check .`, and `mypy src tests` passed. Raw inputs remain covered
+  by the `data/raw/` ignore rule.
+
+- **In flight / blocked:** W1-01 is not status-closed: its row in `tickets/00_INDEX.md` has no
+  completion/reviewer attestation. The only untracked path is the unrelated
+  `tickets/W5-01_baseline-mlp_PLAN.md`; it must remain outside W1-01 changes.
+
+- **Owner-attention:** The human owner must record the accepted independent-review identity/date
+  and W1-01 status in `tickets/00_INDEX.md`. Preserve the repository owner's existing fixture-license
+  authorization attestation.
+
+- **Next step:** The human owner records the independent-review decision and status for W1-01 in
+  the index; leave the W5-01 plan untouched. Refresh this handoff again only if that changes the
+  live state.
+
+- **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py tests/unit/data/test_fixtures.py -q`
+  should report 34 passed; `git status --short` should show this handoff edit and only
+  `?? tickets/W5-01_baseline-mlp_PLAN.md` as untracked.
+
+## PRIOR (2026-09-29, W1-01 raw-data acquisition and provenance — Codex review complete)
+
+- **Done:** Codex independently reviewed W1-01 against spec §4.1, its approved plan, and the
+  preamble. `tests/unit/data/test_provenance.py` and `tests/unit/data/test_fixtures.py` passed
+  (34 passed), including checksums and header-excluded row counts for all five locally present
+  raw files. `ruff check .`, `ruff format --check .`, and `mypy src tests` passed. Raw inputs are
+  covered by the `data/raw/` ignore rule. No technical findings were filed.
+
+- **In flight / blocked:** `tests/unit/data/test_provenance.py` has an uncommitted 150-line W1-01
+  test addition that pins synchronization between `data/DATA_PROVENANCE.md` and `RAW_FILES`.
+  It is technically clean and should be committed with the intended W1-01 change. The unrelated
+  untracked `tickets/W5-01_baseline-mlp_PLAN.md` must remain outside that change set.
+
+- **Owner-attention:** A human owner must decide whether to accept and commit the pending W1-01
+  test addition, then record W1-01's independent-review/status closure in `tickets/00_INDEX.md`
+  and refresh this handoff only when the ticket is actually closed. The recorded fixture-license
+  authorization remains a repository-owner attestation.
+
+- **Next step:** Commit or discard only the intended W1-01 provenance-test addition after human
+  review; do not include the W5-01 plan. If closing W1-01, complete the index and handoff
+  checklist after the human records the review decision.
+
+- **Five-minute test:** `uv run pytest tests/unit/data/test_provenance.py tests/unit/data/test_fixtures.py -q`
+  should report 34 passed; `git status --short` should show only the intended provenance test and
+  the unrelated W5-01 plan until the former is committed.
+
+## PRIOR (2026-08-30, dissertation-to-code onboarding guide — review comments addressed, not yet merged)
 
 - **Done:** Reworked `docs/WoC-Bots_Dissertation_to_Code_Guide.md` (a new onboarding doc, PR
   currently open, not yet numbered/merged) to resolve every inline comment @SamuelGauthier left on
