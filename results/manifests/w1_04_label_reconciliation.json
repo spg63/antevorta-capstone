@@ -1,0 +1,37 @@
+{
+  "balance_waiver": "Session driver explicitly waived published-balance requirement on 2026-10-25; stakeholder acceptance pending",
+  "comparison_label": "revenue > 1.5 * budget; exact-5x reference fall-through corrected by user",
+  "git_sha": "c833200d106d966522aa378b1615d76579ed0d6d",
+  "input_kind": "python_w1_03_sqlite; not independent reference validation",
+  "input_path": "data/processed/movies.sqlite",
+  "input_sha256": "16dff47521fcb542e6c6b2245d08bfa196f06def37db3e2b1970e2c9ef0b0a10",
+  "results": {
+    "disagreement_rows": 282,
+    "reference_threshold_corrected": {
+      "counts": [
+        1050,
+        1982
+      ],
+      "matches_published": false,
+      "percentages": [
+        34.63060686015831,
+        65.36939313984169
+      ]
+    },
+    "row_count": 3032,
+    "variant_a": {
+      "counts": [
+        1332,
+        1700
+      ],
+      "matches_published": false,
+      "percentages": [
+        43.931398416886545,
+        56.068601583113455
+      ]
+    }
+  },
+  "seed": null,
+  "shipped_label": "revenue > 2 * budget",
+  "worktree_dirty": true
+}

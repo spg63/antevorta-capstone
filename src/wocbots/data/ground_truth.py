@@ -310,6 +310,10 @@ def load_reference_sqlite(sqlite_path: Path, table_name: str = TABLE_NAME) -> pd
 def extract_reference(sqlite_path: Path, table_name: str = TABLE_NAME) -> ReferenceExtractionResult:
     """Load an unchanged W1-02 table and compute its feature/provenance counts."""
     dataframe = load_reference_sqlite(sqlite_path, table_name=table_name)
+    # W1-04 may add the shipped target after W1-03 builds this feature table.
+    # The reference extract deliberately remains feature-only.
+    if "label" in dataframe.columns:
+        dataframe = dataframe.drop(columns="label")
     _validate_feature_columns(dataframe)
 
     null_counts = {column: int(dataframe[column].isna().sum()) for column in dataframe.columns}
