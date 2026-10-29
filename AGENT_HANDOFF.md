@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-10-25 (Codex HANDOFF) on `sarjit/w1-04-labels-validation-gate`
-at `c833200`: W1-04 changes are uncommitted; the unrelated W5-01 plan is untracked.
+**Last updated:** 2026-10-28 (Codex HANDOFF) on `sarjit/w1-05-splits-normalization`
+at `611943e`: W1-04 closure bookkeeping is uncommitted; no source or test files changed.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,26 +20,24 @@ at `c833200`: W1-04 changes are uncommitted; the unrelated W5-01 plan is untrack
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-10-25, W1-04 handoff)
+## CURRENT STATE (2026-10-28, W1-04 gate resolved)
 
-- **Done:** The local SQLite `movies` table has the strict `revenue > 2 × budget`
-  label, added by `scripts/label_w1_04_movies.py`. Focused label tests passed
-  (18); the previous full suite passed (310 passed, 2 expected failures).
-  `results/manifests/w1_04_label_reconciliation.json` records the measured gate.
-- **In flight / blocked:** W1-04 is open. The W1-05 split runner's default input CSV
-  is missing and it expects `label_a`, while the database column is `label`. The
-  experiment loader separately recomputes labels. Rebuilding SQLite requires rerunning
-  the labeling script. The manifest was generated with uncommitted changes.
-- **Owner-attention:** The session driver requested assignment as reviewer (name not
-  supplied); review and sign-off have not been recorded. The driver also directed
-  implementation, so preamble §8's independence requirement still needs an eligible
-  independent reviewer. The stakeholder must adjudicate the failed-balance waiver
-  and the corrected reference comparison before closure.
-- **Next step:** Resolve the downstream split input and label contract, then obtain
-  stakeholder adjudication and independent review before recording ticket completion.
-- **Five-minute test:** `.venv/bin/python -m pytest -p no:cacheprovider
-  tests/unit/data/test_labels.py -q` checks label boundaries and the available local
-  database; `git status --short` shows the uncommitted work.
+- **Done:** W1-04 is ✅. Matt Ward approved its PR on 2026-10-26, and the stakeholder
+  resolved the reconciliation gate on 2026-10-28: ship label 1 only when `revenue >
+  2 × budget`; equality and every other value use the same rule, with no 5× condition.
+  Evidence remains in `results/manifests/w1_04_label_reconciliation.json`.
+- **In flight / blocked:** W1-05 remains open. Its runner/input-label contract and
+  artifact-consumption path need resolution before downstream experiments can rely on
+  the fixed split.
+- **Owner-attention:** No W1-04 ruling remains. A human owner should review the
+  outstanding W1-05 findings before starting its corrective implementation.
+- **Next step:** Repair W1-05 so it builds and consumes the persisted split/scaler
+  artifact from the W1-04 labeled output.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_labels.py -q` checks label
+  boundaries; `git diff --check && git status --short` verifies this documentation-only
+  update.
+
+## PRIOR (2026-10-25, W1-04 handoff)
 
 ## PRIOR (2026-10-25, W1-04 reconciliation)
 

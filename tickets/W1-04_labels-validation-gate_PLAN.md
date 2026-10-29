@@ -26,11 +26,11 @@ stakeholder decision if its reconciliation gate fires.
   the selected label in a `label` column. A repeatable W1-04 step runs after the
   feature-only database build and feature extraction remains label-free.
 - After the measured gate failed, the session driver explicitly waived the
-  published-balance requirement on 2026-10-25. Stakeholder acceptance remains to be
-  confirmed before closure.
-- The session driver directed that the reference's exact-5× fall-through be treated
-  as a bug, not reproduced. The 1.5× comparison corrects it and is therefore not an
-  exact reproduction of the reference column.
+  published-balance requirement on 2026-10-25. The stakeholder accepted that waiver
+  on 2026-10-28 and ratified the strict 2× shipped rule.
+- The stakeholder ruled that there is no separate 5× condition: every valid value is
+  classified solely by whether revenue is strictly greater than 2× budget. Historical
+  reference-derived reconciliation evidence does not alter that shipped rule.
 
 ## 4. Verified grounding facts
 

@@ -180,7 +180,7 @@ ticket first (the what), then its plan (the how).
 | W1-01 | `W1-01_raw-data-acquisition.md` | Raw data acquisition + provenance | — (day 1) — **✅ (reviewed: Sarjit Kaswala, 2026-10-25)** |
 | W1-02 | `W1-02_ground-truth-build-extract.md` | antevorta-db ground-truth build + reference extraction | W1-01 — **✅ (reviewed: Sarjit Kaswala, 2026-10-25)** |
 | W1-03 | `W1-03_hollywood-etl-transforms.md` | ETL: join, clean, transforms (labels excluded) | W1-01 — **✅ (reviewed: Sarjit Kaswala, 2026-10-25)** |
-| W1-04 | `W1-04_labels-validation-gate.md` | Labels + validation + the reconciliation GATE (escalates) | W1-02, W1-03 |
+| W1-04 | `W1-04_labels-validation-gate.md` | Labels + validation + the reconciliation GATE (escalates) | W1-02, W1-03 — **✅ (reviewed: Matt Ward, 2026-10-26; stakeholder gate ruling: 2026-10-28)** |
 | W1-05 | `W1-05_splits-normalization.md` | Splits + normalization + leakage guards | W1-04 |
 | W1-06 | `W1-06_anchor-analysis.md` | Anchor analysis (RESULT block) | W1-05 |
 
