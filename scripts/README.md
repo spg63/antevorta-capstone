@@ -46,6 +46,13 @@ uv run python scripts/label_w1_04_movies.py
 The W1-02 build manifest records the SQLite hash before this labeling step. The
 W1-04 reconciliation manifest records the hash of the input used for reconciliation.
 
+Optionally measure the label balance and compare it with the reference-derived
+threshold after labeling:
+
+```bash
+uv run python scripts/reconcile_w1_04_labels.py --output results/manifests/w1_04_label_reconciliation.json
+```
+
 ## 4. Generate the reference outputs
 
 ```bash
