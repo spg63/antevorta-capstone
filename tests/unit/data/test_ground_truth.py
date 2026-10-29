@@ -20,6 +20,7 @@ from wocbots.data.ground_truth import (
     write_reference_manifest,
     write_versioned_reference,
 )
+from wocbots.data.labels import label_movies_sqlite
 
 FIXTURES_ROOT = Path(__file__).resolve().parents[2] / "fixtures"
 
@@ -162,6 +163,15 @@ def test_extract_records_exact_counts_and_duplicate_ids(feature_frame: pd.DataFr
     assert result.zero_counts["ml_vote_count"] == 1
     assert result.duplicate_tmdb_ids == 1
     assert result.duplicate_movie_ids == 1
+
+
+def test_extract_remains_feature_only_after_labeling(feature_frame: pd.DataFrame, tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "movies.sqlite"
+    valid = feature_frame.assign(revenue=[500.0, 400.0, 900.0])
+    build_movies_sqlite(valid, sqlite_path)
+    label_movies_sqlite(sqlite_path)
+    assert load_reference_sqlite(sqlite_path)["label"].tolist() == [1, 0, 1]
+    assert list(extract_reference(sqlite_path).table.columns) == list(REFERENCE_FEATURE_COLUMNS)
 
 
 def test_invalid_or_noncanonical_table_name_is_rejected(feature_frame: pd.DataFrame, tmp_path: Path) -> None:

@@ -1,33 +1,23 @@
-"""W1-04 test requirements.
+"""W1-04 label boundary and reconciliation tests."""
 
-1. Boundary pin: revenue == 2*budget -> label 0 under variant (a). This is a pure logic
-   pin, unaffected by which raw-data snapshot is on disk — always runs, always must pass.
-2. Row-level validation against W1-02's reference: still does not exist. Reference-column
-   reconciliation (variant (b)) was ruled OUT OF SCOPE (ticket RESULT block, ratified
-   2026-08-15) rather than merely blocked — there is no reference to validate against and
-   none is expected. Adding this test back is only in scope if a genuine independent
-   reference is supplied later.
-3. Class-balance pin: NOT a "matches 47.5/52.5" assertion anymore. That gate fired, was
-   escalated, and was resolved by ruling variant (a) shipped **undefended** — i.e. the
-   ticket explicitly does not require this match. What remains testable is that the
-   shipped label is reproducible: `test_shipped_label_balance_matches_ratified_result`
-   pins the actual measured balance (43.93/56.07 on `data/processed/movies.sqlite`, n=3,032) so a
-   silent change to the label definition or the underlying data would be caught, without
-   re-imposing the published-balance requirement the ruling deliberately waived. It reads a
-   gitignored derived CSV (`data/*.csv`, see `.gitignore`), so it is a skip-if-absent local
-   pin — CI has no raw data and never runs it. The mechanism it guards is covered
-   unconditionally by `test_class_balance_pct_is_percentages_rounded_to_two_places`.
-"""
-
+import sqlite3
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pytest
 
-from wocbots.data.labels import class_balance_pct, variant_a_label
+from wocbots.data.ground_truth import load_reference_sqlite
+from wocbots.data.labels import (
+    class_balance_pct,
+    label_movies_sqlite,
+    reconcile_labels,
+    reference_threshold_label,
+    variant_a_label,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-LABELED_CSV = REPO_ROOT / "data" / "hollywood_features_labeled_variant_a.csv"
+FEATURE_SQLITE = REPO_ROOT / "data" / "processed" / "movies.sqlite"
 
 
 def test_boundary_exactly_2x_budget_is_not_success() -> None:
@@ -58,21 +48,74 @@ def test_class_balance_pct_is_percentages_rounded_to_two_places() -> None:
 
 
 @pytest.mark.skipif(
-    not LABELED_CSV.exists(),
-    reason=(
-        f"{LABELED_CSV.name} is a gitignored derived artifact (.gitignore: data/*.csv) built "
-        "from data/raw/, which is not committed either. Regenerate it locally to run this pin; "
-        "CI has neither file, so this can never be a CI gate."
-    ),
+    not FEATURE_SQLITE.exists(),
+    reason="Full W1-03 SQLite is a local, uncommitted dataset artifact.",
 )
-def test_shipped_label_balance_matches_ratified_result() -> None:
-    """Regression pin for the ratified RESULT block, not a published-balance check — the
-    ticket's own ruling (2026-08-15) waived the 47.5/52.5 match requirement when it shipped
-    variant (a) undefended. This test only catches an accidental drift in the label
-    definition or the underlying `movies.sqlite` snapshot.
-    """
-    df = pd.read_csv(LABELED_CSV)
-    balance = class_balance_pct(df["label_a"])
-    assert balance.loc[0] == 43.93
-    assert balance.loc[1] == 56.07
-    assert len(df) == 3032
+def test_shipped_label_balance_gate_on_local_data() -> None:
+    result = reconcile_labels(load_reference_sqlite(FEATURE_SQLITE))
+    balance = cast(dict[str, object], result["variant_a"])
+    assert result["row_count"] == 3032
+    assert balance["counts"] == [1332, 1700]
+    # The session driver waived this requirement after it failed; do not claim it passed.
+    assert balance["matches_published"] is False
+
+
+def test_reference_comparison_boundary_and_corrected_five_times() -> None:
+    df = pd.DataFrame({"budget": [100] * 6, "revenue": [149, 150, 151, 499, 500, 501]})
+    assert reference_threshold_label(df).tolist() == [0, 0, 1, 1, 1, 1]
+
+
+def test_reconciliation_counts_and_disagreement() -> None:
+    df = pd.DataFrame({"budget": [100] * 4, "revenue": [100, 175, 200, 501]}, index=[5, 2, 7, 1])
+    result = reconcile_labels(df)
+    assert result["row_count"] == 4
+    assert result["disagreement_rows"] == 2
+    assert result["variant_a"] == {"counts": [3, 1], "percentages": [75.0, 25.0], "matches_published": False}
+    assert result["reference_threshold_corrected"] == {
+        "counts": [1, 3],
+        "percentages": [25.0, 75.0],
+        "matches_published": False,
+    }
+
+
+@pytest.mark.parametrize("budget,revenue", [(0, 10), (10, 0), (10, float("nan")), (float("inf"), 10)])
+def test_reconciliation_rejects_invalid_rows(budget: float, revenue: float) -> None:
+    with pytest.raises(ValueError):
+        reconcile_labels(pd.DataFrame({"budget": [budget], "revenue": [revenue]}))
+
+
+def test_reconciliation_rejects_empty() -> None:
+    with pytest.raises(ValueError):
+        reconcile_labels(pd.DataFrame({"budget": [], "revenue": []}))
+
+
+@pytest.mark.parametrize("zeros,expected", [(46, False), (47, True), (48, True), (49, False)])
+def test_published_balance_tolerance(zeros: int, expected: bool) -> None:
+    df = pd.DataFrame({"budget": [100] * 100, "revenue": [100] * zeros + [300] * (100 - zeros)})
+    balance = cast(dict[str, object], reconcile_labels(df)["variant_a"])
+    assert balance["matches_published"] == expected
+
+
+def test_sqlite_labels_are_persisted_and_refreshed(tmp_path: Path) -> None:
+    path = tmp_path / "movies.sqlite"
+    with sqlite3.connect(path) as connection:
+        connection.execute("CREATE TABLE movies (budget REAL, revenue REAL)")
+        connection.executemany("INSERT INTO movies VALUES (?, ?)", [(100, 199), (100, 200), (100, 201)])
+    assert label_movies_sqlite(path) == 3
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("SELECT label FROM movies ORDER BY rowid").fetchall() == [(0,), (0,), (1,)]
+        connection.execute("UPDATE movies SET revenue = 500 WHERE rowid = 1")
+    assert label_movies_sqlite(path) == 3
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("SELECT label FROM movies ORDER BY rowid").fetchall() == [(1,), (0,), (1,)]
+
+
+def test_sqlite_invalid_values_roll_back_without_adding_column(tmp_path: Path) -> None:
+    path = tmp_path / "movies.sqlite"
+    with sqlite3.connect(path) as connection:
+        connection.execute("CREATE TABLE movies (budget REAL, revenue REAL)")
+        connection.execute("INSERT INTO movies VALUES (100, NULL)")
+    with pytest.raises(ValueError):
+        label_movies_sqlite(path)
+    with sqlite3.connect(path) as connection:
+        assert [row[1] for row in connection.execute("PRAGMA table_info(movies)")] == ["budget", "revenue"]

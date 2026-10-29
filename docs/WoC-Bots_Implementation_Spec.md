@@ -170,16 +170,11 @@ less popular movies.
 
 ### 4.2 What `antevorta-db` gives you
 
-The `antevorta-db` module (Kotlin) is the reference ETL: it ingests both raw datasets
-into SQLite and materializes the joined movie table with labels already computed. You can
-use it two ways:
-
-- **Path A (reference/ground truth):** run its Hollywood ingestion to produce the SQLite
-  database, then read that SQLite file from Python (`sqlite3` / `pandas.read_sql`). No
-  Kotlin knowledge needed beyond running a build; SQLite is language-neutral.
-- **Path B (recommended for the toolkit):** re-implement the ETL in pandas as part of
-  your Python package, following the normative rules in §4.3, and use Path A's output to
-  *validate* yours (row counts, label balance, spot-check joins).
+The `antevorta-db` module (Kotlin) describes the reference ETL: it ingests both raw datasets
+into SQLite and materializes the joined movie table with labels already computed. Its
+Hollywood code is available for inspection, but its outdated environment prevents running
+it to produce a reference database. Implement the ETL in this repository following §4.3;
+do not require validation against output from `antevorta-db`.
 
 Useful landmarks in `antevorta-db` (citable, you have this code):
 

@@ -37,15 +37,32 @@ This creates the ignored `data/processed/movies.sqlite` artifact. It contains fi
 (`movielens_links`, `movielens_movies`, `movielens_ratings`, `tmdb_movies`, and `tmdb_credits`) plus the
 derived W1-03 feature table, `movies`.
 
+Add or refresh W1-04's `label` column on the computed `movies` table after each build:
+
+```bash
+uv run python scripts/label_w1_04_movies.py
+```
+
+The W1-02 build manifest records the SQLite hash before this labeling step. The
+W1-04 reconciliation manifest records the hash of the input used for reconciliation.
+
+Optionally measure the label balance and compare it with the reference-derived
+threshold after labeling:
+
+```bash
+uv run python scripts/reconcile_w1_04_labels.py --output results/manifests/w1_04_label_reconciliation.json
+```
+
 ## 4. Generate the reference outputs
 
 ```bash
 uv run python scripts/extract_w1_02_reference.py
 ```
 
-This validates and exports the derived `movies` table to the local full reference CSV, updates aggregate
+This validates and exports the derived `movies` features to the local full reference CSV, updates aggregate
 manifests, and regenerates the deterministic test fixture. Run it after rebuilding the SQLite artifact or
-changing the W1-03 feature schema or transforms; otherwise, normal development can skip it.
+changing the W1-03 feature schema or transforms; otherwise, normal development can skip it. The W1-04
+`label` column, when present, is excluded from this feature-only reference.
 
 ## 5. Verify the data pipeline
 
