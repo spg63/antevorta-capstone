@@ -5,7 +5,7 @@ from wocbots.swarm.encounterdata import EncounterData
 
 
 class WorkerBee(BeeObserver):
-    def __init__(self, agent : Agent, encounter_data : EncounterData) -> WorkerBee:
+    def __init__(self, agent : Agent, encounter_data : EncounterData) -> None:
         super().__init__()
         self.agent = agent
         self.encounter_data = encounter_data
