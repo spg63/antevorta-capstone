@@ -3,19 +3,19 @@ from wocbots.swarm.observer import BeeObserver
 
 
 class BeeSubject:
-    def __init__(self, agent : Agent) -> None:
-        self.observers : list[BeeObserver] = []
-        self.agent : Agent = agent
+    def __init__(self, agent: Agent) -> None:
+        self.observers: list[BeeObserver] = []
+        self.agent: Agent = agent
 
-    def register_observer(self, bee_observer:BeeObserver):
+    def register_observer(self, bee_observer: BeeObserver) -> None:
         self.observers.append(bee_observer)
 
-    def deregister_observer(self, bee_observer:BeeObserver):
+    def deregister_observer(self, bee_observer: BeeObserver) -> None:
         self.observers.remove(bee_observer)
 
     def deregister_all_observers(self) -> None:
         self.observers = []
 
-    def notify_observers(self):
+    def notify_observers(self) -> None:
         for observer in self.observers:
             observer.notify(self.agent)

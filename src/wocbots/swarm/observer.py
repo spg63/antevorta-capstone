@@ -4,7 +4,6 @@ from wocbots.agents.agent import Agent
 
 
 class BeeObserver(ABC):
-
     @abstractmethod
-    def notify(self, presenter : Agent):
+    def notify(self, presenter: Agent) -> None:
         pass
