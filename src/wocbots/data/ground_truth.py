@@ -307,6 +307,16 @@ def load_reference_sqlite(sqlite_path: Path, table_name: str = TABLE_NAME) -> pd
         connection.close()
 
 
+def load_labeled_sqlite(sqlite_path: Path, table_name: str = TABLE_NAME) -> pd.DataFrame:
+    """Load W1-04's labeled table with SQLite's stable row identity for split membership."""
+    safe_table_name = _validated_table_name(table_name)
+    connection = sqlite3.connect(sqlite_path)
+    try:
+        return pd.read_sql(f'SELECT rowid AS _rowid, * FROM "{safe_table_name}"', connection)
+    finally:
+        connection.close()
+
+
 def extract_reference(sqlite_path: Path, table_name: str = TABLE_NAME) -> ReferenceExtractionResult:
     """Load an unchanged W1-02 table and compute its feature/provenance counts."""
     dataframe = load_reference_sqlite(sqlite_path, table_name=table_name)

@@ -354,13 +354,16 @@ def test_reference_bands_real_data() -> None:
     comparison and its escalation live; asserting it a second time here would duplicate the
     escalation rather than add evidence, so this test pins the instrument, not the claim.
     """
+    from wocbots.data.splits import load_split_artifact
     from wocbots.experiments.hollywood_data import load_labeled_hollywood, materialize_split
 
-    split = materialize_split(load_labeled_hollywood(), np.random.default_rng(20260810))
+    split = materialize_split(
+        load_labeled_hollywood(), load_split_artifact(Path("data/derived/split_v1.json"))
+    )
 
     sanity = build_sanity_agent(
-        train_data=split.train_data,
-        eval_data=split.eval_data,
+        train_data=split.sanity_train_data,
+        eval_data=split.sanity_eval_data,
         rng=np.random.default_rng(1),
         spec=ClassifierSpec(epochs=50),
         confidence_weights=HOLLYWOOD_WEIGHTS,

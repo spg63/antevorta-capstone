@@ -46,7 +46,24 @@ uv run python scripts/label_w1_04_movies.py
 The W1-02 build manifest records the SQLite hash before this labeling step. The
 W1-04 reconciliation manifest records the hash of the input used for reconciliation.
 
-## 4. Generate the reference outputs
+## 4. Build W1-05's fixed split and normalization artifact
+
+After labeling, and after committing the code/data-pipeline change that produced the labeled SQLite, run:
+
+```bash
+uv run python scripts/build_w1_05_splits.py
+```
+
+This reads the persisted `movies.label` column from SQLite; it does not rebuild labels from the raw CSVs.
+It writes two ignored local files, `data/derived/split_v1.json` and `data/derived/split_v1.npz`, containing
+the fixed train/eval/test memberships, five folds, and training-only normalization values.
+
+It also writes `results/manifests/w1_05_split_provenance.json`. Commit that compact manifest with the
+corresponding code commit; it records the source fingerprint, seed, membership digests, scalers, and Git SHA
+without storing raw rows or split IDs. All real-data experiment configurations must point at these persisted
+artifacts rather than creating a new split.
+
+## 5. Generate the reference outputs
 
 ```bash
 uv run python scripts/extract_w1_02_reference.py
@@ -57,7 +74,7 @@ manifests, and regenerates the deterministic test fixture. Run it after rebuildi
 changing the W1-03 feature schema or transforms; otherwise, normal development can skip it. The W1-04
 `label` column, when present, is excluded from this feature-only reference.
 
-## 5. Verify the data pipeline
+## 6. Verify the data pipeline
 
 ```bash
 uv run pytest tests/unit/data/test_ground_truth.py tests/unit/data/test_hollywood.py -q

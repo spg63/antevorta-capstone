@@ -23,13 +23,14 @@ This module calls NO RNG of its own: it only advances the Generator the harness 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 
 import numpy as np
 
 from wocbots.agents.crowd import BuiltCrowd, CrowdConfig, build_crowd
+from wocbots.data.splits import load_split_artifact
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.hollywood_data import (
-    DEFAULT_RAW_ROOT,
     load_labeled_hollywood,
     materialize_split,
 )
@@ -46,17 +47,18 @@ HOLLYWOOD_CROWD_CONFIGS: tuple[str, ...] = (
 def build_hollywood_crowd(
     crowd_config_path: str,
     rng: np.random.Generator,
-    raw_root: str = DEFAULT_RAW_ROOT,
+    sqlite_path: str,
+    split_artifact: str,
 ) -> BuiltCrowd:
     """Load a crowd config, materialize the real split, build the crowd.
 
-    One Generator threads split → assignment → per-agent classifier seeds, so the whole crowd
-    is reproducible from one master seed (spec §9.1). `eval_data` is the train-side 90/10
+    The Generator threads assignment and classifier seeds; membership comes from the persisted
+    artifact. `eval_data` is the train-side 90/10
     slice; the test split is never touched (spec §10.5).
     """
     config = CrowdConfig.from_yaml(crowd_config_path)
-    labeled = load_labeled_hollywood(raw_root)
-    split = materialize_split(labeled, rng)
+    labeled = load_labeled_hollywood(sqlite_path)
+    split = materialize_split(labeled, load_split_artifact(Path(split_artifact)))
     return build_crowd(
         config=config,
         train_data=split.train_data,
@@ -76,10 +78,12 @@ def _crowd_runner(config: ExperimentConfig, rng: np.random.Generator) -> Mapping
     if not isinstance(crowd_config_param, str):
         raise ValueError(f"{config.kind!r} requires params.crowd_config (a path to a crowd YAML)")
 
-    raw_root_param = config.params.get("raw_root", DEFAULT_RAW_ROOT)
-    raw_root = raw_root_param if isinstance(raw_root_param, str) else DEFAULT_RAW_ROOT
+    sqlite_param = config.params.get("labeled_sqlite")
+    artifact_param = config.params.get("split_artifact")
+    if not isinstance(sqlite_param, str) or not isinstance(artifact_param, str):
+        raise ValueError("w2_03_hollywood_crowd requires params.labeled_sqlite and params.split_artifact")
 
-    crowd = build_hollywood_crowd(crowd_config_param, rng, raw_root)
+    crowd = build_hollywood_crowd(crowd_config_param, rng, sqlite_param, artifact_param)
     manifest = crowd.manifest
 
     accuracies = np.array([record.eval_accuracy for record in manifest.agents], dtype=float)

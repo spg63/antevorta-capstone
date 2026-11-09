@@ -12,7 +12,7 @@ descends from the single harness `numpy.random.Generator` (spec §9.1, the W0-04
 rule): `fit` draws ONE integer from that Generator for sklearn's `random_state`, so a
 crowd trained from one master seed is bit-reproducible. Library nondeterminism is pinned
 here, not wished away: BLAS thread count is forced to 1 for the duration of every fit and
-predict (`threadpool_limits`), and the logreg solver runs `n_jobs=1`. Same feature subset +
+predict (`threadpool_limits`). Same feature subset +
 same Generator state ⇒ identical trained metrics, twice (ticket test req 3).
 
 This module calls NO RNG of its own: it only advances the Generator handed to `fit`. The
@@ -242,8 +242,9 @@ class LogisticRegressionAgentClassifier:
 
     It exists to demonstrate the crowd is agnostic to agent internals — the MLP-shape knobs
     (`hidden_width`, `epochs`, `batch_size`) simply do not apply and are ignored. Seeded
-    from the same Generator and pinned `n_jobs=1` + single-thread so it honours the same
-    determinism contract (§12-R3).
+    from the same Generator and fit under a single-thread limit so it honours the same
+    determinism contract (§12-R3). `n_jobs` is intentionally omitted: current scikit-learn
+    ignores it for this solver and warns when it is supplied.
     """
 
     def __init__(self, spec: ClassifierSpec) -> None:
@@ -253,7 +254,6 @@ class LogisticRegressionAgentClassifier:
     def fit(self, x: FloatMatrix, y: LabelVector, rng: np.random.Generator) -> None:
         model = LogisticRegression(
             random_state=_seed_from(rng),
-            n_jobs=1,
             max_iter=_LOGREG_MAX_ITER,
         )
         with threadpool_limits(limits=1):

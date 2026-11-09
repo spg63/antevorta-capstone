@@ -4,7 +4,9 @@ save/load cycle byte-identically, since every downstream experiment reads it bac
 disk rather than re-splitting).
 """
 
+import json
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -26,7 +28,7 @@ def labeled_df() -> pd.DataFrame:
     n = 400
     df = pd.DataFrame(
         {
-            "tmdbId": np.arange(n),
+            "_rowid": np.arange(n),
             "budget": rng.uniform(1_000, 100_000_000, n),
             "vote_count": rng.uniform(0, 5000, n),
             "vote_average": rng.uniform(0, 10, n),
@@ -66,7 +68,7 @@ def test_stratification_within_one_point(labeled_df: pd.DataFrame) -> None:
         (artifact.eval_ids, "eval"),
         (artifact.test_ids, "test"),
     ]:
-        sub = labeled_df[labeled_df["tmdbId"].isin(ids)]
+        sub = labeled_df[labeled_df["_rowid"].isin(ids)]
         rate = sub["label"].mean() * 100
         assert abs(rate - overall_rate) <= 1.0, f"{name} split off by {abs(rate - overall_rate):.2f}pt"
 
@@ -77,7 +79,7 @@ def test_train_eval_test_partition_is_disjoint_and_complete(labeled_df: pd.DataF
     assert train & eval_ == set()
     assert train & test == set()
     assert eval_ & test == set()
-    assert train | eval_ | test == set(labeled_df["tmdbId"])
+    assert train | eval_ | test == set(labeled_df["_rowid"])
 
 
 def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFrame) -> None:
@@ -86,7 +88,7 @@ def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFram
     touch the dataframe again.
     """
     artifact = make_split(labeled_df, "label", rng=np.random.default_rng(11), feature_columns=FEATURES)
-    non_train_mask = ~labeled_df["tmdbId"].isin(artifact.train_ids)
+    non_train_mask = ~labeled_df["_rowid"].isin(artifact.train_ids)
 
     perturbed = labeled_df.copy()
     perturbed.loc[non_train_mask, FEATURES] = perturbed.loc[non_train_mask, FEATURES] * 1000 + 1e9
@@ -98,7 +100,7 @@ def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFram
 
 def test_apply_scaling_produces_values_in_unit_range_for_train(labeled_df: pd.DataFrame) -> None:
     artifact = make_split(labeled_df, "label", rng=np.random.default_rng(5), feature_columns=FEATURES)
-    train_df = labeled_df[labeled_df["tmdbId"].isin(artifact.train_ids)]
+    train_df = labeled_df[labeled_df["_rowid"].isin(artifact.train_ids)]
     scaled = apply_scaling(train_df, artifact)
     assert (scaled >= 0).all().all()
     assert (scaled <= 1).all().all()
@@ -170,3 +172,47 @@ def test_split_artifact_loads_after_the_pair_is_moved(labeled_df: pd.DataFrame, 
 
     loaded = load_split_artifact(moved / manifest_path.name)
     assert list(loaded.train_ids) == list(artifact.train_ids)
+
+
+def test_load_rejects_tampered_duplicate_membership(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    """An NPZ edit must not turn into a silently accepted split artifact."""
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(12), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    npz_path = tmp_path / "split_test.npz"
+    with np.load(npz_path) as original:
+        payload = {key: original[key] for key in original.files}
+    payload["train_ids"] = np.append(payload["train_ids"], payload["train_ids"][0])
+    np.savez(npz_path, **payload)
+
+    with pytest.raises(ValueError, match="metadata|duplicate ids"):
+        load_split_artifact(manifest_path)
+
+
+def test_load_rejects_tampered_json_metadata(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(15), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    manifest = json.loads(manifest_path.read_text())
+    manifest["n_test"] += 1
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(ValueError, match="JSON metadata"):
+        load_split_artifact(manifest_path)
+
+
+def test_materialization_rejects_incomplete_source_partition(labeled_df: pd.DataFrame) -> None:
+    """The source-aware validation rejects an otherwise plausible missing membership."""
+    from wocbots.experiments.hollywood_data import materialize_split
+
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(13), feature_columns=FEATURES)
+    tampered = replace(artifact, test_ids=artifact.test_ids[:-1])
+
+    with pytest.raises(ValueError, match="complete source partition"):
+        materialize_split(labeled_df, tampered)
+
+
+def test_materialization_cannot_regenerate_a_split(labeled_df: pd.DataFrame) -> None:
+    """Consumers accept only artifacts; an RNG can never trigger a hidden re-split."""
+    from wocbots.experiments.hollywood_data import materialize_split
+
+    with pytest.raises(TypeError, match="persisted SplitArtifact"):
+        materialize_split(labeled_df, np.random.default_rng(14))  # type: ignore[arg-type]

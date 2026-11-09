@@ -10,6 +10,7 @@ which reads it directly from the labeled dataframe, not from this module's featu
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -57,6 +58,7 @@ class SplitArtifact:
     """
 
     seed: int
+    source_fingerprint: str
     train_ids: np.ndarray
     eval_ids: np.ndarray  # 90/10 slice OFF the training side
     test_ids: np.ndarray
@@ -64,17 +66,82 @@ class SplitArtifact:
     feature_columns: list[str]
     scaler_min: pd.Series
     scaler_max: pd.Series
+    sanity_revenue_min: float
+    sanity_revenue_max: float
+
+
+def validate_split_artifact(artifact: SplitArtifact, source_ids: np.ndarray | None = None) -> None:
+    """Reject malformed persisted membership before it can reach a model.
+
+    When the canonical source is available, ``source_ids`` also proves that the
+    train/eval/test memberships are a complete partition of that source.
+    """
+    if not artifact.feature_columns or len(set(artifact.feature_columns)) != len(artifact.feature_columns):
+        raise ValueError("split artifact feature columns must be non-empty and unique")
+    if EXCLUDED_FROM_FEATURES & set(artifact.feature_columns):
+        raise ValueError("split artifact feature columns must not include revenue")
+
+    memberships = {"train": artifact.train_ids, "eval": artifact.eval_ids, "test": artifact.test_ids}
+    membership_sets: dict[str, set[object]] = {}
+    for name, ids in memberships.items():
+        values = set(ids.tolist())
+        if len(values) != len(ids):
+            raise ValueError(f"split artifact {name} membership contains duplicate ids")
+        membership_sets[name] = values
+    if membership_sets["train"] & membership_sets["eval"]:
+        raise ValueError("split artifact train and eval memberships overlap")
+    if membership_sets["train"] & membership_sets["test"]:
+        raise ValueError("split artifact train and test memberships overlap")
+    if membership_sets["eval"] & membership_sets["test"]:
+        raise ValueError("split artifact eval and test memberships overlap")
+
+    train_ids = membership_sets["train"]
+    if len(artifact.fold_ids) != 5:
+        raise ValueError("split artifact must contain exactly five folds")
+    for index, (fold_train, fold_validation) in enumerate(artifact.fold_ids):
+        fold_train_ids = set(fold_train.tolist())
+        fold_validation_ids = set(fold_validation.tolist())
+        if len(fold_train_ids) != len(fold_train) or len(fold_validation_ids) != len(fold_validation):
+            raise ValueError(f"split artifact fold {index} contains duplicate ids")
+        if fold_train_ids & fold_validation_ids or fold_train_ids | fold_validation_ids != train_ids:
+            raise ValueError(f"split artifact fold {index} does not partition train membership")
+
+    if source_ids is not None:
+        source_set = set(source_ids.tolist())
+        if len(source_set) != len(source_ids):
+            raise ValueError("labeled source has duplicate split identity values")
+        if membership_sets["train"] | membership_sets["eval"] | membership_sets["test"] != source_set:
+            raise ValueError("split artifact memberships are not a complete source partition")
+
+
+def source_fingerprint(
+    df: pd.DataFrame, label_column: str, feature_columns: list[str], id_column: str = "_rowid"
+) -> str:
+    """Stable identity for the labeled values an artifact is allowed to serve."""
+    required = [id_column, label_column, *feature_columns, "revenue"]
+    missing = set(required) - set(df.columns)
+    if missing:
+        raise ValueError(f"labeled source is missing columns: {sorted(missing)}")
+    if df[id_column].duplicated().any():
+        raise ValueError(f"labeled source has duplicate {id_column} values")
+    labels = df[label_column]
+    if labels.isna().any() or not set(labels.unique()).issubset({0, 1}):
+        raise ValueError(f"{label_column} must contain only binary labels")
+    canonical = df.loc[:, required].sort_values(id_column).reset_index(drop=True)
+    hashed = pd.util.hash_pandas_object(canonical, index=False, categorize=True).to_numpy().tobytes()
+    return hashlib.sha256(hashed).hexdigest()
 
 
 def make_split(
     df: pd.DataFrame,
     label_column: str,
     rng: np.random.Generator,
-    id_column: str = "tmdbId",
+    id_column: str = "_rowid",
     feature_columns: list[str] | None = None,
     test_size: float = 0.2,
     eval_size: float = 0.1,
     n_folds: int = 5,
+    root_seed: int | None = None,
 ) -> SplitArtifact:
     """Spec §4.3.8-9: build one seed's full split + scaler artifact.
 
@@ -103,6 +170,7 @@ def make_split(
     seed_eval_slice = _seed_from(rng)
     seed_kfold = _seed_from(rng)
 
+    fingerprint = source_fingerprint(df, label_column, feature_columns, id_column)
     ids = df[id_column].to_numpy()
     labels = df[label_column].to_numpy()
 
@@ -138,8 +206,9 @@ def make_split(
     scaler_min = train_features.min()
     scaler_max = train_features.max()
 
-    return SplitArtifact(
-        seed=seed_train_test,
+    artifact = SplitArtifact(
+        seed=seed_train_test if root_seed is None else root_seed,
+        source_fingerprint=fingerprint,
         train_ids=ids[real_train_idx],
         eval_ids=ids[real_eval_idx],
         test_ids=ids[test_idx],
@@ -147,7 +216,11 @@ def make_split(
         feature_columns=feature_columns,
         scaler_min=scaler_min,
         scaler_max=scaler_max,
+        sanity_revenue_min=float(df.iloc[real_train_idx]["revenue"].min()),
+        sanity_revenue_max=float(df.iloc[real_train_idx]["revenue"].max()),
     )
+    validate_split_artifact(artifact, ids)
+    return artifact
 
 
 def apply_scaling(df: pd.DataFrame, artifact: SplitArtifact) -> pd.DataFrame:
@@ -199,6 +272,7 @@ def write_split_artifact(artifact: SplitArtifact, out_dir: Path, version: str) -
 
     manifest = {
         "seed": artifact.seed,
+        "source_fingerprint": artifact.source_fingerprint,
         "feature_columns": artifact.feature_columns,
         "n_folds": len(artifact.fold_ids),
         "n_train": int(len(artifact.train_ids)),
@@ -206,6 +280,8 @@ def write_split_artifact(artifact: SplitArtifact, out_dir: Path, version: str) -
         "n_test": int(len(artifact.test_ids)),
         "scaler_min": artifact.scaler_min.to_dict(),
         "scaler_max": artifact.scaler_max.to_dict(),
+        "sanity_revenue_min": artifact.sanity_revenue_min,
+        "sanity_revenue_max": artifact.sanity_revenue_max,
         "ids_path": str(npz_path),
     }
     json_path.write_text(json.dumps(manifest, indent=2))
@@ -229,8 +305,9 @@ def load_split_artifact(json_path: Path) -> SplitArtifact:
     fold_ids = [(npz[f"fold_{i}_train_ids"], npz[f"fold_{i}_val_ids"]) for i in range(n_folds)]
 
     feature_columns = manifest["feature_columns"]
-    return SplitArtifact(
+    artifact = SplitArtifact(
         seed=manifest["seed"],
+        source_fingerprint=manifest["source_fingerprint"],
         train_ids=npz["train_ids"],
         eval_ids=npz["eval_ids"],
         test_ids=npz["test_ids"],
@@ -238,4 +315,16 @@ def load_split_artifact(json_path: Path) -> SplitArtifact:
         feature_columns=feature_columns,
         scaler_min=pd.Series(manifest["scaler_min"])[feature_columns],
         scaler_max=pd.Series(manifest["scaler_max"])[feature_columns],
+        sanity_revenue_min=float(manifest["sanity_revenue_min"]),
+        sanity_revenue_max=float(manifest["sanity_revenue_max"]),
     )
+    expected_counts = {
+        "n_train": len(artifact.train_ids),
+        "n_eval": len(artifact.eval_ids),
+        "n_test": len(artifact.test_ids),
+        "n_folds": len(artifact.fold_ids),
+    }
+    if any(manifest[key] != value for key, value in expected_counts.items()):
+        raise ValueError("split artifact JSON metadata does not match NPZ memberships")
+    validate_split_artifact(artifact)
+    return artifact

@@ -13,14 +13,13 @@ and were in fact got wrong once (see `revenue` below):
   actually this attachment. Scaling it here, once, from train rows only, keeps the leakage
   discipline W1-05 applies to every other column and gives both callers the same guarantee.
 
-This module calls NO RNG of its own: it only advances the Generator it is handed
-(the W0-04 RNG-discipline guard).
+This module never generates membership. Runners load the persisted split artifact;
+their seeded generators are reserved for training and later stochastic mechanisms.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -29,60 +28,49 @@ import pandas as pd
 from wocbots.agents.classifier import LabeledData
 from wocbots.data import (
     apply_scaling,
-    build_hollywood_features,
-    make_split,
-    variant_a_label,
+    load_labeled_sqlite,
 )
-from wocbots.data.splits import SplitArtifact
+from wocbots.data.splits import SplitArtifact, source_fingerprint, validate_split_artifact
 
 LABEL_COLUMN = "label"
-ID_COLUMN = "tmdbId"
-DEFAULT_RAW_ROOT = "data/raw"
+ID_COLUMN = "_rowid"
+DEFAULT_LABELED_SQLITE = "data/processed/movies.sqlite"
 
 
 @dataclass(frozen=True)
 class HollywoodSplit:
     """One seeded run's materialized train/eval data plus the artifact they came from.
 
-    `feature_columns` excludes `revenue`; `train_data`/`eval_data` carry it as a trailing
-    column so the §9.2 sanity agent is constructible, and ONLY via `build_sanity_agent`.
+    `feature_columns` excludes `revenue`. Only the explicitly named ``sanity_*`` views
+    carry it for the §9.2 canary.
     """
 
     artifact: SplitArtifact
     feature_columns: list[str]
     train_data: LabeledData
     eval_data: LabeledData
+    test_data: LabeledData
+    sanity_train_data: LabeledData
+    sanity_eval_data: LabeledData
+    sanity_test_data: LabeledData
 
 
-@lru_cache(maxsize=4)
-def load_labeled_hollywood(raw_root: str = DEFAULT_RAW_ROOT) -> pd.DataFrame:
-    """The W1-03 ETL + W1-04 variant-(a) label, memoised per raw-data root.
-
-    Deterministic and seed-free, so memoising cannot affect any result — it only avoids
-    re-reading 20,000,263 rating rows once per seeded run. `rating.csv` is read with
-    `usecols` because spec §4.3.3-4 needs exactly two columns of a ~690 MB file.
-    """
-    root = Path(raw_root)
-    tmdb_movies = pd.read_csv(root / "tmdb" / "movies.csv")
-    tmdb_credits = pd.read_csv(root / "tmdb" / "credits.csv")
-    links = pd.read_csv(root / "movielens" / "link.csv")
-    ml_movies = pd.read_csv(root / "movielens" / "movie.csv")
-    ratings = pd.read_csv(root / "movielens" / "rating.csv", usecols=["movieId", "rating"])
-
-    features = build_hollywood_features(tmdb_movies, tmdb_credits, links, ml_movies, ratings)
-    labeled = features.copy()
-    labeled[LABEL_COLUMN] = variant_a_label(labeled)
+def load_labeled_hollywood(sqlite_path: str = DEFAULT_LABELED_SQLITE) -> pd.DataFrame:
+    """Load W1-04's persisted label; never rebuild labels from raw input files."""
+    labeled = load_labeled_sqlite(Path(sqlite_path))
+    if LABEL_COLUMN not in labeled:
+        raise ValueError("W1-04 labeled SQLite must contain movies.label")
     return labeled
 
 
-def materialize_split(labeled: pd.DataFrame, rng: np.random.Generator) -> HollywoodSplit:
-    """Derive one run's split from `rng` and pack the scaled train/eval matrices.
-
-    The SPLIT is per-run on purpose: split membership is the stochastic dimension the spec
-    §9.1 ten-run protocol samples. Memoising it would report one run ten times with a
-    fabricated std.
-    """
-    artifact = make_split(labeled, label_column=LABEL_COLUMN, rng=rng)
+def materialize_split(labeled: pd.DataFrame, artifact: SplitArtifact) -> HollywoodSplit:
+    """Materialize only a previously persisted, source-matched split artifact."""
+    if not isinstance(artifact, SplitArtifact):
+        raise TypeError("materialize_split requires a persisted SplitArtifact")
+    actual_fingerprint = source_fingerprint(labeled, LABEL_COLUMN, artifact.feature_columns, ID_COLUMN)
+    if actual_fingerprint != artifact.source_fingerprint:
+        raise ValueError("split artifact does not match the labeled SQLite source")
+    validate_split_artifact(artifact, labeled[ID_COLUMN].to_numpy())
     feature_columns = list(artifact.feature_columns)
 
     scaled = apply_scaling(labeled, artifact)
@@ -90,20 +78,23 @@ def materialize_split(labeled: pd.DataFrame, rng: np.random.Generator) -> Hollyw
 
     train_mask = labeled[ID_COLUMN].isin(artifact.train_ids).to_numpy()
     eval_mask = labeled[ID_COLUMN].isin(artifact.eval_ids).to_numpy()
+    test_mask = labeled[ID_COLUMN].isin(artifact.test_ids).to_numpy()
 
     # See the module docstring: TRAIN-only min-max, matching every other column's treatment.
     revenue_raw = labeled["revenue"].to_numpy(dtype=float)
-    revenue_train = revenue_raw[train_mask]
-    revenue_min = float(revenue_train.min())
-    revenue_span = float(revenue_train.max()) - revenue_min or 1.0
-    scaled["revenue"] = np.clip((revenue_raw - revenue_min) / revenue_span, 0.0, 1.0)
+    revenue_span = artifact.sanity_revenue_max - artifact.sanity_revenue_min or 1.0
+    scaled["revenue"] = np.clip((revenue_raw - artifact.sanity_revenue_min) / revenue_span, 0.0, 1.0)
 
-    columns = [*feature_columns, "revenue"]
+    sanity_columns = [*feature_columns, "revenue"]
     return HollywoodSplit(
         artifact=artifact,
         feature_columns=feature_columns,
-        train_data=_labeled_data(scaled[train_mask], columns),
-        eval_data=_labeled_data(scaled[eval_mask], columns),
+        train_data=_labeled_data(scaled[train_mask], feature_columns),
+        eval_data=_labeled_data(scaled[eval_mask], feature_columns),
+        test_data=_labeled_data(scaled[test_mask], feature_columns),
+        sanity_train_data=_labeled_data(scaled[train_mask], sanity_columns),
+        sanity_eval_data=_labeled_data(scaled[eval_mask], sanity_columns),
+        sanity_test_data=_labeled_data(scaled[test_mask], sanity_columns),
     )
 
 

@@ -13,11 +13,9 @@ Three things are load-bearing and must not be casually changed:
    W1-05's 90/10 eval slice is carved off the TRAINING side; the test split is untouchable
    until final evaluation in W5. Measuring here on test would burn the holdout for a
    calibration check.
-2. **The raw-data load is memoised; the SPLIT is not** (plan §3-D4). The W1-03 ETL takes no
-   seed and returns the same frame every time, so re-running it per seeded run costs minutes
-   to recompute an identical answer. Split membership IS the stochastic dimension the ten
-   runs sample, so it is re-derived per run from that run's Generator. Caching the split
-   too would report one run ten times with a fabricated std.
+2. **The labeled SQLite and persisted split are the controlled input.** All ten harness
+   runs validate and materialize the same W1-05 artifact. Their different seeded generators
+   affect training and later mechanisms, never split membership.
 3. **The sanity row goes down its own constructor** (spec §10.9, plan §3-D5). `budget,
    revenue` is row 1 of §9.2 and is built by `build_sanity_agent`, the only path allowed to
    see `revenue`. It is reported here because pipeline validation is exactly the use §10.9
@@ -38,6 +36,7 @@ import numpy as np
 from wocbots.agents import HOLLYWOOD_WEIGHTS
 from wocbots.agents.classifier import ClassifierSpec, LabeledData
 from wocbots.agents.training import build_sanity_agent, evaluate, train_agent
+from wocbots.data.splits import load_split_artifact
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.hollywood_data import load_labeled_hollywood, materialize_split
 from wocbots.experiments.manifest import Manifest
@@ -136,19 +135,25 @@ def agent_table_runner(config: ExperimentConfig, rng: np.random.Generator) -> Ma
     The harness owns the 10-run mean ± std (spec §9.1, plan §3-D3) — this returns one run's
     raw cells and aggregates nothing itself.
     """
-    raw_root_param = config.params.get("raw_root", "data/raw")
-    raw_root = str(raw_root_param) if isinstance(raw_root_param, (str, Path)) else "data/raw"
+    sqlite_param = config.params.get("labeled_sqlite")
+    artifact_param = config.params.get("split_artifact")
+    if not isinstance(sqlite_param, (str, Path)) or not isinstance(artifact_param, (str, Path)):
+        raise ValueError("w2_04_agent_table requires params.labeled_sqlite and params.split_artifact")
 
-    labeled = load_labeled_hollywood(raw_root)
-    # Split membership is this run's stochastic dimension (plan §3-D4); the shared helper
-    # owns the eval-slice and revenue-scaling contracts (see `hollywood_data`).
-    split = materialize_split(labeled, rng)
+    labeled = load_labeled_hollywood(str(sqlite_param))
+    # Fixed membership comes from the artifact; the shared helper owns the eval-slice and
+    # revenue-scaling contracts (see `hollywood_data`).
+    split = materialize_split(labeled, load_split_artifact(Path(artifact_param)))
 
     results: dict[str, float] = {}
     for row in AGENT_TABLE_ROWS:
         for epochs in EPOCH_COLUMNS:
             results[metric_key(row, epochs)] = _accuracy_for_row(
-                row, epochs, split.train_data, split.eval_data, rng
+                row,
+                epochs,
+                split.sanity_train_data if row.is_sanity else split.train_data,
+                split.sanity_eval_data if row.is_sanity else split.eval_data,
+                rng,
             )
     return results
 
