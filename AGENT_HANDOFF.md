@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-10-28 (Codex HANDOFF) on `sarjit/w1-05-splits-normalization`
-at `611943e`: W1-04 closure bookkeeping is uncommitted; no source or test files changed.
+**Last updated:** 2026-11-08 (Codex HANDOFF) on `sarjit/w1-05-splits-normalization`
+at `3fcee3c`: W1-05 implementation and provenance manifest are committed; reviews remain before closure.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +20,27 @@ at `611943e`: W1-04 closure bookkeeping is uncommitted; no source or test files 
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-10-28, W1-04 gate resolved)
+## CURRENT STATE (2026-11-08, W1-05 implementation committed; reviews pending)
+
+- **Done:** W1-04 is ✅: strict `revenue > 2 × budget`, with no 5× condition. W1-05 is
+  implemented in `27b40d0`: persisted SQLite labels and `_rowid` identity feed a fixed,
+  validated split/scaler artifact; normal data excludes `revenue`; W2-03/W2-04 require
+  that artifact. `3fcee3c` adds the committed compact provenance evidence at
+  `results/manifests/w1_05_split_provenance.json`. The complete suite passed in two
+  batches: `271 passed, 2 xfailed` and `45 passed`; Ruff, formatting, mypy, and
+  `git diff --check` passed before commit.
+- **In flight / blocked:** W1-05 is not status-closed. No technical defect is known;
+  closure waits for the required CORE review of `src/wocbots/experiments/` and the
+  independent ticket-close review.
+- **Owner-attention:** A CORE owner must review the experiment/config consumer changes.
+  A reviewer independent of the implementation must sign off before the W1-05 index row
+  can become ✅.
+- **Next step:** Obtain and record those reviews in `tickets/00_INDEX.md`, then complete
+  W1-05 closure bookkeeping.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_splits.py tests/unit/test_w2_03_hollywood_crowd.py tests/unit/test_w2_04_agent_table.py -q`; `git status --short`
+  should show only this handoff update.
+
+## PRIOR (2026-10-28, W1-04 gate resolved)
 
 - **Done:** W1-04 is ✅. Matt Ward approved its PR on 2026-10-26, and the stakeholder
   resolved the reconciliation gate on 2026-10-28: ship label 1 only when `revenue >
