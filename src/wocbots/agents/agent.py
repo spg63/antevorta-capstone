@@ -19,6 +19,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from wocbots.agents.classifier import AgentClassifier
+
 # Sum-to-one tolerance for confidence weights. The weights are per-problem config
 # (spec §5.4); a sum off by more than float noise is a config bug.
 _WEIGHT_SUM_TOL = 1e-9
@@ -88,6 +90,7 @@ class Agent:
         eval_precision: float,
         eval_recall: float,
         confidence_weights: ConfidenceWeights,
+        classifier : AgentClassifier = None
     ) -> None:
         # Eval metrics arrive as inputs: where they come from (the train-side eval
         # slice, never the test split — spec §10.5) is W2-02's business (ticket S1).
@@ -127,6 +130,8 @@ class Agent:
         # drift is evidence about ONE sample; it never carries over.
         self._certainty_train: float = self.certainty
 
+        self.classifier : AgentClassifier = classifier
+
     # ---- fixed-after-training state (spec §2), read-only ----
 
     @property
@@ -150,6 +155,17 @@ class Agent:
     def features(self) -> tuple[str, ...]:
         """Assigned at creation (W2-03's policy), fixed thereafter."""
         return self._features
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Agent):
+            if (self.features == other.features) and (
+                self.eval_accuracy == other.eval_accuracy) and (
+                self.eval_precision == other.eval_precision) and (
+                self.eval_recall == other.eval_recall) and (
+                self.confidence == other.confidence) and (
+                self.classifier == other.classifier):
+                return True
+        return False
 
     # ---- the §6.5 boundary ----
 
