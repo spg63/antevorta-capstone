@@ -128,6 +128,19 @@ audit (W8-03), and a federated meta-swarm study built on it (W8-04). Auto-tuned 
 thresholds (W8-05). And the final report assembly, which has been accreting since the Q1 report
 (W8-06).
 
+## Wave Maintenance - A wave for improvement
+
+**Question it answers: "What can we do better or more cleanly?"**
+
+Maintenance can begin as soon as the first features are present. Maintenance cleans up issues not originally planned for
+or any refactors to the code that would improve maintainability or functionaluty in the future.
+
+### List of Maintenance Tasks
+| ID# | Description | Owner |
+| --- | --- | --- |
+| 1 | Upgrades to Hollywood Data Labelling | Sarjit |
+| 2 | Updates to Agents: Classifiers in Agents, Save and Load Agents | Matt |
+
 ---
 
 ## Quick reference
@@ -143,6 +156,7 @@ thresholds (W8-05). And the final report assembly, which has been accreting sinc
 | W6 | Honeybee swarm: an earned confidence label | Q2 |
 | W7 | Airline data: generalization and missing-data tolerance | Q2 |
 | W8 | Feature injection, federation, auto-tuning — the paper | Q3+ |
+| WM | Maintenance Wave | Q2+ |
 
 **Waves vs streams, one more time:** waves say *when* a ticket may start (its blockers must be ✅);
 streams say *who* owns it (CORE, DATA, AGENTS, ARENA, EVAL — one writer per directory). A wave is
