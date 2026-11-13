@@ -144,7 +144,7 @@ def _fit_and_initialize(
         eval_precision=metrics.precision,
         eval_recall=metrics.recall,
         confidence_weights=confidence_weights,
-        classifier=classifier
+        classifier=classifier,
     )
     return TrainedAgent(agent=agent, classifier=classifier, eval_metrics=metrics, is_sanity=is_sanity)
 

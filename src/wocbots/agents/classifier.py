@@ -147,7 +147,7 @@ class AgentClassifier(Protocol):
 
     def predict_proba_class1(self, x: FloatMatrix) -> FloatMatrix: ...
 
-    def __eq__(self, other): ...
+    def __eq__(self, other: object) -> bool: ...
 
 
 def build_classifier(spec: ClassifierSpec) -> AgentClassifier:
@@ -197,10 +197,8 @@ class MLPAgentClassifier:
         self._model: MLPClassifier | None = None
         self._hidden_layer_sizes: tuple[int, ...] | None = None
 
-    def __eq__(self, other):
-        if isinstance(other, MLPAgentClassifier):
-            return True
-        return False
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, MLPAgentClassifier)
 
     def fit(self, x: FloatMatrix, y: LabelVector, rng: np.random.Generator) -> None:
         layers = hidden_layer_sizes(self._spec, x.shape[1])
@@ -257,10 +255,8 @@ class LogisticRegressionAgentClassifier:
         self._spec = spec
         self._model: LogisticRegression | None = None
 
-    def __eq__(self, other):
-            if isinstance(other, LogisticRegressionAgentClassifier):
-                return True
-            return False
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, LogisticRegressionAgentClassifier)
 
     def fit(self, x: FloatMatrix, y: LabelVector, rng: np.random.Generator) -> None:
         model = LogisticRegression(
