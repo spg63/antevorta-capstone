@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from wocbots.data.ground_truth import load_labeled_sqlite
-from wocbots.data.splits import make_split, write_split_artifact
+from wocbots.data.splits import make_split, split_artifact_digest, write_split_artifact
 
 
 def _digest(ids: np.ndarray) -> str:
@@ -44,6 +44,11 @@ def write_provenance_manifest(
         git_sha = subprocess.run(
             ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"], check=True, capture_output=True, text=True
+        ).stdout
+        if status.strip():
+            git_sha += "+dirty"
     except (OSError, subprocess.CalledProcessError):
         git_sha = "unavailable"
     membership_digests = {
@@ -57,6 +62,8 @@ def write_provenance_manifest(
     }
     provenance = {
         "ticket": "W1-05",
+        "artifact_schema_version": 2,
+        "artifact_digest": split_artifact_digest(artifact),
         "artifact_path": str(artifact_path),
         "labeled_sqlite": str(sqlite_path),
         "git_sha": git_sha,

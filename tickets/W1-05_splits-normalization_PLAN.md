@@ -238,3 +238,29 @@ named sanity-agent view may contain it.
 
 **D6 — APPROVED (session driver, 2026-11-08):** Update CORE-owned experiment consumers/configuration and
 obtain CORE review before merge.
+
+## PR #46 review remediation (authorized by session driver, 2026-11-14)
+
+Implement the three review findings within D3 and §8: verify artifact integrity, enforce
+five-fold validation coverage, and persist consumed input identity with experiment results.
+
+1. `src/wocbots/data/splits.py`: add `split_artifact_digest(SplitArtifact) -> str` over
+   canonical JSON experimental conditions. Split schema 2 requires and verifies the digest;
+   legacy split files require an explicit rebuild. `validate_split_source(...)` compares
+   persisted normal and sanity scalers with training rows only. Fold validation rejects
+   repeated, missing, or empty validation memberships.
+2. `experiments/{hollywood_data,crowd_build,agent_table,manifest,harness}.py`: return a
+   metrics-compatible `RunnerOutput` carrying `input_artifacts`, then persist those hashes
+   on each `RunResult` in result schema 2. Preserve schema 1 result readability. Reject
+   changes to input identity between runs before aggregation.
+3. `scripts/build_w1_05_splits.py` and runbook: include the artifact digest in compact
+   provenance, mark dirty Git provenance honestly, and document the explicit upgrade.
+4. Tests in `tests/unit/data/test_splits.py`, `test_split_provenance.py`, and
+   `test_harness.py`: reject scaler edits and count-preserving membership swaps; verify
+   training-only scaler validation even with a newly computed digest; reject repeated,
+   missing and empty fold validations; assert digest stability after relocation/encoding
+   changes and changed identity for another split seed; exercise both real runners through
+   saved manifests; reject changing inputs within an invocation; read historical results.
+5. Verify local rebuilt artifacts against the existing memberships/scalers before replacing
+   them, run focused tests then the complete suite, and update handoff. CORE review and
+   independent review remain required before ticket closure. No open algorithmic choices.

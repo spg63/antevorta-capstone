@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-11-08 (Codex HANDOFF) on `sarjit/w1-05-splits-normalization`
-at `3fcee3c`: W1-05 implementation and provenance manifest are committed; reviews remain before closure.
+**Last updated:** 2026-11-14 (Codex IMPLEMENT) on `sarjit/w1-05-splits-normalization`
+at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +20,32 @@ at `3fcee3c`: W1-05 implementation and provenance manifest are committed; review
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-11-08, W1-05 implementation committed; reviews pending)
+## CURRENT STATE (2026-11-14, PR #46 review fixes implemented)
+
+- **Done:** All three W1-05 review findings are addressed locally: split schema 2
+  verifies a digest of memberships/folds/features/scalers; materialization verifies
+  normal and sanity scalers against training rows; five validation folds cover every
+  training row exactly once. W2-03/W2-04 return input hashes to the harness, which
+  persists them per run in result schema 2 and rejects changed inputs between runs.
+  Historical result manifests remain readable. Full suite: **333 passed, 2 expected
+  failures, no skips**, including local real-data tests. Ruff, formatting, mypy, and
+  `git diff --check` passed. Regression pins are in `tests/unit/data/test_splits.py`
+  and `tests/unit/test_split_provenance.py`.
+- **In flight / blocked:** Changes are uncommitted; W1-05 remains open pending CORE
+  and independent review. Local `data/derived/split_v1.{json,npz}` and compact
+  provenance were upgraded with all prior memberships/scalers verified unchanged.
+  Originals are backed up at `/tmp/w1-05-before-integrity-xqi1p9o3`. Provenance
+  honestly records `3ee9108+dirty`; regenerate after the human commits the code.
+- **Owner-attention:** The session driver must arrange CORE and independent review
+  and commit the accepted changes. Existing local edits to `pyproject.toml`,
+  `data/reference_manifests/movies_sqlite_v1.json`, and `.python-version` were
+  preserved; they predate this implementation. No ticket/index sign-off was added.
+- **Next step:** Review the fix diff and obtain required sign-offs, then commit the
+  code and regenerate clean W1-05 provenance before completing closure bookkeeping.
+- **Five-minute test:** `.venv/bin/python -m pytest -p no:cacheprovider -q` checks
+  the complete suite with local data; `git status --short` shows uncommitted changes.
+
+## PRIOR (2026-11-08, W1-05 implementation committed; reviews pending)
 
 - **Done:** W1-04 is ✅: strict `revenue > 2 × budget`, with no 5× condition. W1-05 is
   implemented in `27b40d0`: persisted SQLite labels and `_rowid` identity feed a fixed,

@@ -1,8 +1,10 @@
 {
   "ticket": "W1-05",
+  "artifact_schema_version": 2,
+  "artifact_digest": "32b322f583166fe11d62cffa81b4b8c6ea77b98cf1b83b0132b0f67f15d974a2",
   "artifact_path": "data/derived/split_v1.json",
   "labeled_sqlite": "data/processed/movies.sqlite",
-  "git_sha": "27b40d0cc4a1a9e3eaaeb381aa9e6350656f82bc",
+  "git_sha": "3ee91083fa11562d7cbbb24664f3aaf4ecab0154+dirty",
   "root_seed": 42,
   "source_fingerprint": "69823769d1f055d09ca43c8bb925a0c7955a135c2fd6bac1c61a7460d92c7404",
   "feature_columns": [

@@ -70,6 +70,20 @@ corresponding code commit; it records the source fingerprint, seed, membership d
 without storing raw rows or split IDs. All real-data experiment configurations must point at these persisted
 artifacts rather than creating a new split.
 
+Split schema version 2 includes an `artifact_digest` covering source identity, root seed,
+ordered memberships, folds, feature columns, and normal/sanity scalers. Loading rejects changes
+that do not match that digest. Materialization additionally verifies both scalers against the
+declared training rows. Five validation folds must cover every training row exactly once.
+
+Artifacts built before schema version 2 must be rebuilt explicitly with the same source and
+root seed (the default is 42); consumers reject them with a rebuild instruction. Keep the old
+pair for comparison when upgrading, and verify unchanged memberships before comparing results.
+
+Experiment result schema version 2 records `input_artifacts.split_artifact` and
+`input_artifacts.labeled_source` on each run. Compare these hashes when comparing mechanisms;
+the harness rejects changes between runs of one invocation. Version 1 result manifests remain
+readable, but their missing hashes cannot establish identical experimental inputs.
+
 ## 5. Generate the reference outputs
 
 ```bash

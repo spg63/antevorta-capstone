@@ -30,7 +30,7 @@ from wocbots.data import (
     apply_scaling,
     load_labeled_sqlite,
 )
-from wocbots.data.splits import SplitArtifact, source_fingerprint, validate_split_artifact
+from wocbots.data.splits import SplitArtifact, split_artifact_digest, validate_split_source
 
 LABEL_COLUMN = "label"
 ID_COLUMN = "_rowid"
@@ -54,6 +54,14 @@ class HollywoodSplit:
     sanity_eval_data: LabeledData
     sanity_test_data: LabeledData
 
+    @property
+    def input_artifacts(self) -> dict[str, str]:
+        """Identity of the exact conditions consumed, for each experiment run."""
+        return {
+            "split_artifact": split_artifact_digest(self.artifact),
+            "labeled_source": self.artifact.source_fingerprint,
+        }
+
 
 def load_labeled_hollywood(sqlite_path: str = DEFAULT_LABELED_SQLITE) -> pd.DataFrame:
     """Load W1-04's persisted label; never rebuild labels from raw input files."""
@@ -67,10 +75,7 @@ def materialize_split(labeled: pd.DataFrame, artifact: SplitArtifact) -> Hollywo
     """Materialize only a previously persisted, source-matched split artifact."""
     if not isinstance(artifact, SplitArtifact):
         raise TypeError("materialize_split requires a persisted SplitArtifact")
-    actual_fingerprint = source_fingerprint(labeled, LABEL_COLUMN, artifact.feature_columns, ID_COLUMN)
-    if actual_fingerprint != artifact.source_fingerprint:
-        raise ValueError("split artifact does not match the labeled SQLite source")
-    validate_split_artifact(artifact, labeled[ID_COLUMN].to_numpy())
+    validate_split_source(labeled, artifact, LABEL_COLUMN, ID_COLUMN)
     feature_columns = list(artifact.feature_columns)
 
     scaled = apply_scaling(labeled, artifact)

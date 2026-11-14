@@ -39,7 +39,7 @@ from wocbots.agents.training import build_sanity_agent, evaluate, train_agent
 from wocbots.data.splits import load_split_artifact
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.hollywood_data import load_labeled_hollywood, materialize_split
-from wocbots.experiments.manifest import Manifest
+from wocbots.experiments.manifest import Manifest, RunnerOutput
 from wocbots.experiments.registry import register_kind
 
 # Spec §9.2 reports accuracy at exactly these two epoch counts. The gap between the columns
@@ -129,7 +129,7 @@ def _accuracy_for_row(
     return metrics.accuracy
 
 
-def agent_table_runner(config: ExperimentConfig, rng: np.random.Generator) -> Mapping[str, float]:
+def agent_table_runner(config: ExperimentConfig, rng: np.random.Generator) -> RunnerOutput:
     """One seeded run of the §9.2 reproduction: 10 rows × 2 epoch columns = 20 cells.
 
     The harness owns the 10-run mean ± std (spec §9.1, plan §3-D3) — this returns one run's
@@ -155,7 +155,7 @@ def agent_table_runner(config: ExperimentConfig, rng: np.random.Generator) -> Ma
                 split.sanity_eval_data if row.is_sanity else split.eval_data,
                 rng,
             )
-    return results
+    return RunnerOutput(results, input_artifacts=split.input_artifacts)
 
 
 register_kind("w2_04_agent_table", agent_table_runner)
