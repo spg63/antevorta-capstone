@@ -28,7 +28,7 @@ def test_dummy_smoke_yaml_end_to_end(tmp_path: Path) -> None:
     assert manifest.config.name == "dummy_smoke"
     assert manifest.config.kind == "dummy"
     assert len(manifest.runs) == 3
-    assert manifest.schema_version == 1
+    assert manifest.schema_version == 2
 
 
 def test_determinism_same_config_twice_byte_equal(tmp_path: Path) -> None:

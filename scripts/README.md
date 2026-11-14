@@ -53,7 +53,38 @@ threshold after labeling:
 uv run python scripts/reconcile_w1_04_labels.py --output results/manifests/w1_04_label_reconciliation.json
 ```
 
-## 4. Generate the reference outputs
+## 4. Build W1-05's fixed split and normalization artifact
+
+After labeling, and after committing the code/data-pipeline change that produced the labeled SQLite, run:
+
+```bash
+uv run python scripts/build_w1_05_splits.py
+```
+
+This reads the persisted `movies.label` column from SQLite; it does not rebuild labels from the raw CSVs.
+It writes two ignored local files, `data/derived/split_v1.json` and `data/derived/split_v1.npz`, containing
+the fixed train/eval/test memberships, five folds, and training-only normalization values.
+
+It also writes `results/manifests/w1_05_split_provenance.json`. Commit that compact manifest with the
+corresponding code commit; it records the source fingerprint, seed, membership digests, scalers, and Git SHA
+without storing raw rows or split IDs. All real-data experiment configurations must point at these persisted
+artifacts rather than creating a new split.
+
+Split schema version 2 includes an `artifact_digest` covering source identity, root seed,
+ordered memberships, folds, feature columns, and normal/sanity scalers. Loading rejects changes
+that do not match that digest. Materialization additionally verifies both scalers against the
+declared training rows. Five validation folds must cover every training row exactly once.
+
+Artifacts built before schema version 2 must be rebuilt explicitly with the same source and
+root seed (the default is 42); consumers reject them with a rebuild instruction. Keep the old
+pair for comparison when upgrading, and verify unchanged memberships before comparing results.
+
+Experiment result schema version 2 records `input_artifacts.split_artifact` and
+`input_artifacts.labeled_source` on each run. Compare these hashes when comparing mechanisms;
+the harness rejects changes between runs of one invocation. Version 1 result manifests remain
+readable, but their missing hashes cannot establish identical experimental inputs.
+
+## 5. Generate the reference outputs
 
 ```bash
 uv run python scripts/extract_w1_02_reference.py
@@ -64,7 +95,7 @@ manifests, and regenerates the deterministic test fixture. Run it after rebuildi
 changing the W1-03 feature schema or transforms; otherwise, normal development can skip it. The W1-04
 `label` column, when present, is excluded from this feature-only reference.
 
-## 5. Verify the data pipeline
+## 6. Verify the data pipeline
 
 ```bash
 uv run pytest tests/unit/data/test_ground_truth.py tests/unit/data/test_hollywood.py -q

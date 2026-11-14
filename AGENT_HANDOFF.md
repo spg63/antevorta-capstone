@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-10-25 (Codex HANDOFF) on `sarjit/w1-04-labels-validation-gate`
-at `c833200`: W1-04 changes are uncommitted; the unrelated W5-01 plan is untracked.
+**Last updated:** 2026-11-14 (Codex IMPLEMENT) on `sarjit/w1-05-splits-normalization`
+at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,26 +20,69 @@ at `c833200`: W1-04 changes are uncommitted; the unrelated W5-01 plan is untrack
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-10-25, W1-04 handoff)
+## CURRENT STATE (2026-11-14, PR #46 review fixes implemented)
 
-- **Done:** The local SQLite `movies` table has the strict `revenue > 2 × budget`
-  label, added by `scripts/label_w1_04_movies.py`. Focused label tests passed
-  (18); the previous full suite passed (310 passed, 2 expected failures).
-  `results/manifests/w1_04_label_reconciliation.json` records the measured gate.
-- **In flight / blocked:** W1-04 is open. The W1-05 split runner's default input CSV
-  is missing and it expects `label_a`, while the database column is `label`. The
-  experiment loader separately recomputes labels. Rebuilding SQLite requires rerunning
-  the labeling script. The manifest was generated with uncommitted changes.
-- **Owner-attention:** The session driver requested assignment as reviewer (name not
-  supplied); review and sign-off have not been recorded. The driver also directed
-  implementation, so preamble §8's independence requirement still needs an eligible
-  independent reviewer. The stakeholder must adjudicate the failed-balance waiver
-  and the corrected reference comparison before closure.
-- **Next step:** Resolve the downstream split input and label contract, then obtain
-  stakeholder adjudication and independent review before recording ticket completion.
-- **Five-minute test:** `.venv/bin/python -m pytest -p no:cacheprovider
-  tests/unit/data/test_labels.py -q` checks label boundaries and the available local
-  database; `git status --short` shows the uncommitted work.
+- **Done:** All three W1-05 review findings are addressed locally: split schema 2
+  verifies a digest of memberships/folds/features/scalers; materialization verifies
+  normal and sanity scalers against training rows; five validation folds cover every
+  training row exactly once. W2-03/W2-04 return input hashes to the harness, which
+  persists them per run in result schema 2 and rejects changed inputs between runs.
+  Historical result manifests remain readable. Full suite: **333 passed, 2 expected
+  failures, no skips**, including local real-data tests. Ruff, formatting, mypy, and
+  `git diff --check` passed. Regression pins are in `tests/unit/data/test_splits.py`
+  and `tests/unit/test_split_provenance.py`.
+- **In flight / blocked:** Changes are uncommitted; W1-05 remains open pending CORE
+  and independent review. Local `data/derived/split_v1.{json,npz}` and compact
+  provenance were upgraded with all prior memberships/scalers verified unchanged.
+  Originals are backed up at `/tmp/w1-05-before-integrity-xqi1p9o3`. Provenance
+  honestly records `3ee9108+dirty`; regenerate after the human commits the code.
+- **Owner-attention:** The session driver must arrange CORE and independent review
+  and commit the accepted changes. Existing local edits to `pyproject.toml`,
+  `data/reference_manifests/movies_sqlite_v1.json`, and `.python-version` were
+  preserved; they predate this implementation. No ticket/index sign-off was added.
+- **Next step:** Review the fix diff and obtain required sign-offs, then commit the
+  code and regenerate clean W1-05 provenance before completing closure bookkeeping.
+- **Five-minute test:** `.venv/bin/python -m pytest -p no:cacheprovider -q` checks
+  the complete suite with local data; `git status --short` shows uncommitted changes.
+
+## PRIOR (2026-11-08, W1-05 implementation committed; reviews pending)
+
+- **Done:** W1-04 is ✅: strict `revenue > 2 × budget`, with no 5× condition. W1-05 is
+  implemented in `27b40d0`: persisted SQLite labels and `_rowid` identity feed a fixed,
+  validated split/scaler artifact; normal data excludes `revenue`; W2-03/W2-04 require
+  that artifact. `3fcee3c` adds the committed compact provenance evidence at
+  `results/manifests/w1_05_split_provenance.json`. The complete suite passed in two
+  batches: `271 passed, 2 xfailed` and `45 passed`; Ruff, formatting, mypy, and
+  `git diff --check` passed before commit.
+- **In flight / blocked:** W1-05 is not status-closed. No technical defect is known;
+  closure waits for the required CORE review of `src/wocbots/experiments/` and the
+  independent ticket-close review.
+- **Owner-attention:** A CORE owner must review the experiment/config consumer changes.
+  A reviewer independent of the implementation must sign off before the W1-05 index row
+  can become ✅.
+- **Next step:** Obtain and record those reviews in `tickets/00_INDEX.md`, then complete
+  W1-05 closure bookkeeping.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_splits.py tests/unit/test_w2_03_hollywood_crowd.py tests/unit/test_w2_04_agent_table.py -q`; `git status --short`
+  should show only this handoff update.
+
+## PRIOR (2026-10-28, W1-04 gate resolved)
+
+- **Done:** W1-04 is ✅. Matt Ward approved its PR on 2026-10-26, and the stakeholder
+  resolved the reconciliation gate on 2026-10-28: ship label 1 only when `revenue >
+  2 × budget`; equality and every other value use the same rule, with no 5× condition.
+  Evidence remains in `results/manifests/w1_04_label_reconciliation.json`.
+- **In flight / blocked:** W1-05 remains open. Its runner/input-label contract and
+  artifact-consumption path need resolution before downstream experiments can rely on
+  the fixed split.
+- **Owner-attention:** No W1-04 ruling remains. A human owner should review the
+  outstanding W1-05 findings before starting its corrective implementation.
+- **Next step:** Repair W1-05 so it builds and consumes the persisted split/scaler
+  artifact from the W1-04 labeled output.
+- **Five-minute test:** `uv run pytest tests/unit/data/test_labels.py -q` checks label
+  boundaries; `git diff --check && git status --short` verifies this documentation-only
+  update.
+
+## PRIOR (2026-10-25, W1-04 handoff)
 
 ## PRIOR (2026-10-25, W1-04 reconciliation)
 
