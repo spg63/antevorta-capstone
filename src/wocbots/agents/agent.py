@@ -13,6 +13,7 @@ spec §6.5 and the preamble §7 exact-names rule say `current_prediction`. Spec 
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import Annotated, Literal
@@ -64,6 +65,10 @@ _PROFILE_FIELDS = (
 )
 
 
+def float_to_thousandth(float_num: float) -> int:
+    return int(1000 * float_num)
+
+
 class Agent:
     """The spec §2 state table, executable. State only — no classifier (W2-02).
 
@@ -107,6 +112,7 @@ class Agent:
             # agent SHOULD get is W2-03's assignment policy, not validated here.
             raise ValueError("an agent must have at least one feature")
 
+        self.uuid: uuid.UUID = uuid.uuid4()
         self._features: tuple[str, ...] = tuple(features)
         self._eval_accuracy = eval_accuracy
         self._eval_precision = eval_precision
@@ -158,15 +164,10 @@ class Agent:
         return self._features
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, Agent)
-            and (self.features == other.features)
-            and (self.eval_accuracy == other.eval_accuracy)
-            and (self.eval_precision == other.eval_precision)
-            and (self.eval_recall == other.eval_recall)
-            and (self.confidence == other.confidence)
-            and (self.classifier == other.classifier)
-        )
+        return isinstance(other, Agent) and (self.uuid == other.uuid)
+
+    def __hash__(self) -> int:
+        return hash(self.uuid)
 
     # ---- the §6.5 boundary ----
 

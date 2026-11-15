@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Generator, Iterator
 
 import pytest
@@ -10,25 +11,37 @@ from wocbots.agents.persistence.agentserialization import AgentSerialization
 
 class LocalSqliteWrapper(AbstractSqliteWrapper):
     def __init__(self, filepath: str = "") -> None:
-        self.entries: dict[tuple[str, ...], bytes] = {}
+        self.entries: dict[uuid.UUID, tuple[tuple[str, ...], bytes]] = {}
 
     def __del__(self) -> None:
         pass
 
-    def read_bytes_from_db(self, features: tuple[str, ...]) -> bytes | None:
-        data: bytes | None = self.entries.get(features)
-        if data is None:
+    def read_bytes_from_db(self, uuid: uuid.UUID) -> bytes | None:
+        value = self.entries.get(uuid)
+        if value is None:
             raise ValueError("Entry not found")
+        data : bytes = value[1]
         return data
 
-    def write_bytes_to_db(self, features: tuple[str, ...], data: bytes) -> None:
-        self.entries[features] = data
+    def write_bytes_to_db(self, uuid: uuid.UUID, features: tuple[str, ...], data: bytes) -> None:
+        self.entries[uuid] = (features, data)
 
     def read_all_entries(self) -> list[bytes] | None:
-        if len(self.entries) == 0:
-            raise ValueError("db empty")
-        byte_list: list[bytes] = [self.entries[entry] for entry in list(self.entries)]
-        return byte_list
+        bytes_list: list[bytes] = []
+        for entry in list(self.entries):
+            local_value = self.entries[entry]
+            data = local_value[1]
+            bytes_list.append(data)
+        return bytes_list
+
+    def read_uuids_per_features(self, features: tuple[str, ...]) -> list[uuid.UUID]:
+        uuid_list: list[uuid.UUID] = []
+        for entry in list(self.entries):
+            local_value = self.entries[entry]
+            local_features = local_value[0]
+            if features == local_features:
+                uuid_list.append(entry)
+        return uuid_list
 
 
 @pytest.fixture(scope="function")
@@ -71,7 +84,7 @@ def test_round_trip_individual(
 ) -> None:
     agent1: Agent = agents_under_test[0]
     agent_db_if_under_test.save_agent(agent=agent1)
-    actual_agent = agent_db_if_under_test.load_agent(features=agent1.features)
+    actual_agent = agent_db_if_under_test.load_agent(uuid=agent1.uuid)
     assert agent1 == actual_agent
 
 

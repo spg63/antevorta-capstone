@@ -261,7 +261,6 @@ class LogisticRegressionAgentClassifier:
     def fit(self, x: FloatMatrix, y: LabelVector, rng: np.random.Generator) -> None:
         model = LogisticRegression(
             random_state=_seed_from(rng),
-            n_jobs=1,
             max_iter=_LOGREG_MAX_ITER,
         )
         with threadpool_limits(limits=1):

@@ -1,3 +1,4 @@
+import uuid
 from abc import abstractmethod
 
 
@@ -11,13 +12,17 @@ class AbstractSqliteWrapper:
         pass
 
     @abstractmethod
-    def read_bytes_from_db(self, features: tuple[str, ...]) -> bytes | None:
+    def read_bytes_from_db(self, uuid: uuid.UUID) -> bytes | None:
         pass
 
     @abstractmethod
-    def write_bytes_to_db(self, features: tuple[str, ...], data: bytes) -> None:
+    def write_bytes_to_db(self, uuid: uuid.UUID, features: tuple[str, ...], data: bytes) -> None:
         pass
 
     @abstractmethod
     def read_all_entries(self) -> list[bytes] | None:
+        pass
+
+    @abstractmethod
+    def read_uuids_per_features(self, features: tuple[str, ...]) -> list[uuid.UUID]:
         pass
