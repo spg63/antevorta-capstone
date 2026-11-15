@@ -20,7 +20,7 @@ class LocalSqliteWrapper(AbstractSqliteWrapper):
         value = self.entries.get(uuid)
         if value is None:
             raise ValueError("Entry not found")
-        data : bytes = value[1]
+        data: bytes = value[1]
         return data
 
     def write_bytes_to_db(self, uuid: uuid.UUID, features: tuple[str, ...], data: bytes) -> None:
