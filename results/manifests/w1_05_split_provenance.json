@@ -1,0 +1,80 @@
+{
+  "ticket": "W1-05",
+  "artifact_schema_version": 2,
+  "artifact_digest": "32b322f583166fe11d62cffa81b4b8c6ea77b98cf1b83b0132b0f67f15d974a2",
+  "artifact_path": "data/derived/split_v1.json",
+  "labeled_sqlite": "data/processed/movies.sqlite",
+  "git_sha": "fbc5388b534f41f87d09ac706bddee6983794854",
+  "root_seed": 42,
+  "source_fingerprint": "69823769d1f055d09ca43c8bb925a0c7955a135c2fd6bac1c61a7460d92c7404",
+  "feature_columns": [
+    "budget",
+    "vote_count",
+    "vote_average",
+    "tmdb_popularity",
+    "runtime",
+    "tmdb_vote_average",
+    "tmdb_vote_count",
+    "ml_vote_average",
+    "ml_vote_count"
+  ],
+  "split_counts": {
+    "train": 2182,
+    "eval": 243,
+    "test": 607,
+    "folds": 5
+  },
+  "membership_digests": {
+    "train": "9dbf0e019c82d8a3c071bf262b01c128a228e8051695fd775aa6d7e9c54a1e62",
+    "eval": "7f2e79607e30d4882f0995665acafd0f3afebee47a35cb8907461094fa0bd720",
+    "test": "18a2e16f11cc8a42be3c4214387dad68623b46fa16038d15aa1b85fc1e4f01f6",
+    "folds": [
+      {
+        "train": "4d9caae97f2dbebc74021eb05b5c9543cac6cd8272f63ee534b85293996be58d",
+        "validation": "be409b080e23e6a5bab0e80bf2419d6a6479204ad9938fec65ba43c51fce7b63"
+      },
+      {
+        "train": "969ce6bd9af0895c43436ba016c95b6a8be1dafad4573ad00c4ae2c8e9a8f568",
+        "validation": "93318eee2f549f946dde92ab21eb7d50f0eea7d4c26620890bb5f8146275cc31"
+      },
+      {
+        "train": "1b2a1186bc1db8a18e96a41853409cd188e645c244318f4b216b991576197c81",
+        "validation": "6a73b27a9a83b4ce0b17442f7e5af202705f7bea224aa65d76ebb69b79029c3b"
+      },
+      {
+        "train": "415c519365b2d52c3fb8a21ff3268167ff3838668ac3f4260cdf18c7d225b175",
+        "validation": "1aa91bc56033465f899b0bd18723fe252fbec8c5635e9f1e0619244116afe36a"
+      },
+      {
+        "train": "6964bb066314e682c2f400fc45f5bd8b5d0d680bb78bff0d3a074ffbc83950b2",
+        "validation": "b40bd1732a1cd365961e1129ee5ca4b700182ab7e9447b272f5fedde2feb7eab"
+      }
+    ]
+  },
+  "scaler": {
+    "normal_min": {
+      "budget": 4.0,
+      "vote_count": 7.0,
+      "vote_average": 2.0,
+      "tmdb_popularity": 0.034259,
+      "runtime": 63.0,
+      "tmdb_vote_average": 2.3,
+      "tmdb_vote_count": 1.0,
+      "ml_vote_average": 1.0,
+      "ml_vote_count": 1.0
+    },
+    "normal_max": {
+      "budget": 380000000.0,
+      "vote_count": 64571.0,
+      "vote_average": 8.631922005571031,
+      "tmdb_popularity": 481.098624,
+      "runtime": 248.0,
+      "tmdb_vote_average": 8.3,
+      "tmdb_vote_count": 13752.0,
+      "ml_vote_average": 8.668744415606518,
+      "ml_vote_count": 59715.0
+    },
+    "sanity_revenue_min": 7.0,
+    "sanity_revenue_max": 2787965087.0
+  }
+}

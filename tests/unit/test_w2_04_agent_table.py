@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from wocbots.data.splits import DEFAULT_FEATURE_COLUMNS
@@ -88,15 +89,26 @@ def test_kind_is_registered() -> None:
     assert resolve_kind("w2_04_agent_table") is not None
 
 
-def _synthetic_frame(n: int, rng: np.random.Generator) -> object:
+def test_runner_requires_persisted_source_and_artifact_paths() -> None:
+    """A malformed experiment config must not silently select local defaults."""
+    from wocbots.experiments.agent_table import agent_table_runner
+    from wocbots.experiments.config import ExperimentConfig
+
+    with pytest.raises(ValueError, match="labeled_sqlite and params.split_artifact"):
+        agent_table_runner(
+            ExperimentConfig(name="missing-artifact", kind="w2_04_agent_table", seed=1, n_runs=1),
+            np.random.default_rng(1),
+        )
+
+
+def _synthetic_frame(n: int, rng: np.random.Generator) -> pd.DataFrame:
     """A tiny in-memory stand-in shaped like W1-04's labeled output, for T6.
 
     Deliberately NOT the real data: T6 pins determinism of the runner's plumbing, which is a
     property of the seeding contract, not of the dataset.
     """
-    import pandas as pd
-
     frame = pd.DataFrame({col: rng.random(n) * 100.0 for col in DEFAULT_FEATURE_COLUMNS})
+    frame["_rowid"] = np.arange(n)
     frame["tmdbId"] = np.arange(n)
     frame["revenue"] = rng.random(n) * 1e6
     frame["label"] = (rng.random(n) > 0.5).astype(int)
@@ -110,8 +122,18 @@ def test_runner_is_deterministic_given_the_same_generator(monkeypatch: pytest.Mo
 
     frame = _synthetic_frame(400, np.random.default_rng(11))
     monkeypatch.setattr(agent_table, "load_labeled_hollywood", lambda _root: frame)
+    from wocbots.data.splits import make_split
 
-    config = ExperimentConfig(name="t6", kind="w2_04_agent_table", seed=1, n_runs=1)
+    artifact = make_split(frame, "label", np.random.default_rng(12))
+    monkeypatch.setattr(agent_table, "load_split_artifact", lambda _path: artifact)
+
+    config = ExperimentConfig(
+        name="t6",
+        kind="w2_04_agent_table",
+        seed=1,
+        n_runs=1,
+        params={"labeled_sqlite": "fixture.sqlite", "split_artifact": "fixture.json"},
+    )
     first = dict(agent_table.agent_table_runner(config, np.random.default_rng(99)))
     second = dict(agent_table.agent_table_runner(config, np.random.default_rng(99)))
 
@@ -137,13 +159,24 @@ def test_sanity_row_recovers_a_revenue_defined_label(monkeypatch: pytest.MonkeyP
     rng = np.random.default_rng(5)
     n = 600
     frame = pd.DataFrame({col: rng.random(n) * 100.0 for col in DEFAULT_FEATURE_COLUMNS})
+    frame["_rowid"] = np.arange(n)
     frame["tmdbId"] = np.arange(n)
     frame["budget"] = rng.random(n) * 1e8
     frame["revenue"] = frame["budget"] * (rng.random(n) * 6.0)
     frame["label"] = (frame["revenue"] > 2 * frame["budget"]).astype(int)
 
     monkeypatch.setattr(agent_table, "load_labeled_hollywood", lambda _root: frame)
-    config = ExperimentConfig(name="canary", kind="w2_04_agent_table", seed=1, n_runs=1)
+    from wocbots.data.splits import make_split
+
+    artifact = make_split(frame, "label", np.random.default_rng(6))
+    monkeypatch.setattr(agent_table, "load_split_artifact", lambda _path: artifact)
+    config = ExperimentConfig(
+        name="canary",
+        kind="w2_04_agent_table",
+        seed=1,
+        n_runs=1,
+        params={"labeled_sqlite": "fixture.sqlite", "split_artifact": "fixture.json"},
+    )
     metrics = agent_table.agent_table_runner(config, np.random.default_rng(3))
 
     assert metrics["budget+revenue@50ep"] > 0.90, (

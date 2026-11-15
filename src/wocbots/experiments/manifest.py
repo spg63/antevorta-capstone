@@ -8,13 +8,36 @@ overwrites a prior run's evidence.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.provenance import Provenance
+
+
+@dataclass(frozen=True)
+class RunnerOutput(Mapping[str, float]):
+    """Numeric metrics plus input identity supplied by the code that consumed it.
+
+    Remains a metrics mapping for existing callers. Input hashes are separate from
+    metrics so aggregation never turns an identity into a mean or standard deviation.
+    """
+
+    metrics: Mapping[str, float]
+    input_artifacts: dict[str, str] = field(default_factory=dict)
+
+    def __getitem__(self, key: str) -> float:
+        return self.metrics[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.metrics)
+
+    def __len__(self) -> int:
+        return len(self.metrics)
 
 
 class RunResult(BaseModel):
@@ -24,6 +47,7 @@ class RunResult(BaseModel):
 
     run_index: int
     metrics: dict[str, float]
+    input_artifacts: dict[str, str] = Field(default_factory=dict)
 
 
 class MetricSummary(BaseModel):
@@ -46,7 +70,7 @@ class Manifest(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    schema_version: int = 1
+    schema_version: int = 2
     provenance: Provenance
     config: ExperimentConfig
     runs: list[RunResult]

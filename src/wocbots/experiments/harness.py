@@ -21,7 +21,7 @@ from wocbots.experiments import kinds as _kinds  # noqa: F401  (import side effe
 from wocbots.experiments import mechanism_comparison as _mechanism_comparison  # noqa: F401
 from wocbots.experiments import synthetic_anchor as _synthetic_anchor  # noqa: F401
 from wocbots.experiments.config import ExperimentConfig
-from wocbots.experiments.manifest import Manifest, MetricSummary, RunResult, write_manifest
+from wocbots.experiments.manifest import Manifest, MetricSummary, RunnerOutput, RunResult, write_manifest
 from wocbots.experiments.provenance import capture_provenance
 from wocbots.experiments.registry import resolve_kind
 
@@ -58,7 +58,10 @@ def run_experiment(
     for i, child in enumerate(children):
         rng = np.random.default_rng(child)  # ALLOWLISTED: the one seed origin (W0-04 S3)
         metrics = runner(cfg, rng)
-        runs.append(RunResult(run_index=i, metrics=dict(metrics)))
+        input_artifacts = metrics.input_artifacts if isinstance(metrics, RunnerOutput) else {}
+        if runs and input_artifacts != runs[0].input_artifacts:
+            raise ValueError("experiment input artifacts changed between runs; refusing to aggregate")
+        runs.append(RunResult(run_index=i, metrics=dict(metrics), input_artifacts=input_artifacts))
 
     manifest = Manifest(
         provenance=capture_provenance(),

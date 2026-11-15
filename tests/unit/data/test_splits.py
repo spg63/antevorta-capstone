@@ -4,7 +4,9 @@ save/load cycle byte-identically, since every downstream experiment reads it bac
 disk rather than re-splitting).
 """
 
+import json
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +18,8 @@ from wocbots.data.splits import (
     build_feature_matrix,
     load_split_artifact,
     make_split,
+    split_artifact_digest,
+    validate_split_artifact,
     write_split_artifact,
 )
 
@@ -26,7 +30,7 @@ def labeled_df() -> pd.DataFrame:
     n = 400
     df = pd.DataFrame(
         {
-            "tmdbId": np.arange(n),
+            "_rowid": np.arange(n),
             "budget": rng.uniform(1_000, 100_000_000, n),
             "vote_count": rng.uniform(0, 5000, n),
             "vote_average": rng.uniform(0, 10, n),
@@ -66,7 +70,7 @@ def test_stratification_within_one_point(labeled_df: pd.DataFrame) -> None:
         (artifact.eval_ids, "eval"),
         (artifact.test_ids, "test"),
     ]:
-        sub = labeled_df[labeled_df["tmdbId"].isin(ids)]
+        sub = labeled_df[labeled_df["_rowid"].isin(ids)]
         rate = sub["label"].mean() * 100
         assert abs(rate - overall_rate) <= 1.0, f"{name} split off by {abs(rate - overall_rate):.2f}pt"
 
@@ -77,7 +81,7 @@ def test_train_eval_test_partition_is_disjoint_and_complete(labeled_df: pd.DataF
     assert train & eval_ == set()
     assert train & test == set()
     assert eval_ & test == set()
-    assert train | eval_ | test == set(labeled_df["tmdbId"])
+    assert train | eval_ | test == set(labeled_df["_rowid"])
 
 
 def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFrame) -> None:
@@ -86,7 +90,7 @@ def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFram
     touch the dataframe again.
     """
     artifact = make_split(labeled_df, "label", rng=np.random.default_rng(11), feature_columns=FEATURES)
-    non_train_mask = ~labeled_df["tmdbId"].isin(artifact.train_ids)
+    non_train_mask = ~labeled_df["_rowid"].isin(artifact.train_ids)
 
     perturbed = labeled_df.copy()
     perturbed.loc[non_train_mask, FEATURES] = perturbed.loc[non_train_mask, FEATURES] * 1000 + 1e9
@@ -98,7 +102,7 @@ def test_scaler_params_are_a_function_of_train_rows_only(labeled_df: pd.DataFram
 
 def test_apply_scaling_produces_values_in_unit_range_for_train(labeled_df: pd.DataFrame) -> None:
     artifact = make_split(labeled_df, "label", rng=np.random.default_rng(5), feature_columns=FEATURES)
-    train_df = labeled_df[labeled_df["tmdbId"].isin(artifact.train_ids)]
+    train_df = labeled_df[labeled_df["_rowid"].isin(artifact.train_ids)]
     scaled = apply_scaling(train_df, artifact)
     assert (scaled >= 0).all().all()
     assert (scaled <= 1).all().all()
@@ -150,6 +154,7 @@ def test_write_then_load_split_artifact_round_trips(labeled_df: pd.DataFrame, tm
     assert loaded.feature_columns == artifact.feature_columns
     assert loaded.scaler_min.equals(artifact.scaler_min)
     assert loaded.scaler_max.equals(artifact.scaler_max)
+    assert loaded.content_digest == artifact.content_digest == split_artifact_digest(artifact)
     assert len(loaded.fold_ids) == len(artifact.fold_ids)
     fold_pairs = zip(artifact.fold_ids, loaded.fold_ids, strict=True)
     for (orig_train, orig_val), (load_train, load_val) in fold_pairs:
@@ -170,3 +175,137 @@ def test_split_artifact_loads_after_the_pair_is_moved(labeled_df: pd.DataFrame, 
 
     loaded = load_split_artifact(moved / manifest_path.name)
     assert list(loaded.train_ids) == list(artifact.train_ids)
+    assert split_artifact_digest(loaded) == split_artifact_digest(artifact)
+
+
+def test_load_rejects_tampered_duplicate_membership(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    """An NPZ edit must not turn into a silently accepted split artifact."""
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(12), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    npz_path = tmp_path / "split_test.npz"
+    with np.load(npz_path) as original:
+        payload = {key: original[key] for key in original.files}
+    payload["train_ids"] = np.append(payload["train_ids"], payload["train_ids"][0])
+    np.savez(npz_path, **payload)
+
+    with pytest.raises(ValueError, match="metadata|duplicate ids"):
+        load_split_artifact(manifest_path)
+
+
+def test_load_rejects_tampered_json_metadata(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(15), feature_columns=FEATURES)
+    manifest_path = write_split_artifact(artifact, tmp_path, version="test")
+    manifest = json.loads(manifest_path.read_text())
+    manifest["n_test"] += 1
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(ValueError, match="JSON metadata"):
+        load_split_artifact(manifest_path)
+
+
+def test_materialization_rejects_incomplete_source_partition(labeled_df: pd.DataFrame) -> None:
+    """The source-aware validation rejects an otherwise plausible missing membership."""
+    from wocbots.experiments.hollywood_data import materialize_split
+
+    artifact = make_split(labeled_df, "label", rng=np.random.default_rng(13), feature_columns=FEATURES)
+    tampered = replace(artifact, test_ids=artifact.test_ids[:-1])
+
+    with pytest.raises(ValueError, match="complete source partition"):
+        materialize_split(labeled_df, tampered)
+
+
+def test_materialization_cannot_regenerate_a_split(labeled_df: pd.DataFrame) -> None:
+    """Consumers accept only artifacts; an RNG can never trigger a hidden re-split."""
+    from wocbots.experiments.hollywood_data import materialize_split
+
+    with pytest.raises(TypeError, match="persisted SplitArtifact"):
+        materialize_split(labeled_df, np.random.default_rng(14))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("key", ["scaler_min", "scaler_max", "sanity_revenue_min", "sanity_revenue_max"])
+def test_load_rejects_scaler_edit(labeled_df: pd.DataFrame, tmp_path: Path, key: str) -> None:
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    path = write_split_artifact(artifact, tmp_path, "test")
+    manifest = json.loads(path.read_text())
+    if key.startswith("scaler_"):
+        manifest[key]["budget"] += 1.0
+    else:
+        manifest[key] += 1.0
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="digest"):
+        load_split_artifact(path)
+
+
+def test_load_rejects_membership_swap_with_unchanged_counts(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    path = write_split_artifact(artifact, tmp_path, "test")
+    npz_path = tmp_path / "split_test.npz"
+    with np.load(npz_path) as original:
+        payload = {key: original[key] for key in original.files}
+    payload["eval_ids"][0], payload["test_ids"][0] = payload["test_ids"][0], payload["eval_ids"][0]
+    np.savez(npz_path, **payload)
+    with pytest.raises(ValueError, match="digest"):
+        load_split_artifact(path)
+
+
+@pytest.mark.parametrize("revenue", [False, True])
+def test_materialization_checks_train_scalers_even_with_a_new_digest(
+    labeled_df: pd.DataFrame, tmp_path: Path, revenue: bool
+) -> None:
+    from wocbots.experiments.hollywood_data import materialize_split
+
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    if revenue:
+        altered = replace(artifact, sanity_revenue_max=artifact.sanity_revenue_max + 1.0)
+    else:
+        altered = replace(artifact, scaler_max=artifact.scaler_max + 1.0)
+    altered = replace(altered, content_digest=split_artifact_digest(altered))
+    path = write_split_artifact(altered, tmp_path, "test")
+    with pytest.raises(ValueError, match="scalers do not match training rows"):
+        materialize_split(labeled_df, load_split_artifact(path))
+
+
+@pytest.mark.parametrize("damage", ["repeat", "omit", "empty"])
+def test_folds_must_validate_every_train_row_once(labeled_df: pd.DataFrame, damage: str) -> None:
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    folds = list(artifact.fold_ids)
+    if damage == "repeat":
+        folds = [folds[0]] * 5
+    elif damage == "omit":
+        train, val = folds[0]
+        folds[0] = (np.append(train, val[0]), val[1:])
+    else:
+        folds[0] = (artifact.train_ids.copy(), np.array([], dtype=int))
+    with pytest.raises(ValueError, match="validation"):
+        validate_split_artifact(replace(artifact, fold_ids=folds, content_digest=None))
+
+
+def test_digest_tracks_conditions_and_is_independent_of_array_encoding(labeled_df: pd.DataFrame) -> None:
+    a = make_split(labeled_df, "label", np.random.default_rng(42))
+    b = make_split(labeled_df, "label", np.random.default_rng(43))
+    assert a.source_fingerprint == b.source_fingerprint
+    assert split_artifact_digest(a) != split_artifact_digest(b)
+    encoded = replace(a, train_ids=a.train_ids.astype(">i8"))
+    assert split_artifact_digest(encoded) == split_artifact_digest(a)
+
+
+def test_revenue_scaler_ignores_eval_and_test_values(labeled_df: pd.DataFrame) -> None:
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    perturbed = labeled_df.copy()
+    perturbed.loc[~perturbed["_rowid"].isin(artifact.train_ids), "revenue"] *= 1e9
+    other = make_split(perturbed, "label", np.random.default_rng(42))
+    assert (artifact.sanity_revenue_min, artifact.sanity_revenue_max) == (
+        other.sanity_revenue_min,
+        other.sanity_revenue_max,
+    )
+
+
+def test_legacy_artifact_requires_explicit_rebuild(labeled_df: pd.DataFrame, tmp_path: Path) -> None:
+    artifact = make_split(labeled_df, "label", np.random.default_rng(42))
+    path = write_split_artifact(artifact, tmp_path, "test")
+    manifest = json.loads(path.read_text())
+    del manifest["schema_version"]
+    del manifest["artifact_digest"]
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="rebuild with scripts/build_w1_05_splits.py"):
+        load_split_artifact(path)

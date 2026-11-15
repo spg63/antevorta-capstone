@@ -13,4 +13,5 @@ seed: 20260810
 n_runs: 10
 params:
   crowd_config: configs/crowd_hollywood_5agent.yaml
-  raw_root: data/raw
+  labeled_sqlite: data/processed/movies.sqlite
+  split_artifact: data/derived/split_v1.json

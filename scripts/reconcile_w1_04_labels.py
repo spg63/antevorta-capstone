@@ -33,10 +33,10 @@ def main() -> None:
         "input_kind": "python_w1_03_sqlite; not independent reference validation",
         "seed": None,
         "shipped_label": "revenue > 2 * budget",
-        "comparison_label": "revenue > 1.5 * budget; exact-5x reference fall-through corrected by user",
+        "comparison_label": "historical reference-derived comparison; not the shipped rule",
         "balance_waiver": (
-            "Session driver explicitly waived published-balance requirement on 2026-10-25; "
-            "stakeholder acceptance pending"
+            "Stakeholder accepted strict revenue > 2 * budget as the shipped rule on "
+            "2026-10-28; no special 5x condition."
         ),
         "results": reconcile_labels(load_reference_sqlite(args.sqlite)),
     }

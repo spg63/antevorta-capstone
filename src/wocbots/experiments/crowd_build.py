@@ -22,17 +22,19 @@ This module calls NO RNG of its own: it only advances the Generator the harness 
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from pathlib import Path
 
 import numpy as np
 
 from wocbots.agents.crowd import BuiltCrowd, CrowdConfig, build_crowd
+from wocbots.data.splits import load_split_artifact
 from wocbots.experiments.config import ExperimentConfig
 from wocbots.experiments.hollywood_data import (
-    DEFAULT_RAW_ROOT,
+    HollywoodSplit,
     load_labeled_hollywood,
     materialize_split,
 )
+from wocbots.experiments.manifest import RunnerOutput
 from wocbots.experiments.registry import register_kind
 
 # The two named configs spec §9.2 (crowd-level matched five) and §9.3 (the 26-agent mix) call
@@ -46,17 +48,23 @@ HOLLYWOOD_CROWD_CONFIGS: tuple[str, ...] = (
 def build_hollywood_crowd(
     crowd_config_path: str,
     rng: np.random.Generator,
-    raw_root: str = DEFAULT_RAW_ROOT,
+    sqlite_path: str,
+    split_artifact: str,
 ) -> BuiltCrowd:
     """Load a crowd config, materialize the real split, build the crowd.
 
-    One Generator threads split → assignment → per-agent classifier seeds, so the whole crowd
-    is reproducible from one master seed (spec §9.1). `eval_data` is the train-side 90/10
+    The Generator threads assignment and classifier seeds; membership comes from the persisted
+    artifact. `eval_data` is the train-side 90/10
     slice; the test split is never touched (spec §10.5).
     """
+    labeled = load_labeled_hollywood(sqlite_path)
+    split = materialize_split(labeled, load_split_artifact(Path(split_artifact)))
+    return _build_from_split(crowd_config_path, rng, split)
+
+
+def _build_from_split(crowd_config_path: str, rng: np.random.Generator, split: HollywoodSplit) -> BuiltCrowd:
+    """Use the same materialized input for training and provenance capture."""
     config = CrowdConfig.from_yaml(crowd_config_path)
-    labeled = load_labeled_hollywood(raw_root)
-    split = materialize_split(labeled, rng)
     return build_crowd(
         config=config,
         train_data=split.train_data,
@@ -65,7 +73,7 @@ def build_hollywood_crowd(
     )
 
 
-def _crowd_runner(config: ExperimentConfig, rng: np.random.Generator) -> Mapping[str, float]:
+def _crowd_runner(config: ExperimentConfig, rng: np.random.Generator) -> RunnerOutput:
     """One seeded build of one named Hollywood crowd.
 
     Reports composition (how many agents survived §5.3 pruning) and the eval-accuracy spread
@@ -76,14 +84,18 @@ def _crowd_runner(config: ExperimentConfig, rng: np.random.Generator) -> Mapping
     if not isinstance(crowd_config_param, str):
         raise ValueError(f"{config.kind!r} requires params.crowd_config (a path to a crowd YAML)")
 
-    raw_root_param = config.params.get("raw_root", DEFAULT_RAW_ROOT)
-    raw_root = raw_root_param if isinstance(raw_root_param, str) else DEFAULT_RAW_ROOT
+    sqlite_param = config.params.get("labeled_sqlite")
+    artifact_param = config.params.get("split_artifact")
+    if not isinstance(sqlite_param, str) or not isinstance(artifact_param, str):
+        raise ValueError("w2_03_hollywood_crowd requires params.labeled_sqlite and params.split_artifact")
 
-    crowd = build_hollywood_crowd(crowd_config_param, rng, raw_root)
+    labeled = load_labeled_hollywood(sqlite_param)
+    split = materialize_split(labeled, load_split_artifact(Path(artifact_param)))
+    crowd = _build_from_split(crowd_config_param, rng, split)
     manifest = crowd.manifest
 
     accuracies = np.array([record.eval_accuracy for record in manifest.agents], dtype=float)
-    return {
+    metrics = {
         "roster_size": float(len(manifest.roster)),
         "kept_agents": float(len(manifest.agents)),
         "pruned_agents": float(len(manifest.pruned)),
@@ -91,6 +103,7 @@ def _crowd_runner(config: ExperimentConfig, rng: np.random.Generator) -> Mapping
         "eval_accuracy_min": float(accuracies.min()) if accuracies.size else 0.0,
         "eval_accuracy_max": float(accuracies.max()) if accuracies.size else 0.0,
     }
+    return RunnerOutput(metrics, input_artifacts=split.input_artifacts)
 
 
 register_kind("w2_03_hollywood_crowd", _crowd_runner)

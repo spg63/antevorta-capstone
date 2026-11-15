@@ -24,10 +24,13 @@ import pytest
 
 from wocbots.agents.crowd import CrowdConfig
 from wocbots.data.splits import DEFAULT_FEATURE_COLUMNS
-from wocbots.experiments.crowd_build import HOLLYWOOD_CROWD_CONFIGS, build_hollywood_crowd
+from wocbots.experiments.config import ExperimentConfig
+from wocbots.experiments.crowd_build import HOLLYWOOD_CROWD_CONFIGS, _crowd_runner, build_hollywood_crowd
 from wocbots.experiments.registry import resolve_kind
 
 RAW_ROOT = Path("data/raw")
+LABELED_SQLITE = "data/processed/movies.sqlite"
+SPLIT_ARTIFACT = "data/derived/split_v1.json"
 
 _requires_raw_data = pytest.mark.skipif(
     not (RAW_ROOT / "tmdb" / "movies.csv").exists(),
@@ -101,6 +104,20 @@ def test_crowd_kind_is_registered() -> None:
     assert resolve_kind("w2_03_hollywood_crowd") is not None
 
 
+def test_crowd_runner_requires_persisted_source_and_artifact_paths() -> None:
+    with pytest.raises(ValueError, match="labeled_sqlite and params.split_artifact"):
+        _crowd_runner(
+            ExperimentConfig(
+                name="missing-artifact",
+                kind="w2_03_hollywood_crowd",
+                seed=1,
+                n_runs=1,
+                params={"crowd_config": "configs/crowd_hollywood_5agent.yaml"},
+            ),
+            np.random.default_rng(1),
+        )
+
+
 def test_the_two_configs_exercise_both_policy_branches() -> None:
     """One explicit roster, one seeded deal — together they cover the whole §5.1 seam."""
     policies = {CrowdConfig.from_yaml(p).assignment.policy for p in HOLLYWOOD_CROWD_CONFIGS}
@@ -111,7 +128,9 @@ def test_the_two_configs_exercise_both_policy_branches() -> None:
 @_requires_raw_data
 def test_five_agent_crowd_builds_on_real_data() -> None:
     """Spec §9.2 crowd-level: five agents, four 2-feature anchored on budget + one 5-feature."""
-    crowd = build_hollywood_crowd("configs/crowd_hollywood_5agent.yaml", np.random.default_rng(20260810))
+    crowd = build_hollywood_crowd(
+        "configs/crowd_hollywood_5agent.yaml", np.random.default_rng(20260810), LABELED_SQLITE, SPLIT_ARTIFACT
+    )
     manifest = crowd.manifest
 
     assert len(manifest.roster) == 5
@@ -126,7 +145,12 @@ def test_five_agent_crowd_builds_on_real_data() -> None:
 @_requires_raw_data
 def test_twenty_six_agent_crowd_builds_on_real_data() -> None:
     """Spec §9.3: one 5-feature, five 4-feature, ten 3-feature, ten 2-feature."""
-    crowd = build_hollywood_crowd("configs/crowd_hollywood_26agent.yaml", np.random.default_rng(20260810))
+    crowd = build_hollywood_crowd(
+        "configs/crowd_hollywood_26agent.yaml",
+        np.random.default_rng(20260810),
+        LABELED_SQLITE,
+        SPLIT_ARTIFACT,
+    )
     manifest = crowd.manifest
 
     assert len(manifest.roster) == 26
@@ -143,6 +167,10 @@ def test_twenty_six_agent_crowd_builds_on_real_data() -> None:
 @_requires_raw_data
 def test_real_crowd_build_is_deterministic_under_seed() -> None:
     """Same master seed ⇒ byte-identical crowd manifest, on real data (ticket test req 1)."""
-    first = build_hollywood_crowd("configs/crowd_hollywood_26agent.yaml", np.random.default_rng(7))
-    second = build_hollywood_crowd("configs/crowd_hollywood_26agent.yaml", np.random.default_rng(7))
+    first = build_hollywood_crowd(
+        "configs/crowd_hollywood_26agent.yaml", np.random.default_rng(7), LABELED_SQLITE, SPLIT_ARTIFACT
+    )
+    second = build_hollywood_crowd(
+        "configs/crowd_hollywood_26agent.yaml", np.random.default_rng(7), LABELED_SQLITE, SPLIT_ARTIFACT
+    )
     assert first.manifest.model_dump(mode="json") == second.manifest.model_dump(mode="json")
