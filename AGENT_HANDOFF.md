@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-11-14 (Codex IMPLEMENT) on `sarjit/w1-05-splits-normalization`
-at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
+**Last updated:** 2026-11-16 (Codex HANDOFF) on `zainalbassam/W5-01-baseline-mlp`
+at `3051c1d`: W1-05 completion recorded by the session driver; index and handoff edits are uncommitted.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +20,25 @@ at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-11-14, PR #46 review fixes implemented)
+## CURRENT STATE (2026-11-16, W1-05 completion recorded)
+
+- **Done:** The session driver confirms W1-05 is implemented and has updated
+  `tickets/00_INDEX.md` to ✅ with review by Zain Al Bassam dated 2026-11-16.
+  W5-01's W1-05 prerequisite is now satisfied in the local index.
+- **In flight / blocked:** W5-01 is assigned in REVIEW mode; its implementation
+  diff, tests, and experiment evidence have not yet been reviewed in this session.
+  The local index update and this handoff update are uncommitted. The earlier
+  handoff's W1-05 pending-review status is superseded by the driver's update.
+- **Owner-attention:** The session driver owns committing the status bookkeeping.
+  No W5-01 review sign-off has been issued; this handoff update does not certify
+  W5-01 implementation or experiment results.
+- **Next step:** Resume the W5-01 read-only review against its ticket and spec,
+  identifying the full implementation diff and verifying tests and manifests.
+- **Five-minute test:** `git diff --check` validates the bookkeeping edits;
+  `git status --short` shows the local index and handoff changes. No code tests
+  were run for this documentation-only update.
+
+## PRIOR (2026-11-14, PR #46 review fixes implemented)
 
 - **Done:** All three W1-05 review findings are addressed locally: split schema 2
   verifies a digest of memberships/folds/features/scalers; materialization verifies
