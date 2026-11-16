@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from wocbots.agents import HOLLYWOOD_WEIGHTS, Agent, ConfidenceWeights
+from wocbots.agents.agent import _DEFAULT_CLASSIFIER, HOLLYWOOD_WEIGHTS, Agent, ConfidenceWeights
 
 # The exact §6.5 surface (mini-plan Q1: spec wins over the ticket's "prediction").
 PROFILE_FIELDS = {
@@ -94,10 +94,19 @@ def test_weights_frozen_and_extra_forbidden() -> None:
 
 @pytest.mark.parametrize("bad", [-0.01, 1.01])
 def test_eval_metric_out_of_bounds_raises(bad: float) -> None:
-    for kwarg in ("eval_accuracy", "eval_precision", "eval_recall"):
+    for kwarg in (
+        "eval_accuracy",
+        "eval_precision",
+        "eval_recall",
+    ):
         kwargs = {"eval_accuracy": 0.8, "eval_precision": 0.7, "eval_recall": 0.6, kwarg: bad}
         with pytest.raises(ValueError, match=kwarg):
-            Agent(features=("budget",), confidence_weights=HOLLYWOOD_WEIGHTS, **kwargs)
+            Agent(
+                features=("budget",),
+                confidence_weights=HOLLYWOOD_WEIGHTS,
+                classifier=_DEFAULT_CLASSIFIER,
+                **kwargs,
+            )
 
 
 def test_eval_metric_bounds_inclusive() -> None:
