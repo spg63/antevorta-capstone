@@ -451,4 +451,3 @@ def test_build_crowd_creates_db_file() -> None:
     agents: list[Agent] = db_interface.load_all_agents()
     for agent in agents:
         assert isinstance(agent, Agent)
-    os.remove(os.path.join(TEST_DB_DIR, TEST_DB_FILE))
