@@ -84,7 +84,25 @@ Experiment result schema version 2 records `input_artifacts.split_artifact` and
 the harness rejects changes between runs of one invocation. Version 1 result manifests remain
 readable, but their missing hashes cannot establish identical experimental inputs.
 
-## 5. Generate the reference outputs
+## 5. Run W1-06's anchor analysis
+
+After building a schema-2 W1-05 split, rank the candidate shared features on its training
+membership only:
+
+```bash
+uv run python scripts/run_w1_06_anchor_analysis.py --seed 42
+```
+
+The command reads `data/processed/movies.sqlite` and `data/derived/split_v1.json`, validates
+that the split matches the labeled source, and writes the full point-biserial/PCA ranking to
+`results/manifests/w1_06_anchor_analysis.json`. It prints the top six features to the terminal.
+Use `--sqlite`, `--split`, or `--output` to provide alternate paths; use the same seed when
+reproducing a result. The analysis never uses eval or test rows.
+
+For the Hollywood reference configuration, retain `budget` as the shared anchor per the
+stakeholder ruling recorded in W1-06, even though the measured ranking differs.
+
+## 6. Generate the reference outputs
 
 ```bash
 uv run python scripts/extract_w1_02_reference.py
@@ -95,7 +113,7 @@ manifests, and regenerates the deterministic test fixture. Run it after rebuildi
 changing the W1-03 feature schema or transforms; otherwise, normal development can skip it. The W1-04
 `label` column, when present, is excluded from this feature-only reference.
 
-## 6. Verify the data pipeline
+## 7. Verify the data pipeline
 
 ```bash
 uv run pytest tests/unit/data/test_ground_truth.py tests/unit/data/test_hollywood.py -q

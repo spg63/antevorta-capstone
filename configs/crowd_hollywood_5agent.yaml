@@ -16,9 +16,8 @@
 # The W2-03 unit tests never caught it because they build synthetic frames with their own
 # column names. Verified against the real split by `test_w2_03_hollywood_configs_real_data`.
 #
-# The ANCHOR SET (`budget`) is still provisional: W1-06's RESULT block is blank, and its
-# measured ranking on this snapshot puts budget LAST (r = 0.0224). Not re-anchored here —
-# that is W1-06's ruling to make, not this config's.
+# W1-06 records the train-only ranking and stakeholder ruling (2026-11-16): retain `budget`
+# as the shared anchor to preserve this §9.2 reference configuration even if the ranking differs.
 name: crowd_hollywood_5agent
 
 assignment:
