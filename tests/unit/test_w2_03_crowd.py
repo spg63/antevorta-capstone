@@ -18,6 +18,7 @@ W2-04's job); determinism is by construction, so nothing here can flake.
 
 from __future__ import annotations
 
+import os
 from collections import Counter
 from pathlib import Path
 
@@ -25,7 +26,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from wocbots.agents import HOLLYWOOD_WEIGHTS
+from wocbots.agents import HOLLYWOOD_WEIGHTS, Agent
 from wocbots.agents.classifier import ClassifierSpec, LabeledData
 from wocbots.agents.crowd import (
     AgentGroup,
@@ -42,6 +43,7 @@ from wocbots.agents.crowd import (
     read_crowd_manifest,
     write_crowd_manifest,
 )
+from wocbots.agents.persistence import AgentDbInterface, AgentSerialization, SqliteWrapper
 
 CONFIGS_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -417,3 +419,36 @@ def test_crowd_manifest_records_architecture_for_mlp() -> None:
     train, ev = _blobs(np.random.default_rng(1)), _blobs(np.random.default_rng(2))
     built = build_crowd(config=config, train_data=train, eval_data=ev, rng=np.random.default_rng(5))
     assert built.manifest.agents[0].architecture == (32, 32)
+
+
+def test_build_crowd_creates_db_file() -> None:
+    TEST_DB_DIR = os.path.join(f"{os.path.dirname(os.path.abspath(__file__))}", "persistance", "db")
+    TEST_DB_FILE: str = "agents_trained.sqlite3"
+    config = CrowdConfig(
+        name="arch",
+        assignment=ExplicitAssignmentConfig(policy="explicit", agents=(("f0", "f1", "f2", "f3", "f4"),)),
+        classifier=ClassifierSpec(variant="mlp", epochs=5, hidden_width=32),
+        confidence_weights=HOLLYWOOD_WEIGHTS,
+    )
+    train, ev = _blobs(np.random.default_rng(1)), _blobs(np.random.default_rng(2))
+    build_crowd(
+        config=config,
+        train_data=train,
+        eval_data=ev,
+        rng=np.random.default_rng(5),
+        save_agents=True,
+        sql_directory=TEST_DB_DIR,
+    )
+
+    assert os.path.exists(os.path.join(TEST_DB_DIR, TEST_DB_FILE))
+
+    serialization: AgentSerialization = AgentSerialization()
+    sql_wrappeer: SqliteWrapper = SqliteWrapper(path=os.path.join(TEST_DB_DIR, TEST_DB_FILE))
+    db_interface: AgentDbInterface = AgentDbInterface(
+        sqlite_wrapper=sql_wrappeer, serialization=serialization
+    )
+
+    agents: list[Agent] = db_interface.load_all_agents()
+    for agent in agents:
+        assert isinstance(agent, Agent)
+    os.remove(os.path.join(TEST_DB_DIR, TEST_DB_FILE))

@@ -13,4 +13,4 @@ class AgentSerialization:
             agent = loads(data)
             return agent
         except TypeError:
-            raise TypeError(f"Deserialized object was not an Agent -- ${type(agent)}") from TypeError
+            raise TypeError(f"Deserialized object was not an Agent -- {type(agent)}") from TypeError
