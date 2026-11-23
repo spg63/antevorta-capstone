@@ -38,6 +38,9 @@ code paths.
 
 ## RESULT — anchor analysis (fill before closing)
 
-- Feature ranking (top 6, with scores): ☐ ____
-- Chosen anchor set: ☐ ____
-- Matches §9.2 expectations: ☐ yes ☐ no → escalated
+- Feature ranking (top 6, point-biserial r): tmdb_vote_count 0.324234;
+  tmdb_popularity 0.322022; vote_count 0.292277; tmdb_vote_average 0.267190;
+  ml_vote_count 0.256335; vote_average 0.235698. See
+  `results/manifests/w1_06_anchor_analysis.json` (seed 42, 2,182 train rows).
+- Chosen anchor set: budget (stakeholder ruling, 2026-11-16, to preserve the §9.2 reference setup).
+- Matches §9.2 expectations: no → escalated; stakeholder ruled to retain budget.

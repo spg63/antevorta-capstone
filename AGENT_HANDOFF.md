@@ -1,7 +1,7 @@
 # Agent Handoff
 
-**Last updated:** 2026-11-14 (Codex IMPLEMENT) on `sarjit/w1-05-splits-normalization`
-at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
+**Last updated:** 2026-11-22 (Codex HANDOFF) on `sarjit/w1-06-anchor-analysis`:
+W1-06 is implemented locally and awaits independent review.
 
 > **HOW THIS FILE WORKS (do not delete this box).** This is the repo's living state journal — the first
 > thing every new session reads after the preamble. Rules:
@@ -20,7 +20,23 @@ at `3ee9108`: three PR #46 findings addressed locally; changes are uncommitted.
 > 4. Write for someone with zero context beyond the preamble. No unexplained abbreviations, no "as
 >    discussed." If you invented a name this session, define it.
 
-## CURRENT STATE (2026-11-14, PR #46 review fixes implemented)
+## CURRENT STATE (2026-11-22, W1-06 handoff)
+
+- **Done:** W1-06 has a seeded train-only ranking command, a committed-ready ranking
+  artifact, a filled RESULT block, and stakeholder ruling to retain `budget` for the
+  §9.2 reference setup. `scripts/README.md` now documents the command and prerequisites.
+  Focused anchor tests, ruff, formatting, and mypy passed.
+- **In flight / blocked:** The W1-06 changes are uncommitted. The ticket cannot close until
+  an implementer-independent review occurs; the previous full pytest attempt did not capture
+  a final result in the interactive window.
+- **Owner-attention:** The session driver must obtain independent review, adjudicate any
+  findings, commit accepted changes, then record the review in `tickets/00_INDEX.md`.
+- **Next step:** Review the W1-06 diff against `tickets/W1-06_anchor-analysis_PLAN.md` and
+  run the full pytest suite to completion before ticket-close bookkeeping.
+- **Five-minute test:** `.venv/bin/python -m pytest -q tests/unit/data/test_anchor_analysis.py`
+  and `uv run python scripts/run_w1_06_anchor_analysis.py --seed 42` exercise the focused path.
+
+## PRIOR (2026-11-14, PR #46 review fixes implemented)
 
 - **Done:** All three W1-05 review findings are addressed locally: split schema 2
   verifies a digest of memberships/folds/features/scalers; materialization verifies

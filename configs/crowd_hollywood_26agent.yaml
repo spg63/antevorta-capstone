@@ -13,10 +13,8 @@
 # tests missed it because they use synthetic frames with their own column names. Verified
 # against the real split by `test_w2_03_hollywood_configs_real_data`.
 #
-# The ANCHOR SET (`budget`) remains provisional: W1-06's RESULT block is still blank, and its
-# measured ranking on this snapshot puts budget LAST (r = 0.0224) against spec §5.1's claim
-# that it is the natural anchor. Not re-anchored here — W1-06 owns that ruling. This file is
-# the COMPOSITION, which is what W2-03 owns. The end-to-end reproduction is W2-04.
+# W1-06 records the train-only ranking and stakeholder ruling (2026-11-16): retain `budget`
+# as the shared anchor to preserve the §9.2 reference setup even if the ranking differs.
 name: crowd_hollywood_26agent
 
 assignment:
