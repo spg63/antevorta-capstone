@@ -36,6 +36,7 @@ W0-04 guard): the seeded policy only *advances* the `Generator` handed to it, vi
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,12 +48,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wocbots.agents.agent import ConfidenceWeights
 from wocbots.agents.classifier import ClassifierSpec, LabeledData, MLPAgentClassifier
+from wocbots.agents.persistence import AgentDbInterface, AgentSerialization, SqliteWrapper
 from wocbots.agents.training import LEAKY_FEATURES, PruneResult, TrainedAgent, train_crowd
 
 # Spec §5.1: "1–4 highly correlated features shared with all agents." The anchor set is the
 # crowd's shared knowledge base; its size is bounded here so a mis-sized config fails loudly.
 _MIN_ANCHORS = 1
 _MAX_ANCHORS = 4
+DEFAULT_SQL_DIRECTORY = os.path.join("..", "..", "..", "data")
 
 # A roster is a tuple of per-agent feature tuples — the ONLY thing assignment produces. No
 # agents, no classifiers: assignment is not entangled with agent internals (ticket forbidden
@@ -422,12 +425,24 @@ def _build_manifest(config: CrowdConfig, roster: Roster, result: PruneResult) ->
     )
 
 
+def _save_agents(sql_directory: str, agents: tuple[TrainedAgent, ...]) -> None:
+    agent_list = [trained_agent.agent for trained_agent in agents]
+    serialization: AgentSerialization = AgentSerialization()
+    db_wrapper: SqliteWrapper = SqliteWrapper(
+        path=os.path.abspath(os.path.join(sql_directory, "agents_trained.sqlite3"))
+    )
+    db_interface: AgentDbInterface = AgentDbInterface(sqlite_wrapper=db_wrapper, serialization=serialization)
+    db_interface.save_agents(agents=agent_list)
+
+
 def build_crowd(
     *,
     config: CrowdConfig,
     train_data: LabeledData,
     eval_data: LabeledData,
     rng: np.random.Generator,
+    save_agents: bool = False,
+    sql_directory: str = DEFAULT_SQL_DIRECTORY,
 ) -> BuiltCrowd:
     """Config -> roster -> trained/evaluated/initialized/pruned agents + a crowd manifest (S2).
 
@@ -454,6 +469,8 @@ def build_crowd(
         confidence_weights=config.confidence_weights,
         rng=rng,
     )
+    if save_agents:
+        _save_agents(sql_directory=sql_directory, agents=result.kept)
     manifest = _build_manifest(config, roster, result)
     return BuiltCrowd(agents=result.kept, manifest=manifest)
 
